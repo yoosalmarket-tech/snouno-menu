@@ -240,12 +240,18 @@ function renderCards(){
  if(!groups.length){const p=make('p',favoritesOnly&&!q?'اضغط على القلب لحفظ أطباقك المفضلة.':'لا توجد أطباق مطابقة.');p.className='empty';grid.append(p);}
  menuSections=groups.map(group=>group.section);renderChips(groups);
 }
+function startingScore(value){
+ const score=make('span');score.className='rating';
+ const amount=make('bdi','★ '+Number(value).toFixed(1));amount.dir='ltr';
+ score.append(amount,' · تقييم مبدئي');
+ return score;
+}
 function mealCard(d){
    const article=make('article');article.className='card';
    const open=make('button');open.className='card-open';open.onclick=()=>detail(d);
    if(d.image)open.append(image(d.image,d.name));
-   const rating=make('span',d.rating!=null?'★ '+Number(d.rating).toFixed(1):'');rating.className='rating';
-   open.append(rating,make('strong',d.name),make('p',d.description),price(d));if(!d.available)open.append(make('small','غير متوفر'));
+   if(d.rating!=null)open.append(startingScore(d.rating));
+   open.append(make('strong',d.name),make('p',d.description),price(d));if(!d.available)open.append(make('small','غير متوفر'));
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';article.append(badge);}
    const heart=make('button');heart.className='heart';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label','المفضلة · '+d.name);heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
@@ -292,7 +298,7 @@ function detail(d){
  }
  const content=make('div');content.className='content';
  const lead=make('div');lead.className='dish-lead';lead.append(make('h2',d.name));
- if(d.rating!=null){const n=Math.min(5,Math.max(0,Math.round(d.rating)));const stars=make('span','★'.repeat(n));stars.className='summary-stars';stars.dir='ltr';stars.append(make('small','★'.repeat(5-n)));stars.title=String(d.rating);lead.append(stars);}
+ if(d.rating!=null)lead.append(startingScore(d.rating));
  content.append(lead);if(d.price!=null)content.append(price(d));
  if(d.description)content.append(make('p',d.description));
  if(d.ingredients){content.append(make('h3','المكونات'));const groups=make('div');groups.className='ingredients';
