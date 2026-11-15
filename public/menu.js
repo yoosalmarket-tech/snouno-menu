@@ -59,10 +59,24 @@ function renderSettings(){
  setText('brand',s.name);setText('greeting',s.welcome);setText('quick',s.hotline);setText('browse',s.welcome_button);
  $('cover-photo').setAttribute('href',asset(s.hero)||'/assets/plate.webp');
  $('logo').src=asset(s.logo)||'/assets/logo.webp';renderAds(s);
- setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);setText('credit',s.credit);
+ setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);setText('credit-link',s.credit);$('credit').hidden=!s.credit;
  orderLinks($('links'));
 }
+let creditTimeout;
+function resetCredit() {
+ clearTimeout(creditTimeout);
+ creditTimeout=undefined;
+ setText('credit-hint','');
+}
+$('credit-link').onclick=()=>{
+ if(creditTimeout!==undefined){
+   resetCredit();location.assign('https://www.yoosal.net/');return;
+ }
+ setText('credit-hint','اضغط مرة ثانية لزيارة موقع يوصل');
+ creditTimeout=setTimeout(resetCredit,5000);
+};
 function route(){
+ resetCredit();
  const dest=location.hash.slice(1)||'welcome';
  const welcome=dest==='welcome',contact=dest==='contact';
  $('welcome').hidden=!welcome;$('inside').hidden=welcome;$('menu').hidden=contact;$('contact').hidden=!contact;
@@ -97,7 +111,7 @@ function renderCards(){
    open.append(rating,make('strong',d.name),make('p',d.description),price(d));if(!d.available)open.append(make('small','غير متوفر'));
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';article.append(badge);}
-   const heart=make('button',favorites.has(d.id)?'♥':'♡');heart.className='heart';heart.textContent='';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M20.8 4.6a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label','المفضلة · '+d.name);heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
+   const heart=make('button');heart.className='heart';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label','المفضلة · '+d.name);heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
    heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));renderCards();};article.append(heart);grid.append(article);
  }
 }
@@ -110,7 +124,11 @@ function bindFeedback(form,extra){
  }catch{output.textContent='تعذّر الإرسال. حاول مرة أخرى.';}finally{button.disabled=false;}};
 }
 function detail(d){
- const box=$('details');box.replaceChildren();if(d.image)box.append(image(d.image,d.name));
+ const box=$('details');box.replaceChildren();
+ if(d.image){
+   const frame=make('figure');frame.className='dish-photo';
+   frame.append(image(d.image,d.name));box.append(frame);
+ }
  const content=make('div');content.className='content';content.append(make('h2',d.name),make('p',d.description),price(d));
  if(d.ingredients)content.append(make('h3','المكونات'),make('p',d.ingredients));
  const buttons=make('div');buttons.className='links';if(d.available)orderLinks(buttons);else buttons.append('غير متوفر');content.append(buttons);
