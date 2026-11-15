@@ -41,3 +41,10 @@
  @keyframes intro-fade{from{opacity:0}to{opacity:1}}
  @keyframes intro-copy{from{transform:translateY(var(--rise));opacity:0}to{transform:translateY(0);opacity:1}}
 }
+.brand-home{width:49%;display:flex;align-items:center;height:61px}.brand-home img{width:100%;height:100%;object-fit:contain}
+#credit-link{border:0;background:transparent;color:inherit;padding:10px 14px;font:inherit;min-height:44px}
+#credit-hint:not(:empty){display:block;color:var(--ink);font-size:13px}
+.heart svg{width:19px;height:19px;aspect-ratio:1;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.65}
+.dish-photo{margin:4px 4px 0;aspect-ratio:394/242.63;overflow:hidden;border-radius:38px 38px 33px 33px}
+.dish-photo img{display:block;width:100%;height:100%;object-fit:cover}
+#close{position:absolute;top:12px;left:12px;margin:0}
