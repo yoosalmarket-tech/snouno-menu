@@ -224,8 +224,82 @@ function detail(d){
  }
  bindFeedback(form,{kind:'تقييم',dish_id:d.id});content.append(form);show();
 }
-$('search').oninput=renderCards;$('close').onclick=()=>$('dish').close();
-$('dish').onclick=e=>{if(e.target===$('dish')&&e.clientY<$('details').getBoundingClientRect().top)$('dish').close();};
+function installDishDismissal(dialog) {
+ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+ let gesture=null,offset=0,phase='',settleTimer;
+ const clear=()=>{
+   clearTimeout(settleTimer);
+   gesture=null;offset=0;phase='';
+   dialog.removeAttribute('data-motion');
+   dialog.style.removeProperty('--sheet-offset');
+ };
+ const move=y=>{
+   offset=Math.max(0,y);
+   dialog.style.setProperty('--sheet-offset',offset+'px');
+ };
+ const settle=closing=>{
+   if(!dialog.open||phase==='dismiss')return;
+   gesture=null;clearTimeout(settleTimer);
+   phase=closing?'dismiss':'return';dialog.dataset.motion=phase;
+   move(closing?dialog.getBoundingClientRect().height:0);
+   const finish=()=>{
+     if(closing&&dialog.open)dialog.close();
+     clear();
+   };
+   if(reducedMotion.matches)finish();else settleTimer=setTimeout(finish,250);
+ };
+ const start=(id,x,y,target)=>{
+   if(phase||dialog.scrollTop>1||!target.closest('#details')||
+      target.closest('button,a,input,textarea,select,label,form'))return;
+   gesture={id,x,y,drag:false};
+ };
+ const drag=(id,x,y,event)=>{
+   if(!gesture||gesture.id!==id)return;
+   const dy=y-gesture.y,dx=Math.abs(x-gesture.x);
+   if(!gesture.drag){
+     if(Math.max(Math.abs(dy),dx)<6)return;
+     if(dy<=dx||dialog.scrollTop>1||!event.cancelable){gesture=null;return;}
+     gesture.drag=true;dialog.dataset.motion='drag';
+   }
+   if(event.cancelable)event.preventDefault();
+   move(dy);
+ };
+ const end=(id,cancelled=false)=>{
+   if(!gesture||gesture.id!==id)return;
+   if(gesture.drag)settle(!cancelled&&offset>=Math.min(128,dialog.clientHeight*.18));
+   else gesture=null;
+ };
+ const cancel=()=>{if(gesture)end(gesture.id,true);};
+ dialog.addEventListener('touchstart',event=>{
+   if(event.touches.length!==1){cancel();return;}
+   const t=event.changedTouches[0];start(t.identifier,t.clientX,t.clientY,event.target);
+ },{passive:true});
+ dialog.addEventListener('touchmove',event=>{
+   const t=event.touches[0];
+   if(t&&event.touches.length===1)drag(t.identifier,t.clientX,t.clientY,event);
+ },{passive:false});
+ dialog.addEventListener('touchend',event=>{
+   for(const t of event.changedTouches)end(t.identifier);
+ });
+ dialog.addEventListener('touchcancel',cancel);
+ dialog.addEventListener('pointerdown',event=>{
+   if(event.pointerType==='mouse'&&event.button===0)start('mouse',event.clientX,event.clientY,event.target);
+ });
+ window.addEventListener('pointermove',event=>{
+   if(event.pointerType==='mouse')drag('mouse',event.clientX,event.clientY,event);
+ });
+ window.addEventListener('pointerup',event=>{if(event.pointerType==='mouse')end('mouse');});
+ window.addEventListener('blur',cancel);
+ dialog.addEventListener('dragstart',event=>{if(gesture)event.preventDefault();});
+ dialog.addEventListener('click',event=>{
+   if(event.target===dialog&&!phase)settle(true);
+ });
+ dialog.addEventListener('cancel',event=>{event.preventDefault();settle(true);});
+ dialog.addEventListener('close',clear);
+ $('close').onclick=()=>settle(true);
+}
+$('search').oninput=renderCards;
+if(!isPreview)installDishDismissal($('dish'));
 bindFeedback($('feedback'),{});route();
 function installPreview(){
  if(!isPreview)return;

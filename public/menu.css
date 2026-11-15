@@ -51,7 +51,7 @@
 
 /* Restaurant photography remains visible under the charcoal texture. */
 #welcome{isolation:isolate;position:relative;background:#201e19 url('/assets/restaurant-front.webp') center/cover no-repeat}
-#welcome::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#161411bd,transparent 62%),url('/assets/charcoal.webp') left center/auto 120%;opacity:.52}
+#welcome::before{content:"";position:absolute;inset:0;z-index:-1;background:url('/assets/charcoal.webp') 5.32% 1.24%/auto 117.56% no-repeat;opacity:.95}
 .cover .welcome-plate{transform-box:view-box;transform-origin:100% 47%}
 *{-webkit-tap-highlight-color:transparent}
 #inside>header{position:sticky;top:0;z-index:5;transition:transform .17s ease-out}
@@ -116,3 +116,10 @@ body[data-preview="popup"] #dish{position:relative;inset:auto;display:block;--pe
 body[data-preview="popup"] #details{min-height:0}
 body[data-preview="card"] #cards{display:block;width:min(205px,100%);margin:auto}
 body[data-preview] *{animation:none!important;transition:none!important}
+
+/* Move the sheet and close button together while the backdrop stays in place. */
+#dish[data-motion] {animation:none;transform:translateY(var(--sheet-offset,0px))}
+#dish[data-motion="drag"] {user-select:none}
+#dish[data-motion="return"],#dish[data-motion="dismiss"] {transition:transform 240ms cubic-bezier(.22,.7,.28,1)}
+#dish[data-motion="dismiss"]::backdrop {animation:veil-arrives 240ms ease-out reverse both}
+@media(prefers-reduced-motion:reduce){#dish[data-motion],#dish[data-motion]::backdrop{transition:none;animation:none}}
