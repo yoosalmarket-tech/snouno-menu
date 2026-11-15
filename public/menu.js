@@ -5,33 +5,34 @@ const make=(tag,text)=>{const el=document.createElement(tag);if(text!=null)el.te
 let dishes=[],categories=[],links=[],settings={},category='all';
 let favorites=new Set(JSON.parse(localStorage.getItem('snouno-favorites')||'[]'));
 const money=value=>Number(value)+' ₪';
-function asset(src){if(!src)return '';try{const u=new URL(src,location.origin);return /^(https?:)$/.test(u.protocol)?u.href:'';}catch{return '';}}
+const isPreview=window.parent!==window&&new URLSearchParams(location.search).get('preview')==='1';
+function asset(src){if(!src)return '';if(isPreview&&src.startsWith('blob:'+location.origin+'/'))return src;try{const u=new URL(src,location.origin);return /^(https?:)$/.test(u.protocol)?u.href:'';}catch{return '';}}
 function setText(id,text){$(id).textContent=text||'';}
 function image(src,alt){const img=make('img');img.src=asset(src);img.alt=alt;return img;}
-function orderLinks(container){
+const ordering=['makook','sonbol'];
+function contactLinks(container,channels) {
  container.replaceChildren();
- for(const link of links){
-   if(!/^(https:\/\/|mailto:|tel:)/i.test(link.url))continue;
-   const a=make('a');a.href=link.url;
-   a.append(make('span',link.name));
-   if (/سنبل|مكوك/.test(link.name)) {
-     a.className='order-action';
-     const arrow=make('i','←');arrow.setAttribute('aria-hidden','true');a.append(arrow);
-   }
+ for(const channel of channels){
+   const link=links.find(row=>row.channel===channel);
+   if(!link||!/^https?:\/\//i.test(link.url))continue;
+   const a=make('a');a.href=link.url;a.dataset.channel=channel;
+   a.setAttribute('aria-label',link.name);
+   a.append(image('/assets/'+channel+'.svg',''),make('span',link.name));
+   if(ordering.includes(channel))a.classList.add('order-action');
    container.append(a);
  }
 }
 let stopCarousel=()=>{};
 function renderAds(s) {
  stopCarousel();
- const ads = [[s.banner,s.banner_alt],[s.banner_two,s.banner_two_alt],[s.banner_three,s.banner_three_alt]].filter(([url])=>asset(url));
+ const ads = [[s.banner,s.banner_alt,s.banner_dish],[s.banner_two,s.banner_two_alt,s.banner_two_dish],[s.banner_three,s.banner_three_alt,s.banner_three_dish]].filter(([url])=>asset(url));
  const track=$('ad-track'), dots=$('ad-dots');
  track.replaceChildren(); dots.replaceChildren(); $('ads').hidden=!ads.length;
  let timer,active=0,dragging=false;
  const listeners=new AbortController();
  const restart=()=>{
    clearTimeout(timer);
-   if(ads.length<2||document.hidden||location.hash!=='#menu'||dragging)return;
+   if(isPreview||ads.length<2||document.hidden||location.hash!=='#menu'||dragging)return;
    timer=setTimeout(()=>{
      if(!$('dish').open)select((active+1)%ads.length);
      restart();
@@ -55,9 +56,11 @@ function renderAds(s) {
    active=index;
    Array.from(dots.children).forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===index)));
  }
- for (const [index,[url,label]] of ads.entries()) {
+ for (const [index,[url,label,dishId]] of ads.entries()) {
    const title=label||('إعلان '+(index+1));
-   const slide=image(url,title);track.append(slide);
+   const slide=make('button');slide.type='button';slide.className='ad-product';slide.setAttribute('aria-label','عرض '+title);
+   slide.append(image(url,title));slide.onclick=()=>detail(dishes.find(d=>d.id===dishId)||{name:title,image:url,available:true});
+   track.append(slide);
    const dot=make('button');dot.type='button';dot.setAttribute('aria-label',title);
    dot.onclick=()=>{select(index);restart();};dots.append(dot);
  }
@@ -81,8 +84,9 @@ function renderSettings(){
  setText('brand',s.name);setText('greeting',s.welcome);setText('quick',s.hotline);setText('browse',s.welcome_button);
  $('cover-photo').setAttribute('href',asset(s.hero)||'/assets/plate.webp');
  $('logo').src=asset(s.logo)||'/assets/logo.webp';renderAds(s);
- setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);setText('credit-link',s.credit);$('credit').hidden=!s.credit;
- orderLinks($('links'));
+ setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
+ credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit;
+ contactLinks($('links'),[...ordering,'whatsapp']);contactLinks($('social-links'),['instagram','facebook']);
 }
 let creditTimeout;
 function resetCredit() {
@@ -103,12 +107,27 @@ function route(){
  const welcome=dest==='welcome',contact=dest==='contact';
  $('welcome').hidden=!welcome;$('inside').hidden=welcome;$('menu').hidden=contact;$('contact').hidden=!contact;
  for(const a of $('dock').children)a.setAttribute('aria-current',a.hash===(contact?'#contact':'#menu')?'page':'false');
+ $('social-links').hidden=!contact;document.body.classList.toggle('contact-route',contact);
+ $('inside').querySelector('header').classList.remove('tucked');pageHeader.style.transform='';previousY=0;
  if($('dish').open)$('dish').close();window.scrollTo(0,0);
 }
+let previousY=0;
+ const pageHeader=$('inside').querySelector('header');
+ window.addEventListener('scroll',()=>{
+   const y=Math.max(0,window.scrollY);
+   if(y!==previousY){
+     const down=y>previousY;
+     pageHeader.classList.toggle('tucked',down&&y>=pageHeader.offsetHeight);
+     pageHeader.style.transform=down&&y<pageHeader.offsetHeight?'translateY(-'+y+'px)':'';
+   }
+   previousY=y;
+ },{passive:true});
 window.addEventListener('hashchange',route);
 function theme(dark){document.body.classList.toggle('dark',dark);$('theme').textContent=dark?'☀':'☾';}
-theme(localStorage.getItem('snouno-theme')==='dark');
-$('theme').onclick=()=>{const dark=!document.body.classList.contains('dark');theme(dark);localStorage.setItem('snouno-theme',dark?'dark':'light');};
+const systemTheme=matchMedia('(prefers-color-scheme:dark)');
+theme(systemTheme.matches);
+systemTheme.addEventListener('change',event=>theme(event.matches));
+$('theme').onclick=()=>{const dark=!document.body.classList.contains('dark');theme(dark);};
 function renderChips(){
  $('chips').replaceChildren();
  for(const c of [{id:'all',name:'الكل',icon:'☰'},{id:'favorites',name:'المفضلة',icon:'★'},...categories]){
@@ -117,8 +136,10 @@ function renderChips(){
  }
 }
 function price(d){
- const p=make('div',money(d.price));p.className='price';
- if(d.old_price>d.price)p.append(make('del',money(d.old_price)));
+ const p=make('div');p.className='price';
+ const amount=(tag,value)=>{const el=make(tag,money(value));el.dir='ltr';return el;};
+ p.append(amount('bdi',d.price));
+ if(d.old_price>d.price)p.append(amount('del',d.old_price));
  return p;
 }
 function renderCards(){
@@ -141,20 +162,57 @@ function bindFeedback(form,extra){
  form.onsubmit=async e=>{e.preventDefault();const output=form.querySelector('output');const button=form.querySelector('button[type=submit],button:not([type])');
  button.disabled=true;try{
  const values=Object.fromEntries(new FormData(form));
+ if(extra.dish_id){
+   let visitor=localStorage.getItem('snouno-visitor');
+   if(!visitor){visitor=crypto.randomUUID();localStorage.setItem('snouno-visitor',visitor);}
+   values.visitor_id=visitor;
+ }
  const reply=await fetch(base+'menu_feedback',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({...values,...extra})});
- if(!reply.ok)throw new Error();form.reset();output.textContent='شكراً لك، وصلتنا رسالتك.';
+ const duplicate=extra.dish_id&&reply.status===409&&(await reply.json()).code==='23505';
+ if(!reply.ok&&!duplicate)throw new Error();
+ if(extra.dish_id){
+   localStorage.setItem('snouno-rated-'+extra.dish_id,'1');form.replaceChildren(make('p',duplicate?'سبق أن قيّمت هذا الطبق.':'شكراً لك، تم حفظ تقييمك.'));
+ }else{form.reset();output.textContent='شكراً لك، وصلتنا رسالتك.';}
  }catch{output.textContent='تعذّر الإرسال. حاول مرة أخرى.';}finally{button.disabled=false;}};
+}
+function ingredientGroups(text=''){
+ const groups=new Map();
+ for(const line of text.split(/[;؛\n]/)){
+   const split=line.indexOf(':');
+   const heading=split<0?'':line.slice(0,split).trim();
+   const items=(split<0?line:line.slice(split+1)).split(/[،,]/).map(v=>v.trim()).filter(Boolean);
+   for(const item of items){
+     const group=heading||(/جبن|حليب|لبن/.test(item)?'ألبان':/دجاج|لحم|روبيان/.test(item)?'بروتين':/صوص|سيزر|صلصة/.test(item)?'صلصات':/خس|خيار|طماطم|أفوكادو|جزر/.test(item)?'خضار':'إضافات');
+     if(!groups.has(group))groups.set(group,[]);groups.get(group).push(item);
+   }
+ }
+ return groups;
 }
 function detail(d){
  const box=$('details');box.replaceChildren();
+ const categoryLabel=categories.find(c=>c.id===d.category_id)?.name||'';
  if(d.image){
    const frame=make('figure');frame.className='dish-photo';
-   frame.append(image(d.image,d.name));box.append(frame);
+   frame.append(image(d.image==='/assets/knockout.webp'?'/assets/knockout-detail.webp':d.image,d.name));
+   if(categoryLabel){const tag=make('span',categoryLabel);tag.className='photo-tag';frame.append(tag);}
+   box.append(frame);
  }
- const content=make('div');content.className='content';content.append(make('h2',d.name),make('p',d.description),price(d));
- if(d.ingredients)content.append(make('h3','المكونات'),make('p',d.ingredients));
- const buttons=make('div');buttons.className='links';if(d.available)orderLinks(buttons);else buttons.append('غير متوفر');content.append(buttons);
- const form=make('form');form.innerHTML='<h3>قيّم الطبق</h3><fieldset class="stars"><legend>التقييم</legend></fieldset><label>اكتب رأيك عن الطبق<textarea name="message" maxlength="2000"></textarea></label><button class="yellow">إرسال التقييم</button><output></output>';
+ const content=make('div');content.className='content';
+ const lead=make('div');lead.className='dish-lead';lead.append(make('h2',d.name));
+ if(d.rating!=null){const n=Math.min(5,Math.max(0,Math.round(d.rating)));const stars=make('span','★'.repeat(n));stars.className='summary-stars';stars.dir='ltr';stars.append(make('small','★'.repeat(5-n)));stars.title=String(d.rating);lead.append(stars);}
+ content.append(lead);if(d.price!=null)content.append(price(d));
+ if(d.ingredients){content.append(make('h3','المكونات'));const groups=make('div');groups.className='ingredients';
+   for(const [group,items] of ingredientGroups(d.ingredients)){
+     const row=make('div');row.setAttribute('aria-label',group);
+     for(const item of items){const chip=make('span',item);chip.title=group;chip.dataset.color=/طماطم/.test(item)?'red':group==='خضار'?'green':group==='ألبان'?'white':'gold';row.append(chip);}
+     groups.append(row);
+   }content.append(groups);
+ }
+ const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering);else buttons.append('غير متوفر');content.append(buttons);
+ const show=()=>{box.append(content);if(!$('dish').open)$('dish').showModal();$('dish').scrollTop=0;};
+ if(!d.id){show();return;}
+ if(localStorage.getItem('snouno-rated-'+d.id)){content.append(make('p','سبق أن قيّمت هذا الطبق.'));show();return;}
+ const form=make('form');form.innerHTML='<h3>قيّم الطبق</h3><fieldset class="stars"><legend>التقييم</legend></fieldset><label>اكتب رأيك عن الطبق<textarea name="message" maxlength="2000"></textarea></label><button class="yellow send-rating" aria-label="إرسال التقييم">➤</button><output></output>';
  const stars=form.querySelector('.stars');
  for(let i=1;i<=5;i++){
    const label=make('label');const radio=make('input');
@@ -162,17 +220,48 @@ function detail(d){
    radio.setAttribute('aria-label',i+' من 5');const star=make('span','★');star.setAttribute('aria-hidden','true');
    label.append(radio,star);stars.append(label);
  }
- bindFeedback(form,{kind:'تقييم',dish_id:d.id});content.append(form);box.append(content);$('dish').showModal();$('dish').scrollTop=0;
+ bindFeedback(form,{kind:'تقييم',dish_id:d.id});content.append(form);show();
 }
 $('search').oninput=renderCards;$('close').onclick=()=>$('dish').close();
-$('dish').onclick=e=>{if(e.target===$('dish')&&e.clientY<$('dish').getBoundingClientRect().top)$('dish').close();};
+$('dish').onclick=e=>{if(e.target===$('dish')&&e.clientY<$('details').getBoundingClientRect().top)$('dish').close();};
 bindFeedback($('feedback'),{});route();
+function installPreview(){
+ if(!isPreview)return;
+ const original={settings:{...settings},links:links.map(v=>({...v}))};
+ document.addEventListener('submit',event=>{event.preventDefault();event.stopImmediatePropagation();},true);
+ document.addEventListener('click',event=>{if(event.target.closest('a,button')){event.preventDefault();event.stopImmediatePropagation();}},true);
+ window.addEventListener('message',event=>{
+   if(event.origin!==location.origin||event.source!==window.parent||event.data?.type!=='snouno-draft')return;
+   const {key,data,field}=event.data;
+   let dest='menu';
+   settings={...original.settings};links=original.links.map(v=>({...v}));
+   if(key==='menu_settings'){
+     settings={...settings,...data};
+     if(['name','welcome','hero','welcome_button','hotline'].includes(field))dest='welcome';
+     if(['address','hours','contact'].includes(field))dest='contact';
+   }else if(key==='menu_links'){
+     dest='contact';links=links.map(link=>link.id===data.id?{...link,url:data.url}:link);
+   }
+   history.replaceState(null,'','#'+dest);route();renderSettings();
+   if(key==='dishes'){detail({...data,id:'preview',price:data.price===''?null:data.price});}
+   if(key==='categories'){
+     const preview=make('button');preview.className='chip';preview.append(make('span',data.icon),data.name);
+     preview.setAttribute('aria-pressed','true');$('chips').replaceChildren(preview);
+     $('cards').replaceChildren();
+   }
+   if(key==='menu_settings'&&field?.startsWith('banner')){
+     const n=field.startsWith('banner_three')?2:field.startsWith('banner_two')?1:0;
+     const slide=$('ad-track').children[n];if(slide)slide.scrollIntoView({inline:'start',block:'nearest'});
+   }
+ });
+ window.parent.postMessage('snouno-preview-ready',location.origin);
+}
 async function load(){
  try{
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links]=values;renderSettings();renderChips();renderCards();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links]=values;renderSettings();renderChips();renderCards();installPreview();$('network').hidden=true;
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
 load();
