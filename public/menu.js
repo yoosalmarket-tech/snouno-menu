@@ -21,10 +21,29 @@ function orderLinks(container){
    container.append(a);
  }
 }
+let stopCarousel=()=>{};
 function renderAds(s) {
+ stopCarousel();
  const ads = [[s.banner,s.banner_alt],[s.banner_two,s.banner_two_alt],[s.banner_three,s.banner_three_alt]].filter(([url])=>asset(url));
  const track=$('ad-track'), dots=$('ad-dots');
  track.replaceChildren(); dots.replaceChildren(); $('ads').hidden=!ads.length;
+ let timer,active=0,dragging=false;
+ const listeners=new AbortController();
+ const restart=()=>{
+   clearTimeout(timer);
+   if(ads.length<2||document.hidden||location.hash!=='#menu'||dragging)return;
+   timer=setTimeout(()=>{
+     if(!$('dish').open)select((active+1)%ads.length);
+     restart();
+   },2000);
+ };
+ stopCarousel=()=>{clearTimeout(timer);listeners.abort();};
+ window.addEventListener('hashchange',restart,{signal:listeners.signal});
+ document.addEventListener('visibilitychange',restart,{signal:listeners.signal});
+ track.onpointerdown=()=>{dragging=true;clearTimeout(timer);};
+ const release=()=>{if(dragging){dragging=false;restart();}};
+ window.addEventListener('pointerup',release,{signal:listeners.signal});
+ window.addEventListener('pointercancel',release,{signal:listeners.signal});
  const select=index=>{
    const slide=track.children[index];
    if (!slide) return;
@@ -32,13 +51,15 @@ function renderAds(s) {
    track.scrollBy({left:offset,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  };
  function highlight(index) {
+   if(index<0)return;
+   active=index;
    Array.from(dots.children).forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===index)));
  }
  for (const [index,[url,label]] of ads.entries()) {
    const title=label||('إعلان '+(index+1));
    const slide=image(url,title);track.append(slide);
    const dot=make('button');dot.type='button';dot.setAttribute('aria-label',title);
-   dot.onclick=()=>select(index);dots.append(dot);
+   dot.onclick=()=>{select(index);restart();};dots.append(dot);
  }
  dots.hidden=ads.length<2;highlight(0);
  track.onscroll=()=>{
@@ -51,8 +72,9 @@ function renderAds(s) {
    event.preventDefault();
    const i=Array.from(dots.children).findIndex(dot=>dot.getAttribute('aria-pressed')==='true');
    const target=event.key==='Home'?0:event.key==='End'?ads.length-1:i+(event.key==='ArrowLeft'?1:-1);
-   select(Math.min(ads.length-1,Math.max(0,target)));
+   select(Math.min(ads.length-1,Math.max(0,target)));restart();
  };
+ restart();
 }
 function renderSettings(){
  const s=settings;
