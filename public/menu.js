@@ -243,7 +243,7 @@ function renderCards(){
 function startingScore(value){
  const score=make('span');score.className='rating';
  const amount=make('bdi','★ '+Number(value).toFixed(1));amount.dir='ltr';
- score.append(amount,' · تقييم مبدئي');
+ score.append(amount);
  return score;
 }
 function mealCard(d){
