@@ -12,7 +12,13 @@ function orderLinks(container){
  container.replaceChildren();
  for(const link of links){
    if(!/^(https:\/\/|mailto:|tel:)/i.test(link.url))continue;
-   const a=make('a',link.name);a.href=link.url;container.append(a);
+   const a=make('a');a.href=link.url;
+   a.append(make('span',link.name));
+   if (/سنبل|مكوك/.test(link.name)) {
+     a.className='order-action';
+     const arrow=make('i','←');arrow.setAttribute('aria-hidden','true');a.append(arrow);
+   }
+   container.append(a);
  }
 }
 function renderSettings(){
@@ -75,8 +81,14 @@ function detail(d){
  const content=make('div');content.className='content';content.append(make('h2',d.name),make('p',d.description),price(d));
  if(d.ingredients)content.append(make('h3','المكونات'),make('p',d.ingredients));
  const buttons=make('div');buttons.className='links';if(d.available)orderLinks(buttons);else buttons.append('غير متوفر');content.append(buttons);
- const form=make('form');form.innerHTML='<h3>قيّم الطبق</h3><label>التقييم<select name="stars" required><option value="">اختر تقييمك</option></select></label><label>اكتب رأيك عن الطبق<textarea name="message" maxlength="2000"></textarea></label><button class="yellow">إرسال التقييم</button><output></output>';
- for(let i=5;i>=1;i--){const opt=make('option','★'.repeat(i));opt.value=i;form.elements.stars.append(opt);}
+ const form=make('form');form.innerHTML='<h3>قيّم الطبق</h3><fieldset class="stars"><legend>التقييم</legend></fieldset><label>اكتب رأيك عن الطبق<textarea name="message" maxlength="2000"></textarea></label><button class="yellow">إرسال التقييم</button><output></output>';
+ const stars=form.querySelector('.stars');
+ for(let i=1;i<=5;i++){
+   const label=make('label');const radio=make('input');
+   radio.type='radio';radio.name='stars';radio.value=i;radio.required=true;
+   radio.setAttribute('aria-label',i+' من 5');const star=make('span','★');star.setAttribute('aria-hidden','true');
+   label.append(radio,star);stars.append(label);
+ }
  bindFeedback(form,{kind:'تقييم',dish_id:d.id});content.append(form);box.append(content);$('dish').showModal();$('dish').scrollTop=0;
 }
 $('search').oninput=renderCards;$('close').onclick=()=>$('dish').close();
