@@ -35,3 +35,4 @@ end loop; end $$;
 revoke insert,delete on public.menu_settings from authenticated;
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values('menu-images','menu-images',true,5242880,array['image/jpeg','image/png','image/webp']);
 create policy menu_upload on storage.objects for insert to authenticated with check (bucket_id='menu-images' and (select private.menu_role()) is not null);
+
