@@ -27,7 +27,7 @@
 .heart{display:grid;place-items:center;padding:0}.heart svg{display:block;width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none}.heart[aria-pressed=true] svg{fill:currentColor}
 @media(prefers-reduced-motion:no-preference){
  .cover{--intro-ease:cubic-bezier(.5,0,.5,1)}
- .welcome-disc,.welcome-mask{transform-box:fill-box;transform-origin:center}
+ .welcome-disc,.welcome-mask,.welcome-plate{transform-box:fill-box;transform-origin:center}
  .welcome-disc{animation:disc-in 1113ms var(--intro-ease) 110ms both}
  .welcome-mask{animation:mask-in 619ms var(--intro-ease) both}
  .welcome-plate{animation:plate-in 1237ms var(--intro-ease) both}
@@ -37,7 +37,7 @@
  #brand{animation-duration:449ms;animation-delay:774ms;--rise:69px}
  @keyframes disc-in{from{transform:scale(0)}to{transform:scale(1)}}
  @keyframes mask-in{from{transform:scale(1.1);filter:drop-shadow(1px 6px 3px #0008)}to{transform:scale(1);filter:drop-shadow(1px 6px 3px #0003)}}
- @keyframes plate-in{from{transform:rotate(-75deg)}to{transform:rotate(0)}}
+ @keyframes plate-in{from{transform:rotate(75deg)}to{transform:rotate(0)}}
  @keyframes intro-fade{from{opacity:0}to{opacity:1}}
  @keyframes intro-copy{from{transform:translateY(var(--rise));opacity:0}to{transform:translateY(0);opacity:1}}
 }
@@ -50,9 +50,9 @@
 #close{position:absolute;top:12px;left:12px;margin:0}
 
 /* Restaurant photography remains visible under the charcoal texture. */
-#welcome{isolation:isolate;position:relative;background:#201e19 url('/assets/welcome-interior.webp') center/cover no-repeat}
-#welcome::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 50%,#100d09 100%),url('/assets/welcome-charcoal.webp') left top/cover no-repeat;opacity:.32}
-.cover .welcome-plate{transform-box:view-box;transform-origin:455px 115px}
+#welcome{isolation:isolate;position:relative;background:#201e19 url('/assets/restaurant-front.webp') center/cover no-repeat}
+#welcome::before{content:"";position:absolute;inset:0;z-index:-1;background:url('/assets/charcoal.webp') 5.32% 1.24%/auto 117.56% no-repeat;opacity:.95}
+.cover .welcome-plate{transform-box:view-box;transform-origin:511px 40px}
 *{-webkit-tap-highlight-color:transparent}
 #inside>header{position:sticky;top:0;z-index:5;transition:transform .17s ease-out}
 #inside>header.tucked{transform:translateY(-102%);pointer-events:none}

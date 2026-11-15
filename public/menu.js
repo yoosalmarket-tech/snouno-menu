@@ -101,14 +101,7 @@ function renderAds() {
 function renderSettings(){
  const s=settings;
  setText('brand',s.name);setText('greeting',s.welcome);setText('quick',s.hotline);setText('browse',s.welcome_button);
- const hero = asset(s.hero);
- const customHero = hero && !hero.endsWith('/assets/plate.webp');
- const photo = $('cover-photo');
- const attributes = customHero
-   ? {href:hero,x:0,y:0,width:391,height:586,transform:'matrix(-.71 -.70 .70 -.71 234 587)'}
-   : {href:'/assets/welcome-serving.webp',x:65,y:95,width:390,height:390,transform:''};
- for (const [key,value] of Object.entries(attributes)) photo.setAttribute(key,value);
- photo.parentNode.style.transformOrigin = customHero ? '511px 40px' : '';
+ $('cover-photo').setAttribute('href',asset(s.hero)||'/assets/plate.webp');
  $('logo').src=asset(s.logo)||'/assets/logo.webp';renderAds();
  setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
  credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit;
