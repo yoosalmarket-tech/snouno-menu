@@ -447,4 +447,22 @@ async function load(){
   [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();renderCards();installPreview();$('network').hidden=true;
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
-load();
+async function revealPage(){
+ if(!document.documentElement.classList.contains('loading'))return;
+ const shell=document.documentElement;
+ const onWelcome=!$('welcome').hidden;
+ if(onWelcome){
+  const sources=[$('cover-photo').getAttribute('href'),'/assets/mask.webp','/assets/restaurant-front.webp','/assets/charcoal.webp'];
+  await Promise.allSettled(sources.map(src=>{const img=new Image();img.src=src;return img.decode();}));
+ }
+ await document.fonts.ready;
+ if(!shell.classList.contains('loading'))return;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(!reduced){
+  const strokes=$('page-loader').getAnimations({subtree:true});
+  for(const stroke of strokes)stroke.playbackRate=2;
+  await Promise.allSettled(strokes.map(stroke=>stroke.finished));
+ }
+ shell.classList.remove('loading');
+}
+load().finally(revealPage);
