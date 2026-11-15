@@ -35,7 +35,7 @@ function renderAds() {
  const listeners=new AbortController();
  const restart=()=>{
    clearTimeout(timer);progress?.cancel();
-   if(isPreview||ads.length<2||document.hidden||location.hash!=='#menu'||dragging)return;
+   if(isPreview||ads.length<2||document.hidden||currentPage()!=='menu'||dragging)return;
    const fill=dots.children[active]?.firstElementChild;
    if(!motion.matches)progress=fill?.animate?.([{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration,fill:'forwards'});
    timer=setTimeout(()=>{
@@ -44,7 +44,7 @@ function renderAds() {
    },duration);
  };
  stopCarousel=()=>{clearTimeout(timer);progress?.cancel();cancelAnimationFrame(frame);listeners.abort();};
- window.addEventListener('hashchange',restart,{signal:listeners.signal});
+ window.addEventListener('pagechange',restart,{signal:listeners.signal});
  document.addEventListener('visibilitychange',restart,{signal:listeners.signal});
  track.onpointerdown=()=>{dragging=true;restart();};
  const release=()=>{if(dragging){dragging=false;restart();}};
@@ -120,15 +120,24 @@ $('credit-link').onclick=()=>{
  setText('credit-hint','اضغط مرة ثانية لزيارة موقع يوصل');
  creditTimeout=setTimeout(resetCredit,5000);
 };
+const pages=['welcome','menu','contact'];
+function currentPage(){
+ const path=location.pathname.replace(/^\/|\/$/g,'');
+ return pages.includes(path)?path:'welcome';
+}
+function pageUrl(page){return '/'+page+location.search;}
 function route(){
+ const legacy=location.hash.slice(1);
+ if(pages.includes(legacy))history.replaceState(null,'',pageUrl(legacy));
  resetCredit();
- const dest=location.hash.slice(1)||'welcome';
+ const dest=currentPage();
  const welcome=dest==='welcome',contact=dest==='contact';
  $('welcome').hidden=!welcome;$('inside').hidden=welcome;$('menu').hidden=contact;$('contact').hidden=!contact;
- for(const a of $('dock').children)a.setAttribute('aria-current',a.hash===(contact?'#contact':'#menu')?'page':'false');
+ for(const a of $('dock').children)a.setAttribute('aria-current',a.dataset.page===dest?'page':'false');
  $('social-links').hidden=welcome;document.body.classList.toggle('contact-route',contact);
  $('inside').querySelector('header').classList.remove('tucked');pageHeader.style.transform='';previousY=0;
  if($('dish').open)$('dish').close();window.scrollTo(0,0);
+ window.dispatchEvent(new Event('pagechange'));
 }
 let previousY=0;
  const pageHeader=$('inside').querySelector('header');
@@ -141,7 +150,16 @@ let previousY=0;
    }
    previousY=y;
  },{passive:true});
+window.addEventListener('popstate',route);
 window.addEventListener('hashchange',route);
+document.addEventListener('click',event=>{
+ const link=event.target.closest('a[data-page]');
+ if(!link||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+ event.preventDefault();
+ const url=pageUrl(link.dataset.page);
+ if(location.pathname+location.search!==url)history.pushState(null,'',url);
+ route();
+});
 function theme(dark){document.body.classList.toggle('dark',dark);$('theme').textContent=dark?'☀':'☾';}
 const systemTheme=matchMedia('(prefers-color-scheme:dark)');
 theme(systemTheme.matches);
@@ -183,7 +201,7 @@ function scheduleCategoryUpdate(){
 window.addEventListener('scroll',scheduleCategoryUpdate,{passive:true});
 window.addEventListener('resize',scheduleCategoryUpdate);
 $('chips').addEventListener('transitionend',scheduleCategoryUpdate);
-window.addEventListener('hashchange',scheduleCategoryUpdate);
+window.addEventListener('pagechange',scheduleCategoryUpdate);
 function scrollToSection(section){
  const y=section.getBoundingClientRect().top;
  const stripHeight=$('chips').offsetHeight;
@@ -420,7 +438,7 @@ function installPreview(){
    }else if(key==='menu_links'){
      dest='contact';links=links.map(link=>link.id===data.id?{...link,url:data.url}:link);
    }
-   history.replaceState(null,'','#'+dest);route();renderSettings();
+   history.replaceState(null,'',pageUrl(dest));route();renderSettings();
    if(key==='dishes'){
      const draft={...data,id:'preview',rating:data.rating===''?null:data.rating,price:data.price===''?null:Number(data.price),old_price:Number(data.old_price)};
      const mode=new URLSearchParams(location.search).get('view');
