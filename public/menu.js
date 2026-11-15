@@ -37,7 +37,7 @@ function renderAds() {
    timer=setTimeout(()=>{
      if(!$('dish').open)select((active+1)%ads.length);
      restart();
-   },2000);
+   },5000);
  };
  stopCarousel=()=>{clearTimeout(timer);listeners.abort();};
  window.addEventListener('hashchange',restart,{signal:listeners.signal});
@@ -130,6 +130,7 @@ theme(systemTheme.matches);
 systemTheme.addEventListener('change',event=>theme(event.matches));
 $('theme').onclick=()=>{const dark=!document.body.classList.contains('dark');theme(dark);};
 let favoritesOnly=false,activeCategory=null,categoryFrame=0;
+const favoritesCategory={id:'favorites',name:'المفضلة',icon:'★'};
 let menuSections=[];
 const categoryButtons=new Map();
 const scrollBehavior=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth';
@@ -178,6 +179,11 @@ function renderChips(groups){
  favorite.onclick=()=>{favoritesOnly=!favoritesOnly;renderCards();if(menuSections.length)scrollToSection(menuSections[0]);};
  strip.append(favorite);
  for(const {category,section} of groups){
+   if(category===favoritesCategory){
+     favorite.setAttribute('aria-controls',section.id);
+     categoryButtons.set(category.id,favorite);
+     continue;
+   }
    const button=make('button');button.type='button';button.className='chip';
    button.append(make('span',category.icon),category.name);
    button.setAttribute('aria-controls',section.id);
@@ -196,9 +202,16 @@ function price(d){
 function renderCards(){
  const q=$('search').value.trim().toLocaleLowerCase('ar');const grid=$('cards');grid.replaceChildren();
  const groups=[];
- for(const category of categories){
-   const matches=dishes.filter(d=>d.category_id===category.id&&(!favoritesOnly||favorites.has(d.id))&&
-     (d.name+' '+d.description).toLocaleLowerCase('ar').includes(q));
+ const visible=dishes.filter(d=>(d.name+' '+d.description).toLocaleLowerCase('ar').includes(q));
+ const byCategory=new Map();
+ for(const dish of visible){
+   const key=favorites.has(dish.id)?favoritesCategory.id:dish.category_id;
+   if(!byCategory.has(key))byCategory.set(key,[]);
+   byCategory.get(key).push(dish);
+ }
+ const ordered=favoritesOnly?[favoritesCategory]:[favoritesCategory,...categories];
+ for(const category of ordered){
+   const matches=byCategory.get(category.id)||[];
    if(!matches.length)continue;
    const section=make('section'),heading=make('h2',category.name),cards=make('div');
    section.id='category-'+category.id;section.dataset.category=category.id;
@@ -218,7 +231,7 @@ function mealCard(d){
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';article.append(badge);}
    const heart=make('button');heart.className='heart';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label','المفضلة · '+d.name);heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
-   heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));if(favoritesOnly)renderCards();};article.append(heart);return article;
+   heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));renderCards();};article.append(heart);return article;
 }
 function bindFeedback(form,extra){
  form.onsubmit=async e=>{e.preventDefault();const output=form.querySelector('output');const button=form.querySelector('button[type=submit],button:not([type])');
