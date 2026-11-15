@@ -263,12 +263,15 @@ function detail(d){
  const lead=make('div');lead.className='dish-lead';lead.append(make('h2',d.name));
  if(d.rating!=null){const n=Math.min(5,Math.max(0,Math.round(d.rating)));const stars=make('span','★'.repeat(n));stars.className='summary-stars';stars.dir='ltr';stars.append(make('small','★'.repeat(5-n)));stars.title=String(d.rating);lead.append(stars);}
  content.append(lead);if(d.price!=null)content.append(price(d));
+ if(d.description)content.append(make('p',d.description));
  if(d.ingredients){content.append(make('h3','المكونات'));const groups=make('div');groups.className='ingredients';
    for(const [group,items] of ingredientGroups(d.ingredients)){
      const row=make('div');row.setAttribute('aria-label',group);
      for(const item of items){const chip=make('span',item);chip.title=group;chip.dataset.color=/طماطم/.test(item)?'red':group==='خضار'?'green':group==='ألبان'?'white':'gold';row.append(chip);}
      groups.append(row);
    }content.append(groups);
+ }else if(d.id){
+   content.append(make('h3','المكونات'),make('p','لم ينشر المطعم تفاصيل المكونات بعد.'));
  }
  const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering,d);else buttons.append('غير متوفر');content.append(buttons);
  const show=()=>{box.append(content);if(!$('dish').open){if(isPreview)$('dish').show();else $('dish').showModal();}$('dish').scrollTop=0;};
