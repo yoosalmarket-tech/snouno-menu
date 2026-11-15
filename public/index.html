@@ -1,15 +1,16 @@
 <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#fdc115"><link rel="icon" type="image/png" sizes="180x180" href="/assets/snouno-icon.png"><link rel="apple-touch-icon" href="/assets/snouno-icon.png"><link rel="preload" as="font" href="/assets/qatar-bold.woff" type="font/woff" crossorigin><style>
-#page-loader{display:none}
-html.loading #page-loader{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#fdc115}
+#page-loader{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#fdc115;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 580ms ease-in-out,visibility 0s linear 580ms}
+html.loading #page-loader{opacity:1;visibility:visible;pointer-events:auto;transition:none}
 html.loading{overflow:hidden}
-#page-loader svg{width:min(62vw,280px);height:auto}
+#page-loader svg{width:min(62vw,280px);height:auto;transform:scale(1.05);transition:transform 580ms ease-out}
+html.loading #page-loader svg{transform:scale(1)}
 #page-loader .ink-lines path{fill:none;stroke:#111;stroke-width:1.35;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;animation:draw-logo 2.8s ease-in-out both}
 #page-loader .ink-fill{fill:#111;animation:fill-logo 2.8s ease both}
 @keyframes draw-logo{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
 @keyframes fill-logo{0%,65%{opacity:0}100%{opacity:1}}
 html.loading #welcome *{animation-play-state:paused}
 html.loading #shell{visibility:hidden}
-@media(prefers-reduced-motion:reduce){#page-loader .ink-lines path,#page-loader .ink-fill{animation:none}}
+@media(prefers-reduced-motion:reduce){#page-loader,#page-loader svg{transition:none}#page-loader .ink-lines path,#page-loader .ink-fill{animation:none}}
 </style>
 <script>
 if(window.parent===window || new URLSearchParams(location.search).get('preview')!=='1'){
