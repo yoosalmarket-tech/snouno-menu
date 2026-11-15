@@ -21,11 +21,44 @@ function orderLinks(container){
    container.append(a);
  }
 }
+function renderAds(s) {
+ const ads = [[s.banner,s.banner_alt],[s.banner_two,s.banner_two_alt],[s.banner_three,s.banner_three_alt]].filter(([url])=>asset(url));
+ const track=$('ad-track'), dots=$('ad-dots');
+ track.replaceChildren(); dots.replaceChildren(); $('ads').hidden=!ads.length;
+ const select=index=>{
+   const slide=track.children[index];
+   if (!slide) return;
+   const offset=slide.getBoundingClientRect().left-track.getBoundingClientRect().left;
+   track.scrollBy({left:offset,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+ };
+ function highlight(index) {
+   Array.from(dots.children).forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===index)));
+ }
+ for (const [index,[url,label]] of ads.entries()) {
+   const title=label||('إعلان '+(index+1));
+   const slide=image(url,title);track.append(slide);
+   const dot=make('button');dot.type='button';dot.setAttribute('aria-label',title);
+   dot.onclick=()=>select(index);dots.append(dot);
+ }
+ dots.hidden=ads.length<2;highlight(0);
+ track.onscroll=()=>{
+   if(!track.clientWidth)return;
+   const left=track.getBoundingClientRect().left;
+   highlight(Array.from(track.children).findIndex(slide=>Math.abs(slide.getBoundingClientRect().left-left)<track.clientWidth/2+1));
+ };
+ track.onkeydown=event=>{
+   if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+   event.preventDefault();
+   const i=Array.from(dots.children).findIndex(dot=>dot.getAttribute('aria-pressed')==='true');
+   const target=event.key==='Home'?0:event.key==='End'?ads.length-1:i+(event.key==='ArrowLeft'?1:-1);
+   select(Math.min(ads.length-1,Math.max(0,target)));
+ };
+}
 function renderSettings(){
  const s=settings;
  setText('brand',s.name);setText('greeting',s.welcome);setText('quick',s.hotline);setText('browse',s.welcome_button);
  $('cover-photo').setAttribute('href',asset(s.hero)||'/assets/plate.webp');
- $('logo').src=asset(s.logo)||'/assets/logo.webp';$('banner').hidden=!s.banner;if(s.banner)$('banner').src=asset(s.banner);
+ $('logo').src=asset(s.logo)||'/assets/logo.webp';renderAds(s);
  setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);setText('credit',s.credit);
  orderLinks($('links'));
 }
@@ -64,7 +97,7 @@ function renderCards(){
    open.append(rating,make('strong',d.name),make('p',d.description),price(d));if(!d.available)open.append(make('small','غير متوفر'));
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';article.append(badge);}
-   const heart=make('button',favorites.has(d.id)?'♥':'♡');heart.className='heart';heart.setAttribute('aria-label','المفضلة · '+d.name);heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
+   const heart=make('button',favorites.has(d.id)?'♥':'♡');heart.className='heart';heart.textContent='';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M20.8 4.6a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label','المفضلة · '+d.name);heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
    heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));renderCards();};article.append(heart);grid.append(article);
  }
 }

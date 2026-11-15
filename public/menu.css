@@ -17,3 +17,27 @@
 @keyframes veil-arrives{from{opacity:0}to{opacity:1}}
 #dish[open]{animation:dish-arrives var(--prototype-motion)}#dish[open]::backdrop{animation:veil-arrives var(--prototype-motion)}
 @media(prefers-reduced-motion:reduce){#dish[open],#dish[open]::backdrop{animation:none}.order-action span,.order-action i,.stars span{transition:none}}
+#ad-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:14px;overscroll-behavior-x:contain}
+#ad-track::-webkit-scrollbar{display:none}
+#ad-track img{display:block;flex:0 0 100%;min-width:0;width:100%;aspect-ratio:3.73;object-fit:cover;scroll-snap-align:start}
+#ad-dots{display:flex;justify-content:center;align-items:center;padding:1px 0 5px}
+#ad-dots button{border:0;background:none;padding:0;width:26px;height:25px;display:grid;place-items:center}
+#ad-dots button::after{content:'';width:6px;height:6px;border-radius:100%;background:#9ea2a5}
+#ad-dots button[aria-pressed=true]::after{background:#feb602}
+.heart{display:grid;place-items:center;padding:0}.heart svg{display:block;width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none}.heart[aria-pressed=true] svg{fill:currentColor}
+@media(prefers-reduced-motion:no-preference){
+ .cover{--intro-ease:cubic-bezier(.5,0,.5,1)}
+ .welcome-disc,.welcome-mask,.welcome-plate{transform-box:fill-box;transform-origin:center}
+ .welcome-disc{animation:disc-in 1113ms var(--intro-ease) 110ms both}
+ .welcome-mask{animation:mask-in 619ms var(--intro-ease) both}
+ .welcome-plate{animation:plate-in 1237ms var(--intro-ease) both}
+ #browse{animation:intro-fade 431ms cubic-bezier(.5,0,.5,1) 77ms both}
+ #quick{animation:intro-fade 553ms cubic-bezier(.5,0,.5,1) 207ms both}
+ #greeting,#brand{display:block;animation:intro-copy 423ms cubic-bezier(.5,0,.5,1) 619ms both;--rise:62.5px}
+ #brand{animation-duration:449ms;animation-delay:774ms;--rise:69px}
+ @keyframes disc-in{from{transform:scale(0)}to{transform:scale(1)}}
+ @keyframes mask-in{from{transform:scale(1.1);filter:drop-shadow(1px 6px 3px #0008)}to{transform:scale(1);filter:drop-shadow(1px 6px 3px #0003)}}
+ @keyframes plate-in{from{transform:translate(292.766px,-73.98px) rotate(138deg)}to{transform:translate(0) rotate(0)}}
+ @keyframes intro-fade{from{opacity:0}to{opacity:1}}
+ @keyframes intro-copy{from{transform:translateY(var(--rise));opacity:0}to{transform:translateY(0);opacity:1}}
+}
