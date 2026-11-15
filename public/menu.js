@@ -2,7 +2,7 @@ const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
 const make=(tag,text)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;return el;};
-let dishes=[],categories=[],links=[],settings={},category='all';
+let dishes=[],categories=[],links=[],advertisements=[],settings={},category='all';
 let favorites=new Set(JSON.parse(localStorage.getItem('snouno-favorites')||'[]'));
 const money=value=>Number(value)+' ₪';
 const isPreview=window.parent!==window&&new URLSearchParams(location.search).get('preview')==='1';
@@ -10,12 +10,13 @@ function asset(src){if(!src)return '';if(isPreview&&src.startsWith('blob:'+locat
 function setText(id,text){$(id).textContent=text||'';}
 function image(src,alt){const img=make('img');img.src=asset(src);img.alt=alt;return img;}
 const ordering=['makook','sonbol'];
-function contactLinks(container,channels) {
+function contactLinks(container,channels,meal) {
  container.replaceChildren();
  for(const channel of channels){
    const link=links.find(row=>row.channel===channel);
-   if(!link||!/^https?:\/\//i.test(link.url))continue;
-   const a=make('a');a.href=link.url;a.dataset.channel=channel;
+   const url=channel==='sonbol'&&meal?.id?meal.sonbol_url:link?.url;
+   if(!link||!url||!/^https?:\/\//i.test(url))continue;
+   const a=make('a');a.href=url;a.dataset.channel=channel;
    a.setAttribute('aria-label',link.name);
    a.append(image('/assets/'+channel+'.svg',''),make('span',link.name));
    if(ordering.includes(channel))a.classList.add('order-action');
@@ -23,9 +24,9 @@ function contactLinks(container,channels) {
  }
 }
 let stopCarousel=()=>{};
-function renderAds(s) {
+function renderAds() {
  stopCarousel();
- const ads = [[s.banner,s.banner_alt,s.banner_dish],[s.banner_two,s.banner_two_alt,s.banner_two_dish],[s.banner_three,s.banner_three_alt,s.banner_three_dish]].filter(([url])=>asset(url));
+ const ads=advertisements.filter(ad=>asset(ad.image));
  const track=$('ad-track'), dots=$('ad-dots');
  track.replaceChildren(); dots.replaceChildren(); $('ads').hidden=!ads.length;
  let timer,active=0,dragging=false;
@@ -56,7 +57,7 @@ function renderAds(s) {
    active=index;
    Array.from(dots.children).forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===index)));
  }
- for (const [index,[url,label,dishId]] of ads.entries()) {
+ for (const [index,{image:url,name:label,dish_id:dishId}] of ads.entries()) {
    const title=label||('إعلان '+(index+1));
    const slide=make('button');slide.type='button';slide.className='ad-product';slide.setAttribute('aria-label','عرض '+title);
    slide.append(image(url,title));slide.onclick=()=>detail(dishes.find(d=>d.id===dishId)||{name:title,image:url,available:true});
@@ -83,7 +84,7 @@ function renderSettings(){
  const s=settings;
  setText('brand',s.name);setText('greeting',s.welcome);setText('quick',s.hotline);setText('browse',s.welcome_button);
  $('cover-photo').setAttribute('href',asset(s.hero)||'/assets/plate.webp');
- $('logo').src=asset(s.logo)||'/assets/logo.webp';renderAds(s);
+ $('logo').src=asset(s.logo)||'/assets/logo.webp';renderAds();
  setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
  credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit;
  contactLinks($('links'),[...ordering,'whatsapp']);contactLinks($('social-links'),['instagram','facebook']);
@@ -107,7 +108,7 @@ function route(){
  const welcome=dest==='welcome',contact=dest==='contact';
  $('welcome').hidden=!welcome;$('inside').hidden=welcome;$('menu').hidden=contact;$('contact').hidden=!contact;
  for(const a of $('dock').children)a.setAttribute('aria-current',a.hash===(contact?'#contact':'#menu')?'page':'false');
- $('social-links').hidden=!contact;document.body.classList.toggle('contact-route',contact);
+ $('social-links').hidden=welcome;document.body.classList.toggle('contact-route',contact);
  $('inside').querySelector('header').classList.remove('tucked');pageHeader.style.transform='';previousY=0;
  if($('dish').open)$('dish').close();window.scrollTo(0,0);
 }
@@ -146,7 +147,9 @@ function renderCards(){
  const q=$('search').value.trim().toLocaleLowerCase('ar');const grid=$('cards');grid.replaceChildren();
  const filtered=dishes.filter(d=>(category==='all'||d.category_id===category||(category==='favorites'&&favorites.has(d.id)))&&(d.name+' '+d.description).toLocaleLowerCase('ar').includes(q));
  if(!filtered.length){const p=make('p',category==='favorites'?'اضغط على القلب لحفظ أطباقك المفضلة.':'لا توجد أطباق مطابقة.');p.className='empty';grid.append(p);}
- for(const d of filtered){
+ for(const d of filtered)grid.append(mealCard(d));
+}
+function mealCard(d){
    const article=make('article');article.className='card';
    const open=make('button');open.className='card-open';open.onclick=()=>detail(d);
    if(d.image)open.append(image(d.image,d.name));
@@ -155,8 +158,7 @@ function renderCards(){
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';article.append(badge);}
    const heart=make('button');heart.className='heart';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label','المفضلة · '+d.name);heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
-   heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));renderCards();};article.append(heart);grid.append(article);
- }
+   heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));renderCards();};article.append(heart);return article;
 }
 function bindFeedback(form,extra){
  form.onsubmit=async e=>{e.preventDefault();const output=form.querySelector('output');const button=form.querySelector('button[type=submit],button:not([type])');
@@ -208,8 +210,8 @@ function detail(d){
      groups.append(row);
    }content.append(groups);
  }
- const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering);else buttons.append('غير متوفر');content.append(buttons);
- const show=()=>{box.append(content);if(!$('dish').open)$('dish').showModal();$('dish').scrollTop=0;};
+ const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering,d);else buttons.append('غير متوفر');content.append(buttons);
+ const show=()=>{box.append(content);if(!$('dish').open){if(isPreview)$('dish').show();else $('dish').showModal();}$('dish').scrollTop=0;};
  if(!d.id){show();return;}
  if(localStorage.getItem('snouno-rated-'+d.id)){content.append(make('p','سبق أن قيّمت هذا الطبق.'));show();return;}
  const form=make('form');form.innerHTML='<h3>قيّم الطبق</h3><fieldset class="stars"><legend>التقييم</legend></fieldset><label>اكتب رأيك عن الطبق<textarea name="message" maxlength="2000"></textarea></label><button class="yellow send-rating" aria-label="إرسال التقييم">➤</button><output></output>';
@@ -227,6 +229,8 @@ $('dish').onclick=e=>{if(e.target===$('dish')&&e.clientY<$('details').getBoundin
 bindFeedback($('feedback'),{});route();
 function installPreview(){
  if(!isPreview)return;
+ let previewObserver;
+ document.body.inert=true;
  const original={settings:{...settings},links:links.map(v=>({...v}))};
  document.addEventListener('submit',event=>{event.preventDefault();event.stopImmediatePropagation();},true);
  document.addEventListener('click',event=>{if(event.target.closest('a,button')){event.preventDefault();event.stopImmediatePropagation();}},true);
@@ -243,25 +247,30 @@ function installPreview(){
      dest='contact';links=links.map(link=>link.id===data.id?{...link,url:data.url}:link);
    }
    history.replaceState(null,'','#'+dest);route();renderSettings();
-   if(key==='dishes'){detail({...data,id:'preview',price:data.price===''?null:data.price});}
+   if(key==='dishes'){
+     const draft={...data,id:'preview',rating:data.rating===''?null:data.rating,price:data.price===''?null:Number(data.price),old_price:Number(data.old_price)};
+     const mode=new URLSearchParams(location.search).get('view');
+     document.body.dataset.preview=mode;
+     if(mode==='card')$('cards').replaceChildren(mealCard(draft));else detail(draft);
+     const target=mode==='card'?$('cards'):$('dish');
+     const report=()=>window.parent.postMessage({type:'snouno-preview-height',height:Math.ceil(target.getBoundingClientRect().height)},location.origin);
+     previewObserver?.disconnect();previewObserver=new ResizeObserver(report);previewObserver.observe(target);report();
+   }
    if(key==='categories'){
      const preview=make('button');preview.className='chip';preview.append(make('span',data.icon),data.name);
      preview.setAttribute('aria-pressed','true');$('chips').replaceChildren(preview);
      $('cards').replaceChildren();
    }
-   if(key==='menu_settings'&&field?.startsWith('banner')){
-     const n=field.startsWith('banner_three')?2:field.startsWith('banner_two')?1:0;
-     const slide=$('ad-track').children[n];if(slide)slide.scrollIntoView({inline:'start',block:'nearest'});
-   }
+
  });
  window.parent.postMessage('snouno-preview-ready',location.origin);
 }
 async function load(){
  try{
-  const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name'].map(async path=>{
+  const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links]=values;renderSettings();renderChips();renderCards();installPreview();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();renderChips();renderCards();installPreview();$('network').hidden=true;
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
 load();

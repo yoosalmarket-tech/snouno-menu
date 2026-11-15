@@ -71,10 +71,10 @@
 .links a{display:inline-flex;align-items:center;justify-content:center;gap:7px;color:#18150c;background:#ffbc1a;text-align:center;line-height:1.3}
 .links img,#social-links img{width:22px;height:22px;object-fit:contain}
 #links a{flex-direction:column;min-height:74px;padding:8px 2px!important;font:bold clamp(11px,3vw,15px)/1.4 Snouno,sans-serif}
-#social-links{position:fixed;z-index:4;bottom:calc(62px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:10px}
+#social-links{display:flex;justify-content:center;gap:10px;margin:24px auto 0}
 #social-links a{width:42px;height:38px;border-radius:12px;background:#ffbc1a;display:grid;place-items:center;box-shadow:0 2px 6px #0002}
 #social-links span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-.contact-route #credit{padding-bottom:calc(132px + env(safe-area-inset-bottom))}
+
 body:has(#dish[open]){overflow:hidden}
 #dish{--peek:clamp(80px,17svh,180px);inset:0;max-height:none;height:100dvh;margin:0 auto;background:transparent;overflow:auto;overscroll-behavior:contain;padding:var(--peek) 6px 0;border-radius:0;scrollbar-width:none}
 #details{background:var(--surface);border:1px solid var(--line);border-radius:32px 32px 0 0;min-height:100dvh;position:relative;padding-bottom:env(safe-area-inset-bottom)}
@@ -107,3 +107,12 @@ body:has(#dish[open]){overflow:hidden}
  @keyframes page-enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
 }
 @media(prefers-reduced-motion:reduce){#inside>header{transition:none}}
+
+body[data-preview],body[data-preview] #shell{min-height:0;background:var(--paper);overflow:hidden}
+body[data-preview] #inside>header,body[data-preview] #menu>:not(#cards),body[data-preview] #inside>:not(#menu){display:none}
+body[data-preview] #menu{padding:0}
+body[data-preview="popup"] #shell{display:none}
+body[data-preview="popup"] #dish{position:relative;inset:auto;display:block;--peek:0px;padding:0;height:auto;width:100%;max-width:none;overflow:hidden}
+body[data-preview="popup"] #details{min-height:0}
+body[data-preview="card"] #cards{display:block;width:min(205px,100%);margin:auto}
+body[data-preview] *{animation:none!important;transition:none!important}

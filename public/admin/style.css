@@ -15,3 +15,5 @@ dialog{width:min(525px,96vw);padding:22px;max-height:92svh}dialog.has-preview[op
 #preview iframe{display:block;width:100%;height:min(67svh,640px);border:1px solid var(--stroke);border-radius:17px;background:#f4f4f1}
 label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{background:#f1f1eb;color:#666}form footer{position:sticky;bottom:-22px;padding:14px 0;background:white;border-top:1px solid var(--stroke)}form footer button:first-child{background:var(--gold);color:var(--ink)}
 @media(max-width:700px){main{grid-template-columns:1fr;gap:10px;margin:17px auto;padding-inline:12px}nav{display:flex;position:static;flex-wrap:nowrap;overflow:auto}nav button{white-space:nowrap}header{height:60px;gap:10px}header span{display:none}article{flex-wrap:wrap}dialog.has-preview[open]{display:flex;flex-direction:column}#preview{position:static;width:100%}#preview iframe{height:380px}}
+
+#preview{position:static}#preview iframe{pointer-events:none}#preview iframe+h3{margin-top:22px}
