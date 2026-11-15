@@ -29,20 +29,24 @@ function renderAds() {
  const ads=advertisements.filter(ad=>asset(ad.image));
  const track=$('ad-track'), dots=$('ad-dots');
  track.replaceChildren(); dots.replaceChildren(); $('ads').hidden=!ads.length;
- let timer,active=0,dragging=false;
+ const duration=5000;
+ const motion=matchMedia('(prefers-reduced-motion: reduce)');
+ let timer,progress,frame,active=0,dragging=false;
  const listeners=new AbortController();
  const restart=()=>{
-   clearTimeout(timer);
+   clearTimeout(timer);progress?.cancel();
    if(isPreview||ads.length<2||document.hidden||location.hash!=='#menu'||dragging)return;
+   const fill=dots.children[active]?.firstElementChild;
+   if(!motion.matches)progress=fill?.animate?.([{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration,fill:'forwards'});
    timer=setTimeout(()=>{
      if(!$('dish').open)select((active+1)%ads.length);
      restart();
-   },5000);
+   },duration);
  };
- stopCarousel=()=>{clearTimeout(timer);listeners.abort();};
+ stopCarousel=()=>{clearTimeout(timer);progress?.cancel();cancelAnimationFrame(frame);listeners.abort();};
  window.addEventListener('hashchange',restart,{signal:listeners.signal});
  document.addEventListener('visibilitychange',restart,{signal:listeners.signal});
- track.onpointerdown=()=>{dragging=true;clearTimeout(timer);};
+ track.onpointerdown=()=>{dragging=true;restart();};
  const release=()=>{if(dragging){dragging=false;restart();}};
  window.addEventListener('pointerup',release,{signal:listeners.signal});
  window.addEventListener('pointercancel',release,{signal:listeners.signal});
@@ -63,14 +67,28 @@ function renderAds() {
    slide.append(image(url,title));slide.onclick=()=>detail(dishes.find(d=>d.id===dishId)||{name:title,image:url,available:true});
    track.append(slide);
    const dot=make('button');dot.type='button';dot.setAttribute('aria-label',title);
+   const fill=make('span');fill.className='ad-progress';dot.append(fill);
    dot.onclick=()=>{select(index);restart();};dots.append(dot);
  }
  dots.hidden=ads.length<2;highlight(0);
- track.onscroll=()=>{
-   if(!track.clientWidth)return;
-   const left=track.getBoundingClientRect().left;
-   highlight(Array.from(track.children).findIndex(slide=>Math.abs(slide.getBoundingClientRect().left-left)<track.clientWidth/2+1));
- };
+ function paintSlides(){
+   frame=0;
+   const width=track.clientWidth;
+   if(!width)return;
+   const position=Math.abs(track.scrollLeft)/width;
+   const nearest=Math.min(ads.length-1,Math.round(position));
+   if(active!==nearest){highlight(nearest);restart();}
+   Array.from(track.children).forEach((slide,i)=>{
+     const distance=Math.max(-1,Math.min(1,i-position));
+     const depth=Math.abs(distance);
+     slide.firstElementChild.style.transform=motion.matches?'none':
+       'translateX('+distance*7+'%) scale('+(1+depth*.16)+')';
+     slide.style.opacity=motion.matches?'1':String(1-depth*.28);
+   });
+ }
+ track.onscroll=()=>{if(!frame)frame=requestAnimationFrame(paintSlides);};
+ motion.addEventListener('change',()=>{paintSlides();restart();},{signal:listeners.signal});
+ paintSlides();
  track.onkeydown=event=>{
    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
    event.preventDefault();

@@ -129,3 +129,13 @@ body[data-preview] *{animation:none!important;transition:none!important}
 #chips{position:sticky;z-index:4;top:90px;background:var(--paper);transition:top .17s ease-out}
 #inside:has(>header.tucked) #chips{top:0}
 @media(prefers-reduced-motion:reduce){#chips{transition:none}}
+
+#ad-dots button{position:relative}
+#ad-dots button::after{border-radius:8px;transition:width .25s ease,background-color .25s ease}
+#ad-dots button[aria-pressed=true]::after{width:20px;background:#927321}
+#ad-dots .ad-progress{display:none;position:absolute;width:20px;height:6px;border-radius:8px;background:#ffc21a;transform:scaleX(0);transform-origin:right;z-index:1;pointer-events:none}
+#ad-dots button[aria-pressed=true] .ad-progress{display:block}
+@media(prefers-reduced-motion:reduce){
+ #ad-dots button::after{transition:none}
+ #ad-dots button[aria-pressed=true]::after{background:#ffc21a}
+}
