@@ -793,3 +793,13 @@ html.loader-morphing #welcome .desktop-curve-shadow{
  width:12px!important;height:4px!important;border-radius:4px!important;
  background:#FDBE2D!important;
 }
+
+
+/* Smaller, quieter ad pagination on mobile and desktop. */
+#ad-dots{gap:1px!important;padding:2px 0 4px!important;}
+#ad-dots button{width:17px!important;height:18px!important;min-width:17px!important;min-height:18px!important;}
+#ad-dots button::after{
+ width:4px!important;height:4px!important;min-width:4px!important;
+ border-radius:999px!important;transition:width .22s ease,background-color .22s ease;
+}
+#ad-dots button[aria-pressed=true]::after{width:11px!important;height:4px!important;}
