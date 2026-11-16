@@ -149,8 +149,17 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   u.rating.textContent=hasRating?'★ '+ratingValue.toFixed(1):'';
   if(hasRating)u.rating.setAttribute('aria-label',(isEnglish()?'Rating ':'التقييم ')+ratingValue.toFixed(1)+' / 5');
   u.desc.textContent=getDescription(m)||m.ingredients||(isEnglish()?'Discover Snouno favourites':'اختار وجبتك المفضلة من سنونو');
-  const price=Number(m.price);
-  u.price.textContent=Number.isFinite(price)?price.toLocaleString('en-US',{maximumFractionDigits:2})+' ₪':'';
+  const price=m.price==null||m.price===''?NaN:Number(m.price);
+  const oldPrice=m.old_price==null||m.old_price===''?NaN:Number(m.old_price);
+  const formatPrice=value=>value.toLocaleString('en-US',{maximumFractionDigits:2})+' ₪';
+  u.price.replaceChildren();
+  if(Number.isFinite(price)){
+   u.price.append(mk('span','rm-current-price',formatPrice(price)));
+   // Only show a crossed-out former price for an actual discount.
+   if(Number.isFinite(oldPrice)&&oldPrice>price){
+    u.price.append(mk('del','rm-old-price',formatPrice(oldPrice)));
+   }
+  }
   u.details.textContent=isEnglish()?'⌖ LOCATION & CONTACT':'⌖ موقعنا و التواصل';
   at(u.customize,'.rm-customize strong').textContent='ORDER NOW';
   at(u.customize,'.rm-customize span span').textContent='اطلب الآن';
