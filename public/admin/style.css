@@ -199,3 +199,16 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
  #body .inline-settings-form>h2{font-size:20px;}
  #body .label-position-preview{width:100%;aspect-ratio:1.35;}
 }
+
+
+/* Do not let the save footer overlap draggable welcome labels when scrolling.
+   A sticky footer can intercept pointerdown over the preview on laptop/mobile. */
+#body .inline-settings-form>footer{
+ position:static!important;
+ bottom:auto!important;
+ z-index:auto!important;
+ margin:12px 0 0!important;
+ padding:16px 0 2px!important;
+ background:#fff!important;
+ backdrop-filter:none!important;
+}
