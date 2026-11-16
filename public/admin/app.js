@@ -494,7 +494,7 @@ async function openSection(key){
      if(key==='dishes')card.dataset.dishId=row.id;
      else card.dataset.sortId=row.id;
      card.classList.add('dish-sort-card');
-     const handle=node('button','⋮⋮');handle.type='button';
+     const handle=node('button','⋮⋮');handle.type='button';handle.id='admin-drag-'+key+'-'+row.id;handle.dataset.trackAction='admin_reorder_handle';
      handle.className='dish-drag-handle';
      handle.title='اسحب لتغيير الترتيب';
      handle.setAttribute('aria-label','تغيير ترتيب '+row.name+' بالسحب أو بأسهم لوحة المفاتيح');
@@ -511,7 +511,7 @@ async function openSection(key){
        old.title='السعر السابق';card.append(old);
      }
      const control=node('label');control.className='availability-control';
-     const input=node('input');input.type='checkbox';input.className='availability-toggle';input.checked=row.available!==false;
+     const input=node('input');input.type='checkbox';input.className='availability-toggle';input.id='admin-availability-'+row.id;input.checked=row.available!==false;
      input.setAttribute('aria-label','توفر '+row.name);
      const rail=node('span');rail.className='availability-track';rail.setAttribute('aria-hidden','true');
      const status=node('span',input.checked?'متوفر':'غير متوفر');status.className='availability-status';
@@ -529,6 +529,17 @@ async function openSection(key){
        }finally{input.disabled=false;}
      };
      card.append(control);
+   }
+   if(['dishes','categories'].includes(key)){
+    const copy=action('نسخ الرابط',async()=>{
+      const url=menuLink(key==='dishes'?'meal':'category',row.id);
+      if(navigator.clipboard?.writeText){
+       try{await navigator.clipboard.writeText(url);notice('تم نسخ رابط '+row.name);return;}catch{}
+      }
+      prompt('انسخ الرابط',url);
+    });
+    copy.id='admin-copy-'+key+'-'+row.id;copy.dataset.trackAction='admin_copy_permalink';
+    card.append(copy);
    }
    if(key==='menu_staff')card.append(node('span',row.role==='owner'?'مالك':'محرر'));
    else if(!feedback) card.append(action('تعديل',()=>edit(key,row)));
@@ -589,7 +600,7 @@ async function edit(key,row,inline=false){
    if(type==='image'){const hint=node('small', 'المقاس المقترح: '+(sizes[field]||'1200 × 740')+' — يُفضّل WebP أو PNG بخلفية شفافة');label.append(hint);const upload=node('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';label.append(upload);uploads[field]=upload;}
    form.append(label);
  }
- const error=node('p');error.setAttribute('role','alert'); const save=node('button',inline?'حفظ جميع الإعدادات':'حفظ');
+ const error=node('p');error.setAttribute('role','alert'); const save=node('button',inline?'حفظ جميع الإعدادات':'حفظ');save.id='admin-save-'+key+'-'+(row.id||'new');save.dataset.trackAction='admin_save_click';
  const footer=node('footer');footer.append(save);
  if(!inline)footer.append(action('إلغاء',()=>$('dialog').close()));
  form.append(error,footer);
@@ -628,8 +639,9 @@ async function edit(key,row,inline=false){
      const result=key==='menu_staff'?await api('/functions/v1/menu-staff',{method:'POST',body:data}):await api('/rest/v1/'+key+(row.id?'?'+filter(row):''),{method:row.id?'PATCH':'POST',body:data,headers:{Prefer:'return=representation'}});
      if(key!=='menu_staff'&&(!Array.isArray(result)||result.length===0))throw new Error('لم يؤكد الخادم حفظ التغييرات. تحقق من الصلاحيات وأعد المحاولة.');
      if(!inline)$('dialog').close();
+     adminReporting.report('admin_save_success',save,{meal_id:key==='dishes'?(row.id||result?.[0]?.id||null):null});
      await openSection(key);notice(result?.message||'تم الحفظ');
-   }catch(e){error.textContent=e.message;}finally{save.disabled=false;}
+   }catch(e){error.textContent=e.message;adminReporting.report('admin_save_error',save,{meal_id:key==='dishes'?row.id||null:null});}finally{save.disabled=false;}
  };
  if(inline){
    setupWelcomeLabelPositionPreviews(form,row,uploads);
