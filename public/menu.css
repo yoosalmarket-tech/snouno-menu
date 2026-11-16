@@ -830,3 +830,46 @@ html.loader-morphing #welcome .desktop-curve-shadow{
   to{opacity:1;transform:translate(-50%,-50%) scale(1)}
  }
 }
+
+
+/* Opt-in immersive menu. The ordinary menu stays lightweight by default. */
+#experience-switch{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:11px 14px;margin:0 0 12px;border:1px solid var(--line);
+ border-radius:16px;background:var(--surface);color:var(--ink);
+ box-shadow:0 5px 16px #00000010;
+}
+#experience-switch .experience-switch-copy{display:flex;flex-direction:column;gap:1px;min-width:0;}
+#experience-switch .experience-switch-kicker{font:bold 10px/1.4 system-ui,sans-serif;letter-spacing:.15em;color:#a57a22;}
+#experience-switch .experience-switch-copy strong{font-size:15px;line-height:1.4;}
+#experience-switch .experience-switch-copy small{font-size:11px;line-height:1.4;color:var(--soft);font-weight:500;}
+#experience-switch .experience-switch-control{display:flex;gap:8px;align-items:center;flex:none;cursor:pointer;}
+#experience-switch .experience-switch-control input{position:absolute;width:1px;height:1px;opacity:0;}
+#experience-switch .experience-switch-track{position:relative;width:50px;height:29px;border-radius:30px;background:#99958a;border:1px solid #847c6a;transition:background .23s;}
+#experience-switch .experience-switch-track::before{content:"";position:absolute;top:3px;right:3px;width:21px;height:21px;border-radius:50%;background:white;box-shadow:0 2px 4px #0003;transition:transform .23s;}
+#experience-switch input:checked+.experience-switch-track{background:#FDBE2D;border-color:#bb8915;}
+#experience-switch input:checked+.experience-switch-track::before{transform:translateX(-20px);background:#27221b;}
+#experience-switch input:focus-visible+.experience-switch-track{outline:3px solid #a67806;outline-offset:3px;}
+#experience-switch .experience-switch-status{font-weight:800;font-size:12px;min-width:29px;color:var(--soft);}
+#rich-menu[hidden]{display:none!important;}
+body.rich-menu-active #menu>#ads,
+body.rich-menu-active #menu>.search,
+body.rich-menu-active #menu>#chips,
+body.rich-menu-active #menu>#cards{display:none!important;}
+body.rich-menu-active #menu{display:block;}
+body.rich-menu-active #rich-menu{display:block;width:100%;}
+body.rich-menu-active #inside>header.tucked{transform:none!important;pointer-events:auto!important;}
+@media(max-width:980px){
+ body.rich-menu-active #inside>header{height:72px!important;}
+ body.rich-menu-active #menu{padding:8px 9px 0!important;}
+ body.rich-menu-active #experience-switch{padding:7px 10px;margin-bottom:6px;border-radius:13px;}
+ body.rich-menu-active #experience-switch .experience-switch-copy small{font-size:10px;}
+}
+@media(min-width:981px){
+ body.rich-menu-active:not([data-preview]) #menu{
+  display:block!important;max-width:1280px;padding:18px 24px 105px!important;margin:auto;
+ }
+ body.rich-menu-active #experience-switch{margin:0 auto 12px;max-width:1160px;}
+ body.rich-menu-active #inside>header{position:sticky!important;}
+}
+body[data-preview] #experience-switch,body[data-preview] #rich-menu{display:none!important;}
