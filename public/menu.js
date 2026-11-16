@@ -84,45 +84,58 @@ const welcomeMobileMeals=[
 ];
 let mobileWelcomeTimer=null,mobileWelcomeSwap=null,mobileWelcomeIndex=0,mobileWelcomeVersion=0;
 function stopMobileWelcomeCycle(){
-  ++mobileWelcomeVersion;
-  clearInterval(mobileWelcomeTimer);clearTimeout(mobileWelcomeSwap);
-  mobileWelcomeTimer=mobileWelcomeSwap=null;
-  $('cover-photo')?.classList.remove('mobile-food-out','mobile-food-in');
+ ++mobileWelcomeVersion;
+ clearInterval(mobileWelcomeTimer);clearTimeout(mobileWelcomeSwap);
+ mobileWelcomeTimer=mobileWelcomeSwap=null;
+ $('cover-photo')?.classList.remove('mobile-food-out','mobile-food-in');
+ $('cover-next')?.classList.remove('mobile-food-out','mobile-food-in','is-visible');
 }
 function canPlayMobileWelcome(){
-  return !isPreview&&!document.hidden&&currentPage()==='welcome'
-     &&matchMedia('(max-width:980px)').matches;
+ return !isPreview&&!document.hidden&&currentPage()==='welcome'
+    &&matchMedia('(max-width:980px)').matches;
 }
 function showMobileWelcomeMeal(index,animate=true){
-  const hero=$('cover-photo'),badge=$('mobile-meal-name');
-  const dots=[...document.querySelectorAll('.welcome-stage-rail button')];
-  const choice=welcomeMobileMeals[index];
-  const record=dishes.find(d=>Number(d.sonbol_listing_id)===choice.listing||d.name===choice.name);
-  const src=asset(record?.image)||choice.src;
-  const name=record?displayName(record):(isEnglish()?({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville Burger'}[choice.listing]):choice.name);
-  const version=mobileWelcomeVersion;
-  const setImage=()=>{
-    if(version!==mobileWelcomeVersion)return;
-    hero.src=src;hero.alt=name;badge.textContent=name;
-    dots.forEach((dot,i)=>dot.setAttribute('aria-current',String(i===index)));
-    hero.classList.remove('mobile-food-out','mobile-food-in');
-    if(animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-      void hero.offsetWidth;hero.classList.add('mobile-food-in');
-    }
-  };
-  clearTimeout(mobileWelcomeSwap);
-  if(!animate||matchMedia('(prefers-reduced-motion: reduce)').matches){setImage();return;}
-  const next=new Image();let started=false;
-  const begin=()=>{
-    if(started||version!==mobileWelcomeVersion)return;
-    started=true;
-    hero.classList.remove('mobile-food-in');
-    hero.classList.add('mobile-food-out');
-    mobileWelcomeSwap=setTimeout(setImage,250);
-  };
-  next.onload=begin;
-  next.onerror=()=>{};next.src=src;
-  if(next.complete&&next.naturalWidth)begin();
+ const hero=$('cover-photo'),incoming=$('cover-next'),badge=$('mobile-meal-name');
+ const dots=[...document.querySelectorAll('.welcome-stage-rail button')];
+ const choice=welcomeMobileMeals[index];
+ const record=dishes.find(d=>Number(d.sonbol_listing_id)===choice.listing||d.name===choice.name);
+ const src=asset(record?.image)||choice.src;
+ const name=record?displayName(record):(isEnglish()?({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville Burger'}[choice.listing]):choice.name);
+ const version=mobileWelcomeVersion;
+ const setLabel=()=>{
+  badge.textContent=name;
+  dots.forEach((dot,i)=>dot.setAttribute('aria-current',String(i===index)));
+ };
+ clearTimeout(mobileWelcomeSwap);
+ if(!animate||matchMedia('(prefers-reduced-motion: reduce)').matches){
+  hero.src=src;hero.alt=name;
+  hero.classList.remove('mobile-food-out','mobile-food-in');
+  incoming.classList.remove('mobile-food-in','is-visible');
+  setLabel();return;
+ }
+ const next=new Image();let begun=false;
+ const begin=()=>{
+  if(begun||version!==mobileWelcomeVersion)return;
+  begun=true;
+  incoming.src=src;incoming.alt='';
+  hero.classList.remove('mobile-food-in');
+  incoming.classList.remove('mobile-food-in');
+  incoming.classList.add('is-visible');
+  // Restart animations after both photo layers are ready.
+  void incoming.offsetWidth;
+  hero.classList.add('mobile-food-out');
+  incoming.classList.add('mobile-food-in');
+  setLabel();
+  mobileWelcomeSwap=setTimeout(()=>{
+   if(version!==mobileWelcomeVersion)return;
+   hero.src=src;hero.alt=name;
+   hero.classList.remove('mobile-food-out');
+   incoming.classList.remove('mobile-food-in','is-visible');
+  },600);
+ };
+ next.onload=begin;next.onerror=()=>{};
+ next.src=src;
+ if(next.complete&&next.naturalWidth)begin();
 }
 function startMobileWelcomeCycle(){
   if(!canPlayMobileWelcome()){if(mobileWelcomeTimer)stopMobileWelcomeCycle();return;}
