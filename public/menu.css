@@ -450,3 +450,70 @@ html.loader-morphing #welcome .desktop-welcome-top img{visibility:hidden;}
  body:not(.dark) #ad-dots button::after{background:#998f80;}
  body:not(.dark) #ad-dots button[aria-pressed=true]::after{background:#FDBE2D;}
 }
+
+
+/* Welcome photo cutouts: no colored fill, circular backing, or tile shadow.
+   Original image frames and movement timing are preserved. */
+#welcome .welcome-food{
+ background:transparent!important;
+ border:0!important;border-radius:0!important;
+ box-shadow:none!important;
+ object-fit:contain!important;
+}
+/* Same soft cream wisps and staggered upward drift as the supplied Hungry Buten HTML. */
+#welcome .welcome-smoke{
+ position:absolute;left:50%;top:26%;z-index:3;
+ width:0;height:0;pointer-events:none;opacity:.48;
+ filter:blur(3px);
+}
+#welcome .welcome-smoke span{
+ position:absolute;top:0;width:26px;height:64px;border-radius:50%;
+ background:radial-gradient(closest-side,#fff3dde6,#fff3dd00);
+ opacity:0;
+ animation:snouno-steam 2.8s ease-out infinite;
+}
+#welcome .welcome-smoke span:nth-child(1){left:-34px;animation-duration:2.8s;animation-delay:0s;}
+#welcome .welcome-smoke span:nth-child(2){left:-8px;animation-duration:3.15s;animation-delay:.7s;}
+#welcome .welcome-smoke span:nth-child(3){left:18px;animation-duration:3.5s;animation-delay:1.4s;}
+#welcome .welcome-smoke span:nth-child(4){left:-20px;animation-duration:3.85s;animation-delay:2.1s;}
+@keyframes snouno-steam{
+ 0%{transform:translateY(10px) scale(.5,.6);opacity:0}
+ 25%{opacity:.5}
+ 60%{transform:translate(8px,-46px) scaleY(1.1);opacity:.28}
+ 100%{transform:translate(-6px,-96px) scale(1.5,1.4);opacity:0}
+}
+#welcome .mobile-smoke{top:27%;opacity:.46;}
+/* Actual curved yellow shapes cast their own shadow.
+   No opacity fades: the amber shadow rises from beneath the wave. */
+#welcome .welcome-top-wave{z-index:1;filter:none!important;}
+#welcome .welcome-curve-shadow,
+#welcome .desktop-curve-shadow{
+ position:absolute;inset:0;width:100%;height:100%;z-index:0;
+ pointer-events:none;transform:translateY(9px);
+ clip-path:inset(0 0 0 0);
+ filter:none!important;
+}
+html.loading #welcome .welcome-curve-shadow,
+html.loading #welcome .desktop-curve-shadow,
+html.loader-morphing #welcome .welcome-curve-shadow,
+html.loader-morphing #welcome .desktop-curve-shadow{
+ transform:translateY(27px);
+ clip-path:inset(95% 0 0 0);
+}
+html.loader-shadow-intro #welcome .welcome-curve-shadow,
+html.loader-shadow-intro #welcome .desktop-curve-shadow{
+ animation:snouno-header-shadow-rise 760ms cubic-bezier(.21,.82,.23,1) both;
+}
+@keyframes snouno-header-shadow-rise{
+ from{transform:translateY(27px);clip-path:inset(96% 0 0 0)}
+ to{transform:translateY(9px);clip-path:inset(0 0 0 0)}
+}
+@media(max-width:980px){
+ #welcome .welcome-food{background:transparent!important;border:0!important;box-shadow:none!important;}
+}
+@media(prefers-reduced-motion:reduce){
+ #welcome .welcome-smoke span{animation:none!important;}
+ #welcome .welcome-curve-shadow,#welcome .desktop-curve-shadow{
+  animation:none!important;transform:translateY(9px)!important;clip-path:none!important;
+ }
+}
