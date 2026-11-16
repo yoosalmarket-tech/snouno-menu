@@ -80,265 +80,152 @@ function contactLinks(container,channels,meal) {
 }
 
 
-/* Cut out solid-color backdrops in welcome images only.
-   The source meal catalog and images used elsewhere remain untouched. */
-const welcomeCutoutCache=new Map();
-const welcomeCutoutObjects=new Set();
-function transparentWelcomeFood(src){
- const url=asset(src)||src;
- if(!url||welcomeCutoutObjects.has(url)||url.startsWith('data:'))return Promise.resolve(url);
- if(welcomeCutoutCache.has(url))return welcomeCutoutCache.get(url);
- const promise=new Promise(resolve=>{
-  const img=new Image();img.crossOrigin='anonymous';
-  img.onerror=()=>resolve(url);
-  img.onload=()=>{
-   try{
-    const factor=Math.min(1,850/Math.max(img.naturalWidth,img.naturalHeight));
-    const w=Math.max(1,Math.round(img.naturalWidth*factor));
-    const h=Math.max(1,Math.round(img.naturalHeight*factor));
-    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-    const ctx=canvas.getContext('2d',{willReadFrequently:true});
-    if(!ctx){resolve(url);return;}
-    ctx.drawImage(img,0,0,w,h);
-    const pixels=ctx.getImageData(0,0,w,h),arr=pixels.data;
-    const corners=[[2,2],[w-3,2],[2,h-3],[w-3,h-3]].map(([x,y])=>{
-      const p=(Math.max(0,Math.min(h-1,y))*w+Math.max(0,Math.min(w-1,x)))*4;
-      return [arr[p],arr[p+1],arr[p+2],arr[p+3]];
-    });
-    if(corners.filter(p=>p[3]<50).length>=2){resolve(url);return;}
-    // Select an edge color shared by multiple corners, never key arbitrary photo colors.
-    const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
-    const seed=corners.map(c=>({c,near:corners.filter(x=>dist(x,c)<65).length}))
-      .sort((a,b)=>b.near-a.near)[0];
-    if(seed.near<2){resolve(url);return;}
-    const bg=seed.c,brightYellow=bg[0]>145&&bg[1]>85&&bg[2]<165&&bg[0]>bg[1];
-    const matches=(p)=>{
-      const at=p*4,r=arr[at],g=arr[at+1],b=arr[at+2];
-      if(arr[at+3]<22)return true;
-      const d=Math.hypot(r-bg[0],g-bg[1],b-bg[2]);
-      if(d<61)return true;
-      return brightYellow&&d<104&&r>155&&g>85&&b<160&&r>g&&g>b*1.2;
-    };
-    const count=w*h,visited=new Uint8Array(count),queue=new Int32Array(count);
-    let front=0,back=0;
-    const enqueue=(p)=>{
-      if(visited[p])return;
-      visited[p]=1;
-      if(matches(p)){visited[p]=2;queue[back++]=p;}
-    };
-    for(let x=0;x<w;x++){enqueue(x);enqueue((h-1)*w+x);}
-    for(let y=0;y<h;y++){enqueue(y*w);enqueue(y*w+w-1);}
-    while(front<back){
-      const p=queue[front++],x=p%w,y=Math.floor(p/w);
-      if(x>0)enqueue(p-1);
-      if(x+1<w)enqueue(p+1);
-      if(y>0)enqueue(p-w);
-      if(y+1<h)enqueue(p+w);
-    }
-    // Do not erase irregular photographs whose border colors do not segment well.
-    if(back/count<.035){resolve(url);return;}
-    for(let i=0;i<back;i++)arr[queue[i]*4+3]=0;
-    // Feather the retained boundary one pixel so the cutout has natural antialiasing.
-    for(let i=0;i<back;i++){
-      const p=queue[i],x=p%w,y=Math.floor(p/w);
-      const near=[x>0?p-1:-1,x+1<w?p+1:-1,y>0?p-w:-1,y+1<h?p+w:-1];
-      for(const n of near){if(n>=0&&visited[n]!==2){
-         const a=n*4+3;arr[a]=Math.min(arr[a],208);
-      }}
-    }
-    ctx.putImageData(pixels,0,0);
-    canvas.toBlob(blob=>{
-      if(!blob){resolve(url);return;}
-      const result=URL.createObjectURL(blob);
-      welcomeCutoutObjects.add(result);resolve(result);
-    },'image/webp',.94);
-   }catch{resolve(url);} // CORS or canvas support: retain the original meal rather than break it.
-  };
-  img.src=url;
- });
- welcomeCutoutCache.set(url,promise);
- return promise;
-}
-function installWelcomeFoodCutouts(){
- for(const id of ['cover-photo','cover-next','desktop-welcome-hero']){
-  const element=$(id);
-  const convert=()=>{
-   const original=element.getAttribute('src');
-   if(!original||welcomeCutoutObjects.has(original))return;
-   transparentWelcomeFood(original).then(cutout=>{
-     if(cutout!==original&&element.getAttribute('src')===original)element.src=cutout;
-   });
-  };
-  new MutationObserver(convert).observe(element,{attributes:true,attributeFilter:['src']});
-  convert();
- }
-}
-
-/* Mobile welcome: three exact Snouno meals and the original vertical indicator. */
+/* Welcome hero carousel. The food assets are pre-rendered transparent WebP
+   cutouts based on the original Snouno product photography; never run a
+   browser-side color-removal algorithm against food pixels. */
+const transparentWelcomeFood=async src=>src;
+function installWelcomeFoodCutouts(){}
 const welcomeMobileMeals=[
-  {listing:2468,name:'بوكس المشاركة',src:'/assets/meals/2468.webp'},
-  {listing:2465,name:'نوك أوت',src:'/assets/meals/2465.webp'},
-  {listing:2472,name:'ناشفيل',src:'/assets/meals/2472.webp'}
+ {listing:2468,name:'بوكس المشاركة',src:'/assets/welcome/2468.webp',fallback:'/assets/meals/2468.webp'},
+ {listing:2465,name:'نوك أوت',src:'/assets/welcome/2465.webp',fallback:'/assets/meals/2465.webp'},
+ {listing:2472,name:'ناشفيل',src:'/assets/welcome/2472.webp',fallback:'/assets/meals/2472.webp'}
 ];
-let mobileWelcomeTimer=null,mobileWelcomeSwap=null,mobileWelcomeIndex=0,mobileWelcomeVersion=0;
-function stopMobileWelcomeCycle(){
- ++mobileWelcomeVersion;
- clearInterval(mobileWelcomeTimer);clearTimeout(mobileWelcomeSwap);
- mobileWelcomeTimer=mobileWelcomeSwap=null;
- $('cover-photo')?.classList.remove('mobile-food-out','mobile-food-in');
- $('cover-next')?.classList.remove('mobile-food-out','mobile-food-in','is-visible');
-}
-function canPlayMobileWelcome(){
- return !isPreview&&!document.hidden&&currentPage()==='welcome'
-    &&matchMedia('(max-width:980px)').matches;
-}
-function showMobileWelcomeMeal(index,animate=true){
- const hero=$('cover-photo'),incoming=$('cover-next'),badge=$('mobile-meal-name');
- const dots=[...document.querySelectorAll('.welcome-stage-rail button')];
+let mobileWelcomeIndex=0;
+let desktopWheelTimer=null,welcomeCarouselTimer=null,welcomeCarouselCleanupTimer=null;
+let welcomeCarouselActive=false,welcomeCarouselAnimating=false,welcomeCarouselSession=0;
+const welcomeAutoplayMs=3000,welcomeTransitionMs=600;
+const prefersReducedWelcomeMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome';
+const onMobileWelcome=()=>matchMedia('(max-width:980px)').matches;
+function welcomeMealName(index){
  const choice=welcomeMobileMeals[index];
- const record=dishes.find(d=>Number(d.sonbol_listing_id)===choice.listing||d.name===choice.name);
- const src=asset(record?.image)||choice.src;
- const name=record?displayName(record):(isEnglish()?({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville Burger'}[choice.listing]):choice.name);
- const version=mobileWelcomeVersion;
- const currentIndex=index;
- const setLabel=()=>{
-  badge.textContent=name;
-  dots.forEach((dot,i)=>dot.setAttribute('aria-current',String(i===index)));
+ const d=dishes.find(item=>Number(item.sonbol_listing_id)===choice.listing||item.name===choice.name);
+ return d?displayName(d):(isEnglish()?({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville'}[choice.listing]):choice.name);
+}
+function setWelcomeImage(img,index){
+ const choice=welcomeMobileMeals[index];
+ img.onerror=()=>{
+  if(img.dataset.fallbackFor!==choice.src){
+   img.dataset.fallbackFor=choice.src;img.src=choice.fallback;
+  }
  };
- clearTimeout(mobileWelcomeSwap);
- if(!animate||matchMedia('(prefers-reduced-motion: reduce)').matches){
-  setLabel();
-  hero.classList.remove('mobile-food-out','mobile-food-in');
-  incoming.classList.remove('mobile-food-in','is-visible');
-  transparentWelcomeFood(src).then(clean=>{
-    if(version===mobileWelcomeVersion&&mobileWelcomeIndex===currentIndex){
-      hero.src=clean;hero.alt=name;
-    }
-  });
-  return;
- }
- transparentWelcomeFood(src).then(clean=>{
- if(version!==mobileWelcomeVersion||mobileWelcomeIndex!==currentIndex)return;
- const next=new Image();let begun=false;
- const begin=()=>{
-  if(begun||version!==mobileWelcomeVersion)return;
-  begun=true;
-  incoming.src=clean;incoming.alt='';
-  hero.classList.remove('mobile-food-in');
-  incoming.classList.remove('mobile-food-in');
-  incoming.classList.add('is-visible');
-  // Restart animations after both photo layers are ready.
-  void incoming.offsetWidth;
-  hero.classList.add('mobile-food-out');
-  incoming.classList.add('mobile-food-in');
-  setLabel();
-  mobileWelcomeSwap=setTimeout(()=>{
-   if(version!==mobileWelcomeVersion)return;
-   hero.src=clean;hero.alt=name;
-   hero.classList.remove('mobile-food-out');
-   incoming.classList.remove('mobile-food-in','is-visible');
-  },600);
- };
- next.onload=begin;next.onerror=()=>{};
- next.src=clean;
- if(next.complete&&next.naturalWidth)begin();
+ img.src=choice.src;
+}
+function updateWelcomeLabels(index){
+ $('mobile-meal-name').textContent=welcomeMealName(index);
+ $('desktop-meal-name').textContent=welcomeMealName(index);
+ $('cover-photo').alt=welcomeMealName(index);
+ $('desktop-welcome-hero').alt=welcomeMealName(index);
+ [...document.querySelectorAll('.welcome-stage-rail button')].forEach((d,i)=>{
+  d.setAttribute('aria-current',String(i===index));
  });
 }
-function startMobileWelcomeCycle(){
-  if(!canPlayMobileWelcome()){if(mobileWelcomeTimer)stopMobileWelcomeCycle();return;}
-  if(mobileWelcomeTimer)return;
-  ++mobileWelcomeVersion;
-  mobileWelcomeIndex=0;
-  showMobileWelcomeMeal(0,false);
-  mobileWelcomeTimer=setInterval(()=>{
-    if(!canPlayMobileWelcome())return;
-    mobileWelcomeIndex=(mobileWelcomeIndex+1)%welcomeMobileMeals.length;
-    showMobileWelcomeMeal(mobileWelcomeIndex);
-  },2000);
+function resetWelcomeImages(){
+ const current=mobileWelcomeIndex;
+ const image=$('cover-photo'),next=$('cover-next'),desktop=$('desktop-welcome-hero');
+ image.classList.remove('mobile-food-out','mobile-food-in');
+ next.classList.remove('is-visible','mobile-food-in');
+ desktop.classList.remove('wheel-exit','wheel-enter');
+ setWelcomeImage(image,current);setWelcomeImage(desktop,current);
+ updateWelcomeLabels(current);
 }
-document.querySelectorAll('.welcome-stage-rail button').forEach((dot,index)=>{
-  dot.onclick=()=>{
-    mobileWelcomeIndex=index;
-    showMobileWelcomeMeal(index,false);
-
-  };
+function stopWelcomeCarousel(){
+ ++welcomeCarouselSession;
+ clearTimeout(welcomeCarouselTimer);clearTimeout(welcomeCarouselCleanupTimer);
+ welcomeCarouselTimer=welcomeCarouselCleanupTimer=null;
+ desktopWheelTimer=null;welcomeCarouselAnimating=false;welcomeCarouselActive=false;
+ $('cover-photo').classList.remove('mobile-food-out');
+ $('cover-next').classList.remove('is-visible','mobile-food-in');
+ $('desktop-welcome-hero').classList.remove('wheel-exit','wheel-enter');
+}
+function scheduleWelcomeCarousel(){
+ clearTimeout(welcomeCarouselTimer);
+ if(!welcomeVisible()||!welcomeCarouselActive)return;
+ welcomeCarouselTimer=setTimeout(()=>goToWelcomeMeal((mobileWelcomeIndex+1)%3),welcomeAutoplayMs);
+ desktopWheelTimer=welcomeCarouselTimer;
+}
+function goToWelcomeMeal(index){
+ index=(index+3)%3;
+ if(welcomeCarouselAnimating||!welcomeVisible()||index===mobileWelcomeIndex)return;
+ clearTimeout(welcomeCarouselTimer);
+ const old=mobileWelcomeIndex,session=welcomeCarouselSession;
+ const current=$('cover-photo'),next=$('cover-next'),desktop=$('desktop-welcome-hero');
+ const mobile=onMobileWelcome();
+ welcomeCarouselAnimating=true;
+ const nextAsset=new Image();
+ nextAsset.onload=()=>{
+  if(session!==welcomeCarouselSession)return;
+  if(prefersReducedWelcomeMotion()){
+   mobileWelcomeIndex=index;resetWelcomeImages();welcomeCarouselAnimating=false;scheduleWelcomeCarousel();return;
+  }
+  if(mobile){
+   setWelcomeImage(next,index);next.alt='';
+   next.classList.remove('mobile-food-in');
+   next.classList.add('is-visible');
+   void next.offsetWidth;
+   current.classList.add('mobile-food-out');next.classList.add('mobile-food-in');
+  }else{
+   desktop.classList.remove('wheel-enter');desktop.classList.add('wheel-exit');
+  }
+  welcomeCarouselCleanupTimer=setTimeout(()=>{
+   if(session!==welcomeCarouselSession)return;
+   mobileWelcomeIndex=index;
+   setWelcomeImage(current,index);
+   setWelcomeImage(desktop,index);
+   updateWelcomeLabels(index);
+   current.classList.remove('mobile-food-out');
+   next.classList.remove('mobile-food-in','is-visible');
+   if(!mobile){desktop.classList.remove('wheel-exit');void desktop.offsetWidth;desktop.classList.add('wheel-enter');}
+   welcomeCarouselCleanupTimer=setTimeout(()=>{
+    if(session!==welcomeCarouselSession)return;
+    desktop.classList.remove('wheel-enter');
+    welcomeCarouselAnimating=false;
+    scheduleWelcomeCarousel();
+   },mobile?100:250);
+  },mobile?welcomeTransitionMs:320);
+ };
+ nextAsset.onerror=()=>{welcomeCarouselAnimating=false;scheduleWelcomeCarousel();};
+ nextAsset.src=welcomeMobileMeals[index].src;
+ if(nextAsset.complete&&nextAsset.naturalWidth)nextAsset.onload();
+}
+function startWelcomeCarousel(){
+ if(!welcomeVisible()){if(welcomeCarouselActive)stopWelcomeCarousel();return;}
+ if(welcomeCarouselActive)return;
+ ++welcomeCarouselSession;welcomeCarouselActive=true;
+ resetWelcomeImages();scheduleWelcomeCarousel();
+}
+function stopMobileWelcomeCycle(){stopWelcomeCarousel()}
+function startMobileWelcomeCycle(){startWelcomeCarousel()}
+function stopDesktopMealWheel(){stopWelcomeCarousel()}
+function startDesktopMealWheel(){startWelcomeCarousel()}
+document.querySelectorAll('.welcome-stage-rail button').forEach((dot,i)=>{
+ dot.onclick=()=>{if(welcomeCarouselAnimating)return;goToWelcomeMeal(i)};
 });
-window.addEventListener('pagechange',startMobileWelcomeCycle);
-window.addEventListener('resize',startMobileWelcomeCycle);
-document.addEventListener('visibilitychange',startMobileWelcomeCycle);
-
-/* Desktop-only rotating meal showcase: actual available dishes, every two seconds.
-   The visual wheel moves between plates; no mobile navigation or product data changes. */
-let desktopWheelTimer=null;
-let desktopWheelSwapTimer=null;
-let desktopWheelFinishTimer=null;
-let desktopWheelGeneration=0;
-let desktopWheelCursor=0;
-let desktopWheelMeals=[];
-function stopDesktopMealWheel(){
-  ++desktopWheelGeneration;
-  clearInterval(desktopWheelTimer);
-  clearTimeout(desktopWheelSwapTimer);
-  clearTimeout(desktopWheelFinishTimer);
-  desktopWheelTimer=desktopWheelSwapTimer=desktopWheelFinishTimer=null;
-  const hero=$('desktop-welcome-hero');
-  if(hero)hero.classList.remove('wheel-exit','wheel-enter');
-}
-function canPlayDesktopWheel(){
-  return !isPreview&&!document.hidden&&currentPage()==='welcome'
-    &&matchMedia('(min-width:981px)').matches&&dishes.length>0;
-}
-function startDesktopMealWheel(){
- if(!canPlayDesktopWheel()){
-   if(desktopWheelTimer)stopDesktopMealWheel();
-   return;
- }
- if(desktopWheelTimer)return;
- // The desktop showcase uses exactly the same three hero dishes as mobile.
- desktopWheelMeals=welcomeMobileMeals.map(entry=>{
-   const row=dishes.find(d=>Number(d.sonbol_listing_id)===entry.listing || d.name===entry.name);
-   return {name:row?.name||entry.name,image:asset(row?.image)||entry.src,
-     id:row?.id||entry.listing,listing:entry.listing,record:row};
- });
- const hero=$('desktop-welcome-hero');
- const label=$('desktop-meal-name');
- if(!hero||!label)return;
- desktopWheelCursor=0;
- const version=desktopWheelGeneration;
- const first=desktopWheelMeals[0];
- hero.src=first.image;
- hero.alt=displayName(first.record||first);
- hero.classList.add('is-menu-meal','wheel-has-rotated');
- label.textContent=displayName(first.record||first);
- transparentWelcomeFood(first.image).then(clean=>{
-   if(version===desktopWheelGeneration && hero.getAttribute('src')===first.image)hero.src=clean;
- });
- const tick=()=>{
-   if(!canPlayDesktopWheel()||version!==desktopWheelGeneration)return;
-   const item=desktopWheelMeals[++desktopWheelCursor%desktopWheelMeals.length];
-   transparentWelcomeFood(item.image).then(clean=>{
-     if(!canPlayDesktopWheel()||version!==desktopWheelGeneration)return;
-     hero.classList.remove('wheel-enter');
-     hero.classList.add('wheel-exit');
-     desktopWheelSwapTimer=setTimeout(()=>{
-       if(version!==desktopWheelGeneration)return;
-       hero.src=clean;
-       hero.alt=displayName(item.record||item);
-       label.textContent=displayName(item.record||item);
-       hero.classList.remove('wheel-exit');
-       void hero.offsetWidth;
-       hero.classList.add('wheel-enter');
-       desktopWheelFinishTimer=setTimeout(()=>{
-         if(version===desktopWheelGeneration)hero.classList.remove('wheel-enter');
-       },520);
-     },320);
-   });
- };
- desktopWheelTimer=setInterval(tick,2000);
-}
-window.addEventListener('pagechange',startDesktopMealWheel);
-window.addEventListener('resize',startDesktopMealWheel);
-document.addEventListener('visibilitychange',startDesktopMealWheel);
+const stage=$('welcome');
+stage.addEventListener('wheel',event=>{
+ if(!welcomeVisible()||welcomeCarouselAnimating)return;
+ if(Math.abs(event.deltaX)+Math.abs(event.deltaY)<7)return;
+ if(!event.target.closest('.welcome-stage,.desktop-visual'))return;
+ event.preventDefault();
+ goToWelcomeMeal((mobileWelcomeIndex+(event.deltaX+event.deltaY>0?1:2))%3);
+},{passive:false});
+let welcomeSwipeX=null,welcomeSwipeY=null;
+stage.addEventListener('pointerdown',event=>{
+ if(!welcomeVisible()||!event.target.closest('.welcome-stage,.desktop-visual'))return;
+ welcomeSwipeX=event.clientX;welcomeSwipeY=event.clientY;
+});
+stage.addEventListener('pointerup',event=>{
+ if(welcomeSwipeX===null||welcomeCarouselAnimating)return;
+ const dx=event.clientX-welcomeSwipeX,dy=event.clientY-welcomeSwipeY;
+ welcomeSwipeX=welcomeSwipeY=null;
+ if(Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy)*1.1)goToWelcomeMeal((mobileWelcomeIndex+(dx<0?1:2))%3);
+});
+window.addEventListener('pagechange',startWelcomeCarousel);
+window.addEventListener('resize',()=>{
+ if(welcomeCarouselAnimating)stopWelcomeCarousel();
+ startWelcomeCarousel();
+});
+document.addEventListener('visibilitychange',startWelcomeCarousel);
 
 let stopCarousel=()=>{};
 function renderAds() {
@@ -446,9 +333,9 @@ function renderSettings(){
  $('desktop-welcome-browse').querySelector('span').textContent=buttonText;
  setText('desktop-welcome-brand',tr(s.name));setText('desktop-welcome-greeting',tr(s.welcome));
  const logo=asset(s.logo)||'/assets/logo.webp';
- const sharing=dishes.find(d=>d.name==='بوكس المشاركة'&&d.image);
- const desktopHero=asset(sharing?.image)||'/assets/meals/2468.webp';
- if(!desktopWheelTimer){$('desktop-welcome-hero').src=desktopHero;$('desktop-welcome-hero').classList.add('is-menu-meal','wheel-has-rotated');setText('desktop-meal-name',sharing?displayName(sharing):tr('بوكس المشاركة'));}
+ setWelcomeImage($('desktop-welcome-hero'),mobileWelcomeIndex);
+ $('desktop-welcome-hero').classList.add('is-menu-meal');
+ updateWelcomeLabels(mobileWelcomeIndex);
  $('logo').src=logo;$('welcome-logo').src=logo;$('desktop-welcome-logo').src=logo;
  renderAds();
  setText('location-name',tr(s.name)+' — '+(isEnglish()?'Gaza':'غزة'));setText('address',tr(s.address));setText('hours',tr(s.hours));setText('hotline',s.hotline);setText('intro',tr(s.contact));const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
