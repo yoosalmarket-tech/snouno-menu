@@ -765,3 +765,252 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-customize{
   text-decoration-color:#a3a3a3!important;
   text-decoration-thickness:1.5px!important;
 }
+
+/* Desktop interactive redesign: a full-width food showroom with its own
+   detail panel, rather than a stretched vertical mobile layout.
+   Only applies above 980px; 3D food physics, touch controls, fixed rail,
+   ordering button, and the entire mobile design remain unaffected. */
+@media(min-width:981px){
+  #rich-menu .rm-app{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) clamp(390px,34vw,550px)!important;
+    grid-template-rows:76px auto minmax(0,1fr)!important;
+    column-gap:0!important;
+    align-items:stretch!important;
+    background:#232323!important;
+  }
+  #rich-menu .rm-top{
+    grid-column:1/-1!important;
+    grid-row:1!important;
+    min-height:76px!important;
+    height:76px!important;
+    border-bottom:1px solid #c19227;
+  }
+  #rich-menu .rm-top-logo{height:49px!important;max-width:200px!important;}
+  #rich-menu .rm-top-caption{
+    left:auto!important;
+    right:clamp(26px,4vw,70px)!important;
+    font-size:11px!important;
+    letter-spacing:.18em!important;
+  }
+  #rich-menu .rm-categories{
+    grid-column:1/-1!important;
+    grid-row:2!important;
+    align-self:start!important;
+    padding:15px clamp(26px,4vw,70px) 9px!important;
+    background:#272626!important;
+    border-bottom:1px solid #484136!important;
+  }
+  #rich-menu .rm-categories-header{padding:0 0 9px!important;}
+  #rich-menu .rm-categories-label{gap:10px!important;}
+  #rich-menu .rm-categories-label strong{font-size:11px!important;}
+  #rich-menu .rm-categories-label span{font-size:14px!important;}
+  #rich-menu .rm-categories-track{
+    padding:1px 0 6px!important;
+    scroll-padding-inline:0!important;
+    gap:10px!important;
+  }
+  #rich-menu .rm-cat{
+    min-width:118px!important;
+    min-height:49px!important;
+    flex-direction:row!important;
+    gap:9px!important;
+    border-radius:13px!important;
+    padding:6px 14px!important;
+    box-shadow:none!important;
+  }
+  #rich-menu .rm-cat strong{font-size:11px!important;}
+  #rich-menu .rm-cat span{font-size:12px!important;}
+  #rich-menu .rm-stage-wrap{
+    grid-column:1!important;
+    grid-row:3!important;
+    min-width:0!important;
+    min-height:0!important;
+    width:100%!important;
+    height:100%!important;
+    flex:none!important;
+    border-right:1px solid #4a453b!important;
+    background-color:#232323!important;
+    background-image:radial-gradient(ellipse 56% 57% at 52% 47%,#38322c 0%,#2b2928 39%,#232323 86%)!important;
+  }
+  #rich-menu .rm-stage{background:transparent!important;}
+  #rich-menu .rm-stage-word{
+    top:clamp(30px,7%,82px)!important;
+    font-size:clamp(80px,9vw,172px)!important;
+    opacity:.26!important;
+    color:#8b713f!important;
+  }
+  #rich-menu .rm-dish{
+    width:clamp(340px,29vw,500px)!important;
+    height:clamp(355px,31vw,520px)!important;
+    left:52%!important;
+    bottom:calc(7% + clamp(27px,4svh,45px))!important;
+  }
+  #rich-menu .rm-shadow{
+    left:52%!important;
+    width:min(65%,470px)!important;
+    bottom:calc(6% + clamp(27px,4svh,45px))!important;
+  }
+  #rich-menu .rm-info{
+    grid-column:2!important;
+    grid-row:3!important;
+    direction:rtl!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:flex-start!important;
+    gap:18px!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    min-height:0!important;
+    height:100%!important;
+    margin:0!important;
+    padding:clamp(45px,7svh,90px) clamp(28px,3.5vw,66px) clamp(34px,5svh,58px)!important;
+    text-align:right!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    scrollbar-width:thin;
+    scrollbar-color:#635947 #292828;
+    background:linear-gradient(153deg,#30302e 0%,#282726 54%,#242324 100%)!important;
+    border-left:1px solid #50483a!important;
+    box-shadow:inset 9px 0 35px #0002!important;
+  }
+  #rich-menu .rm-info::before{display:none!important;}
+  #rich-menu .rm-info-rating{
+    position:static!important;
+    top:auto!important;
+    left:auto!important;
+    right:auto!important;
+    margin:0 0 3px!important;
+    font-size:clamp(15px,1.2vw,19px)!important;
+    text-align:right!important;
+    align-self:flex-start!important;
+  }
+  #rich-menu .rm-info-name{
+    position:static!important;
+    top:auto!important;
+    font-size:clamp(30px,2.8vw,48px)!important;
+    line-height:1.18!important;
+    color:#fff9ed!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    text-align:right!important;
+  }
+  #rich-menu .rm-info-desc{
+    position:static!important;
+    top:auto!important;
+    min-height:0!important;
+    max-width:40ch!important;
+    font-size:clamp(14px,1.15vw,17px)!important;
+    line-height:1.85!important;
+    -webkit-line-clamp:3!important;
+    text-align:right!important;
+    color:#cfc5b4!important;
+  }
+  #rich-menu .rm-info-price{
+    position:static!important;
+    top:auto!important;
+    align-self:flex-start!important;
+    justify-content:flex-start!important;
+    margin:14px 0 26px!important;
+    gap:16px!important;
+    font-size:clamp(28px,2.2vw,38px)!important;
+    direction:ltr!important;
+  }
+  #rich-menu .rm-info-price .rm-old-price{font-size:17px!important;}
+  #rich-menu .rm-info-actions{
+    width:100%!important;
+    max-width:none!important;
+    margin-top:auto!important;
+    gap:14px!important;
+  }
+  #rich-menu .rm-info-details{
+    min-height:58px!important;
+    border-radius:14px!important;
+    font-size:17px!important;
+    transition:transform .16s,box-shadow .16s!important;
+  }
+  #rich-menu .rm-info-fav{width:56px!important;height:56px!important;}
+  #rich-menu .rm-instruction{
+    align-self:stretch!important;
+    width:100%!important;
+    margin:16px 0 0!important;
+    padding:2px 0!important;
+    font-size:11px!important;
+    line-height:1.7!important;
+    text-align:right!important;
+    color:#a9a092!important;
+  }
+  /* Both actions stay anchored to the browser viewport, not the food motion. */
+  body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
+    position:fixed!important;
+    top:clamp(226px,34svh,388px)!important;
+    right:calc(clamp(390px,34vw,550px) + clamp(20px,2.7vw,48px))!important;
+    bottom:auto!important;
+    left:auto!important;
+    transform:none!important;
+    animation:none!important;
+  }
+  #rich-menu .rm-app > .rm-thumbs{
+    top:clamp(226px,34svh,388px)!important;
+    right:calc(clamp(390px,34vw,550px) + clamp(20px,2.7vw,48px))!important;
+    left:auto!important;
+  }
+  #rich-menu .rm-rail-labels{width:clamp(100px,12vw,160px)!important;}
+  #rich-menu .rm-rail-labels span{font-size:12px!important;}
+  body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-customize,
+  #rich-menu .rm-app > .rm-customize{
+    left:clamp(28px,4.2vw,80px)!important;
+    right:auto!important;
+    top:auto!important;
+    bottom:clamp(34px,6svh,85px)!important;
+    transform:none!important;
+    animation:none!important;
+    transition:none!important;
+    padding:8px 18px 8px 8px!important;
+    min-height:56px!important;
+    border-radius:15px!important;
+  }
+  #rich-menu .rm-customize .rm-order-icon{width:39px;height:39px;padding:8px;}
+  #rich-menu .rm-customize strong{font-size:12px!important;letter-spacing:.11em!important;}
+  #rich-menu .rm-customize span{font-size:14px!important;}
+  /* Desktop popups should be centered dialogs, not mobile bottom sheets. */
+  #rich-menu dialog.rm-sheet[open]{
+    inset:0!important;
+    margin:auto!important;
+    width:min(560px,calc(100vw - 80px))!important;
+    max-width:none!important;
+    max-height:min(730px,calc(100dvh - 96px))!important;
+    padding:0!important;
+    border:1px solid #73664c!important;
+    border-radius:24px!important;
+    box-shadow:0 22px 80px #000c!important;
+  }
+}
+/* Compact desktop screens retain the two-column composition without
+   forcing the details or food beyond the visible area. */
+@media(min-width:981px) and (max-height:730px){
+  #rich-menu .rm-app{grid-template-rows:58px auto minmax(0,1fr)!important;}
+  #rich-menu .rm-top{min-height:58px!important;height:58px!important;}
+  #rich-menu .rm-top-logo{height:39px!important;}
+  #rich-menu .rm-categories{padding-top:5px!important;padding-bottom:3px!important;}
+  #rich-menu .rm-categories-header{padding-bottom:3px!important;}
+  #rich-menu .rm-cat{min-height:40px!important;}
+  #rich-menu .rm-info{
+    gap:10px!important;
+    padding-top:clamp(22px,4svh,38px)!important;
+    padding-bottom:20px!important;
+  }
+  #rich-menu .rm-info-name{font-size:clamp(26px,2.5vw,36px)!important;}
+  #rich-menu .rm-info-desc{font-size:13px!important;line-height:1.55!important;}
+  #rich-menu .rm-info-price{margin:6px 0 12px!important;font-size:27px!important;}
+  #rich-menu .rm-info-actions{margin-top:auto!important;}
+  #rich-menu .rm-info-details{min-height:45px!important;}
+  #rich-menu .rm-info-fav{height:45px!important;width:45px!important;}
+  #rich-menu .rm-instruction{margin-top:9px!important;}
+  #rich-menu .rm-dish{height:clamp(310px,26vw,390px)!important;width:clamp(305px,27vw,390px)!important;}
+  body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
+    top:clamp(168px,30svh,225px)!important;
+  }
+}
