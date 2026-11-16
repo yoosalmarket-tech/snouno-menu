@@ -29,15 +29,13 @@
  .cover{--intro-ease:cubic-bezier(.5,0,.5,1)}
  .welcome-disc,.welcome-mask,.welcome-plate{transform-box:fill-box;transform-origin:center}
  .welcome-disc{animation:disc-in 1113ms var(--intro-ease) 110ms both}
- .welcome-mask{animation:mask-in 619ms var(--intro-ease) both}
- .welcome-plate{animation:plate-in 1237ms var(--intro-ease) both}
+  .welcome-plate{animation:plate-in 1237ms var(--intro-ease) both}
  #browse{animation:intro-fade 431ms cubic-bezier(.5,0,.5,1) 77ms both}
  #quick{animation:intro-fade 553ms cubic-bezier(.5,0,.5,1) 207ms both}
  #greeting,#brand{display:block;animation:intro-copy 423ms cubic-bezier(.5,0,.5,1) 619ms both;--rise:62.5px}
  #brand{animation-duration:449ms;animation-delay:774ms;--rise:69px}
  @keyframes disc-in{from{transform:scale(0)}to{transform:scale(1)}}
- @keyframes mask-in{from{transform:scale(1.1);filter:drop-shadow(1px 6px 3px #0008)}to{transform:scale(1);filter:drop-shadow(1px 6px 3px #0003)}}
- @keyframes plate-in{from{transform:rotate(75deg)}to{transform:rotate(0)}}
+  @keyframes plate-in{from{transform:rotate(75deg)}to{transform:rotate(0)}}
  @keyframes intro-fade{from{opacity:0}to{opacity:1}}
  @keyframes intro-copy{from{transform:translateY(var(--rise));opacity:0}to{transform:translateY(0);opacity:1}}
 }
@@ -153,10 +151,7 @@ body[data-preview] *{animation:none!important;transition:none!important}
 #welcome .welcome-category-chip.selected{background:var(--welcome-yellow);border-color:var(--welcome-yellow);color:#15130d;box-shadow:0 3px 0 #9d7117;}
 #welcome .welcome-stage{position:relative;flex:1 1 auto;min-height:155px;max-height:480px;width:100%;overflow:visible;}
 #welcome .welcome-stage-word{position:absolute;z-index:0;left:0;right:0;top:2%;text-align:center;font:1000 clamp(52px,17.2vw,94px)/1 system-ui,sans-serif;letter-spacing:-.085em;color:#423724;white-space:nowrap;pointer-events:none;}
-#welcome .welcome-stage-word-ar{position:absolute;z-index:0;left:0;right:0;bottom:12%;font-size:clamp(56px,19vw,112px);font-weight:900;letter-spacing:-.055em;color:#3c3223;opacity:.75;white-space:nowrap;pointer-events:none;}
-#welcome .welcome-stage-halo{position:absolute;left:50%;top:44%;width:min(92%,460px);height:min(92%,400px);transform:translate(-50%,-50%);background:radial-gradient(ellipse,#b58b3638 0%,#98722623 33%,transparent 68%);pointer-events:none;}
 #welcome .welcome-food{position:absolute;z-index:2;left:50%;top:46%;width:min(88%,415px);height:94%;max-height:395px;object-fit:contain;transform:translate(-50%,-50%);filter:drop-shadow(0 18px 20px #000b);animation:snouno-food-rise 1s cubic-bezier(.17,.79,.2,1) both;}
-#welcome .welcome-food-shadow{position:absolute;z-index:1;left:50%;bottom:4%;width:68%;height:30px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse,#080706b8 10%,transparent 72%);filter:blur(6px);}
 #welcome .welcome-food-badge{position:absolute;z-index:3;right:5%;top:10%;transform:rotate(7deg);display:flex;flex-direction:column;gap:2px;align-items:center;padding:8px 15px;background:#151410;color:var(--welcome-yellow);border:1px solid #635232;border-radius:10px;box-shadow:0 5px 0 #090806bd;font-size:11px;line-height:1.25;}
 #welcome .welcome-food-badge strong{font-size:14px;}
 #welcome .welcome-stage-rail{position:absolute;z-index:3;top:39%;left:15px;display:grid;gap:8px;padding:10px 8px;border:1px solid #72604275;border-radius:20px;background:#221f19d9;}
@@ -803,3 +798,35 @@ html.loader-morphing #welcome .desktop-curve-shadow{
  border-radius:999px!important;transition:width .22s ease,background-color .22s ease;
 }
 #ad-dots button[aria-pressed=true]::after{width:11px!important;height:4px!important;}
+
+
+/* Bare transparent food presentation — no chroma-key simulation, mask,
+   artificial dark halo, or circular ground shadow behind the product. */
+@media(max-width:980px){
+ #welcome .welcome-stage-word,
+ #welcome .welcome-stage-word-ar,
+ #welcome .welcome-stage-halo,
+ #welcome .welcome-food-shadow{display:none!important;}
+ #welcome .welcome-stage,
+ #welcome #cover-photo,
+ #welcome #cover-next{
+  -webkit-mask:none!important;mask:none!important;
+  -webkit-mask-image:none!important;mask-image:none!important;
+  clip-path:none!important;
+ }
+ #welcome #cover-photo,
+ #welcome #cover-next{
+  background:none!important;
+  box-shadow:none!important;
+  filter:none!important;-webkit-filter:none!important;
+  mix-blend-mode:normal!important;
+ }
+ #welcome #cover-photo{
+  animation:snouno-food-clean-arrival 680ms cubic-bezier(.2,.74,.2,1) both!important;
+ }
+ #welcome #cover-next{animation:none!important;}
+ @keyframes snouno-food-clean-arrival{
+  from{opacity:0;transform:translate(-50%,-45%) scale(.96)}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+ }
+}
