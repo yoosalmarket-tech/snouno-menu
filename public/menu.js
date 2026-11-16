@@ -37,6 +37,12 @@ function applyLanguage(){
  toggle.textContent=isEnglish()?'عربي':'EN';
  toggle.setAttribute('aria-pressed',String(isEnglish()));
  toggle.setAttribute('aria-label',isEnglish()?'العودة إلى العربية':'Switch to English');
+ $('search').placeholder=tr('ابحث عن طبقك أو مشروبك المفضل...');
+ $('search').setAttribute('aria-label',tr('البحث عن طبق'));
+ for(const input of document.querySelectorAll('#contact input[placeholder],#contact textarea[placeholder]')){
+  if(!input.dataset.arPlaceholder)input.dataset.arPlaceholder=input.placeholder;
+  input.placeholder=tr(input.dataset.arPlaceholder);
+ }
  $('menu').dir=isEnglish()?'ltr':'rtl';
  $('contact').dir=isEnglish()?'ltr':'rtl';
  if(settings?.name){
@@ -107,14 +113,17 @@ function showMobileWelcomeMeal(index,animate=true){
   };
   clearTimeout(mobileWelcomeSwap);
   if(!animate||matchMedia('(prefers-reduced-motion: reduce)').matches){setImage();return;}
-  const next=new Image();next.onload=()=>{
-    if(version!==mobileWelcomeVersion)return;
+  const next=new Image();let started=false;
+  const begin=()=>{
+    if(started||version!==mobileWelcomeVersion)return;
+    started=true;
     hero.classList.remove('mobile-food-in');
     hero.classList.add('mobile-food-out');
     mobileWelcomeSwap=setTimeout(setImage,250);
   };
+  next.onload=begin;
   next.onerror=()=>{};next.src=src;
-  if(next.complete&&next.naturalWidth)next.onload();
+  if(next.complete&&next.naturalWidth)begin();
 }
 function startMobileWelcomeCycle(){
   if(!canPlayMobileWelcome()){if(mobileWelcomeTimer)stopMobileWelcomeCycle();return;}
@@ -132,8 +141,7 @@ document.querySelectorAll('.welcome-stage-rail button').forEach((dot,index)=>{
   dot.onclick=()=>{
     mobileWelcomeIndex=index;
     showMobileWelcomeMeal(index,false);
-    clearInterval(mobileWelcomeTimer);mobileWelcomeTimer=null;
-    if(canPlayMobileWelcome())startMobileWelcomeCycle();
+
   };
 });
 window.addEventListener('pagechange',startMobileWelcomeCycle);
