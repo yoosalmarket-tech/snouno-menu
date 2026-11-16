@@ -681,7 +681,7 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
    Move only the anchored food cards, their shadow, and the sidebar;
    never translate the 3D scene or its parent (preserves swipe physics). */
 #rich-menu .rm-app{
-  --rm-preview-rise:clamp(26px,4svh,40px);
+  --rm-preview-rise:clamp(52px,7svh,70px);
 }
 #rich-menu .rm-dish{
   bottom:calc(11% + var(--rm-preview-rise))!important;
@@ -696,5 +696,5 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
   top:calc(clamp(140px,29svh,300px) - var(--rm-preview-rise))!important;
 }
 @media(max-height:660px){
-  #rich-menu .rm-app{--rm-preview-rise:20px;}
+  #rich-menu .rm-app{--rm-preview-rise:34px;}
 }
