@@ -6,10 +6,11 @@ const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 const validImage=value=>{if(!value)return '';try{const u=new URL(value,location.origin);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
 const categoryWords=name=>{const a=String(name||'SNOUNO').trim().split(/\s+/);return [a.slice(0,Math.ceil(a.length/2)).join(' '),a.slice(Math.ceil(a.length/2)).join(' ')]};
-export function createRichMenu({host,getData,onOpen,onFavorite}){
+export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  const root=mk('div','rm-app');root.dir='ltr';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
+ '<button type="button" class="rm-exit" aria-label="العودة إلى المنيو العادي" title="العودة إلى المنيو العادي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>',
  '<span class="rm-top-caption" lang="en">SNOUNO / INTERACTIVE</span><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></div>',
  '<nav class="rm-categories" aria-label="تصنيفات الأطباق"><div class="rm-categories-header">',
  '<div class="rm-categories-label"><strong lang="en">CATEGORIES</strong><span dir="rtl">التصنيفات</span></div>',
@@ -270,6 +271,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite}){
   else return;
   event.preventDefault();
  }
+ at(root,'.rm-exit').addEventListener('click',()=>{if(typeof onExit==='function')onExit();});
  u.stage.addEventListener('pointerdown',pointerDown);
  u.stage.addEventListener('pointermove',pointerMove);
  u.stage.addEventListener('pointerup',pointerUp);
