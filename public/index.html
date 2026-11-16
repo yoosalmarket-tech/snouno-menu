@@ -61,10 +61,18 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
       <div class="desktop-visual-ring"></div>
       <span class="desktop-visual-label" aria-hidden="true">SNOUNO</span>
       <img id="desktop-welcome-hero" src="/assets/plate.webp" alt="وجبة من منيو سنونو" fetchpriority="high">
-      <div class="desktop-sticker" aria-hidden="true"><span>شو آكل؟</span><strong>من سنونو!</strong></div>
+      <div class="desktop-sticker" aria-hidden="true"><span>شو آكل؟</span><strong id="desktop-meal-name">من سنونو!</strong></div>
       <span class="desktop-side-note" aria-hidden="true">FRESH • MADE FOR YOU</span>
     </div>
   </div>
+  <nav class="desktop-welcome-dock" aria-label="التنقل في الموقع">
+    <a href="/menu" data-page="menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v7c0 2 5 2 5 0V3m-2.5 0v18M18 3c-3 2-4 7-4 10h4m0-10v18"/></svg>القائمة
+    </a>
+    <a href="/contact" data-page="contact">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 11h.1m4 0h.1m4 0h.1"/></svg>تواصل معنا
+    </a>
+  </nav>
   <footer class="desktop-welcome-footer"><span>SNOUNO RESTAURANT</span><span>استكشف القائمة من أي جهاز</span><span>01 / MENU</span></footer>
 </div>
 </section>
