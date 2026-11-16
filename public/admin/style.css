@@ -108,3 +108,94 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
  cursor:pointer;
 }
 .dish-sort-card.is-dragging{cursor:grabbing;}
+
+
+/* Direct editing of Snouno restaurant settings (no popup). */
+#body .inline-settings-form{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:15px 18px;padding:22px;
+ background:#fff;border:1px solid #dfdbd0;border-radius:18px;
+ box-shadow:0 8px 32px #30210b0b;min-width:0;
+}
+#body .inline-settings-form>h2,
+#body .inline-settings-form>.inline-settings-help,
+#body .inline-settings-form>footer,
+#body .inline-settings-form>[role="alert"]{
+ grid-column:1/-1;
+}
+#body .inline-settings-form>h2{font-size:22px;color:#28221b;}
+#body .inline-settings-help{
+ margin:0 0 5px;padding:12px 14px;line-height:1.7;
+ font-size:14px;color:#655018;background:#fff4d5;
+ border:1px solid #efd496;border-radius:12px;
+}
+#body .inline-settings-form>label{min-width:0;}
+#body .inline-settings-form>label input[type="range"]{
+ cursor:pointer;accent-color:#c39111;padding:0;min-height:28px;
+ background:transparent;border:0;
+}
+#body .inline-settings-form .position-setting{
+ grid-column:auto;align-self:center;
+}
+#body .inline-settings-form .position-value{
+ display:block;color:#825b0b;font-size:13px;
+ background:#fff6dc;width:max-content;padding:1px 8px;border-radius:7px;
+}
+#body .inline-settings-form>footer{
+ position:sticky;bottom:0;z-index:8;
+ margin:7px -8px -8px;padding:12px;
+ background:#ffffffed;backdrop-filter:blur(8px);
+ border-top:1px solid #e2d8c7;border-radius:0 0 14px 14px;
+}
+#body .inline-settings-form>footer button{
+ min-width:180px;font-weight:800;
+ background:#FDBE2D;color:#211909;
+}
+/* Draggable badge previews. Coordinates use the same percentage origin
+   and centered badge as the actual phone welcome stage. */
+#body .label-position-preview{
+ grid-column:1/-1;position:relative;
+ width:min(100%,470px);aspect-ratio:1.55;
+ overflow:hidden;isolation:isolate;
+ background:radial-gradient(ellipse at center,#29221c,#15120f 72%);
+ border:1px solid #5b4928;border-radius:16px;
+ touch-action:none;user-select:none;
+ box-shadow:0 5px 16px #0002;
+}
+#body .label-position-preview::before{
+ content:"معاينة موضع النص • اسحب الملصق";
+ position:absolute;inset-inline-start:11px;bottom:9px;
+ color:#e0d2ac;opacity:.8;font-size:11px;
+ pointer-events:none;z-index:3;
+}
+#body .label-position-food{
+ width:86%;height:87%;position:absolute;
+ left:50%;top:50%;transform:translate(-50%,-50%);
+ object-fit:contain;pointer-events:none;user-select:none;
+ -webkit-user-drag:none;
+}
+#body .label-position-badge{
+ position:absolute;left:82%;top:28%;
+ transform:translate(-50%,-50%) rotate(5deg);
+ display:flex;flex-direction:column;align-items:center;
+ min-width:80px;max-width:42%;padding:8px 12px;
+ background:#151410;color:#FDBE2D;
+ border:1px solid #756138;border-radius:11px;
+ box-shadow:0 5px 0 #080706bd;
+ cursor:grab;touch-action:none;user-select:none;
+ z-index:4;line-height:1.3;text-align:center;
+ font:700 clamp(10px,2.7vw,15px)/1.3 system-ui,Tahoma,sans-serif;
+}
+#body .label-position-badge:active{cursor:grabbing;}
+#body .label-position-badge:focus-visible{
+ outline:3px solid #FDBE2D;outline-offset:3px;
+}
+#body .label-position-badge strong{font-weight:900;}
+#body .label-position-badge span{font-size:.88em;overflow-wrap:anywhere;}
+@media(max-width:760px){
+ #body .inline-settings-form{grid-template-columns:1fr;padding:13px;gap:12px;}
+ #body .inline-settings-form>label,
+ #body .inline-settings-form>.label-position-preview{grid-column:1;}
+ #body .inline-settings-form>h2{font-size:20px;}
+ #body .label-position-preview{width:100%;aspect-ratio:1.35;}
+}
