@@ -67,9 +67,10 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <svg class="welcome-top-wave" viewBox="0 0 390 112" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0H390V87Q195 122 0 87Z" fill="#FDBE2D"/></svg>
 
   <img id="welcome-logo" class="welcome-logo" src="/assets/logo.webp" alt="شعار مطعم سنونو">
+  <button type="button" class="language-switch welcome-language mobile-welcome-language" aria-label="Switch to English" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="language-label" lang="en">EN</span></button>
  </div>
  <div class="welcome-section-caption" dir="rtl"><span class="welcome-caption-line"></span><span>أهلاً وسهلاً</span><span class="welcome-caption-line"></span></div>
- <div class="welcome-category-strip" dir="rtl" aria-label="أصناف من سنونو"><span class="welcome-category-chip selected">وجبات سنونو</span><span class="welcome-category-chip">الشاورما</span><span class="welcome-category-chip">البرجر</span><span class="welcome-category-chip">المقبلات</span></div>
+ 
  <div class="welcome-stage" dir="ltr">
   <div class="welcome-stage-word" aria-hidden="true">SNOUNO</div>
   <div class="welcome-stage-word-ar" aria-hidden="true">سنونو</div>
@@ -91,10 +92,11 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <div class="desktop-welcome-top" aria-label="مطعم سنونو">
     <svg viewBox="0 0 1200 135" preserveAspectRatio="none" aria-hidden="true"><path fill="#FDBE2D" d="M0 0H1200V112Q600 159 0 112Z"/></svg>
     <img id="desktop-welcome-logo" src="/assets/logo.webp" alt="شعار مطعم سنونو">
+    <button type="button" class="language-switch welcome-language desktop-welcome-language" aria-label="Switch to English" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="language-label" lang="en">EN</span></button>
   </div>
   <div class="desktop-hero">
     <div class="desktop-copy">
-      <div class="desktop-category-strip" aria-label="أصناف منيو سنونو"><span class="selected">وجبات سنونو</span><span>الشاورما</span><span>البرجر</span><span>المقبلات</span></div>
+      
       <span class="desktop-section-caption"><span></span>أهلاً وسهلاً<span></span></span>
       <p class="desktop-greeting" id="desktop-welcome-greeting">أهلاً بك في</p>
       <h1><span id="desktop-welcome-brand">مطعم سنونو</span><span class="desktop-headline-accent">على مزاجك.</span></h1>
@@ -116,7 +118,7 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <footer class="desktop-welcome-footer"><span>SNOUNO RESTAURANT</span><span>استكشف القائمة من أي جهاز</span><span>01 / MENU</span></footer>
 </div>
 </section>
-<div id="inside" hidden><header><a class="brand-home" href="/welcome" data-page="welcome" aria-label="العودة إلى واجهة سنونو"><img id="logo" src="/assets/logo.webp" alt="سنونو"></a><div class="header-actions"><button id="language" type="button" aria-label="Switch to English" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="language-label" lang="en">EN</span></button><button id="theme" aria-label="تغيير مظهر المنيو">☾</button></div></header>
+<div id="inside" hidden><header><a class="brand-home" href="/welcome" data-page="welcome" aria-label="العودة إلى واجهة سنونو"><img id="logo" src="/assets/logo.webp" alt="سنونو"></a><div class="header-actions"><button id="language" class="language-switch" type="button" aria-label="Switch to English" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="language-label" lang="en">EN</span></button><button id="theme" aria-label="تغيير مظهر المنيو">☾</button></div></header>
 <section id="menu"><section id="ads" aria-label="إعلانات المطعم" hidden>
  <div class="ad-desktop-heading"><div><span class="ad-overline">SNOUNO / FEATURED</span><h2>عروض تستاهل التجربة</h2><p>اختيارات مميزة من مطعم سنونو</p></div><span class="ad-total" id="ad-total" dir="ltr">01 / 03</span></div>
  <div class="ad-showcase">
