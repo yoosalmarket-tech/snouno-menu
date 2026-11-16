@@ -736,3 +736,29 @@
   font:700 12px/1.35 Snouno,Tahoma,sans-serif;
  }
 }
+
+
+/* Desktop hero uses the identical transparent food presentation and steam recipe.
+   The gear outline remains as an accent, not a colored food background. */
+@media(min-width:981px){
+ body:not([data-preview]) #welcome #desktop-welcome-hero.is-menu-meal{
+  background:transparent!important;border:0!important;border-radius:0!important;
+  box-shadow:none!important;object-fit:contain!important;
+  filter:drop-shadow(0 23px 28px #0008);
+ }
+ body:not([data-preview]) #welcome .desktop-visual-circle{
+  background:transparent!important;box-shadow:none!important;
+ }
+ body:not([data-preview]) #welcome .desktop-smoke{
+  top:27%;left:50%;opacity:.45;filter:blur(3.5px);
+ }
+ body:not([data-preview]) #welcome .desktop-welcome-top svg:not(.desktop-curve-shadow){
+  z-index:1;filter:none!important;
+ }
+ body:not([data-preview]) #welcome .desktop-welcome-top svg.desktop-curve-shadow{
+  z-index:0;filter:none!important;
+ }
+ body:not([data-preview]) #welcome .desktop-welcome-top img{
+  z-index:2;
+ }
+}
