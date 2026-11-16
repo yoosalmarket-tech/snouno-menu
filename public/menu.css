@@ -374,3 +374,21 @@ html.loader-morphing #welcome .desktop-welcome-top img{visibility:hidden;}
  #ads #ad-track{width:100%;min-width:0;}
  #ads #ad-dots{position:relative;z-index:2;}
 }
+
+
+/* Compact globe/EN↔AR language switch; uses selected light/dark theme. */
+#inside>header .header-actions #language{
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ width:auto;min-width:79px;height:40px;padding:0 12px;
+ border:1px solid var(--line);border-radius:22px;
+ background:var(--surface);color:var(--ink);
+ box-shadow:0 2px 7px #00000015;
+ font:850 13px/1 system-ui,Tahoma,sans-serif;
+}
+#inside>header #language svg{
+ width:18px;height:18px;flex:none;
+ fill:none;stroke:#b48722;stroke-width:1.7;
+ stroke-linecap:round;stroke-linejoin:round;
+}
+#inside>header #language .language-label{font-size:12px;letter-spacing:.06em;}
+#inside>header #language:hover{border-color:#b98d24;box-shadow:0 2px 11px #0002;}
