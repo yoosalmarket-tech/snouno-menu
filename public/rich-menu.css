@@ -676,3 +676,25 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
   top:clamp(140px,29svh,300px)!important;
   right:clamp(12px,2.6vw,30px)!important;
 }
+
+/* Raise the meal preview and viewport-anchored sidebar together.
+   Move only the anchored food cards, their shadow, and the sidebar;
+   never translate the 3D scene or its parent (preserves swipe physics). */
+#rich-menu .rm-app{
+  --rm-preview-rise:clamp(26px,4svh,40px);
+}
+#rich-menu .rm-dish{
+  bottom:calc(11% + var(--rm-preview-rise))!important;
+}
+#rich-menu .rm-shadow{
+  bottom:calc(9% + var(--rm-preview-rise))!important;
+}
+#rich-menu .rm-app > .rm-thumbs{
+  top:calc(clamp(140px,29%,300px) - var(--rm-preview-rise))!important;
+}
+body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
+  top:calc(clamp(140px,29svh,300px) - var(--rm-preview-rise))!important;
+}
+@media(max-height:660px){
+  #rich-menu .rm-app{--rm-preview-rise:20px;}
+}
