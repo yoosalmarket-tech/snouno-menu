@@ -75,3 +75,21 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
  .dish-sort-card{gap:8px;}
  .dish-sort-card>.dish-drag-handle{width:45px;height:47px;}
 }
+
+
+/* Reliable hold-and-drop ordering; the dragged card remains in the DOM until release. */
+.is-sorting,.is-sorting *{cursor:grabbing!important;}
+.dish-sort-card.is-dragging{
+ opacity:.67!important;outline:2px solid #FDBE2D;outline-offset:2px;
+ box-shadow:0 10px 28px #0002!important;
+}
+.dish-sort-card.sort-drop-before{box-shadow:inset 0 5px 0 #FDBE2D!important;}
+.dish-sort-card.sort-drop-after{box-shadow:inset 0 -5px 0 #FDBE2D!important;}
+.dish-drag-handle{
+ touch-action:none!important;
+ -webkit-user-select:none!important;
+ user-select:none!important;
+ -webkit-touch-callout:none!important;
+ cursor:grab!important;
+}
+.dish-sort-hint{max-width:760px;}
