@@ -447,3 +447,17 @@ body.rich-menu-active:not([data-preview]) #shell{
   pointer-events:none!important;
   text-align:center!important;
 }
+
+
+/* Per-dish user-controlled interactive label position.
+   77% across and 36% down is a starting point, not a permanent lock. */
+#rich-menu .rm-dish-badge{
+ left:var(--rich-badge-x,77%)!important;
+ top:var(--rich-badge-y,36%)!important;
+ right:auto!important;
+ bottom:auto!important;
+ transform:translate(-50%,-50%) rotate(-3deg)!important;
+ max-width:76%!important;
+ z-index:9!important;
+ pointer-events:none!important;
+}
