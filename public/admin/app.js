@@ -248,8 +248,12 @@ function setupFlatSorting(key,rows){
  wireSortableList(container,'article[data-sort-id]',save,()=>!saving);
 }
 async function openSection(key){
+ if(['menu_staff','account'].includes(key)&&role!=='owner'){
+  notice('هذه الصفحة متاحة للمالك فقط');return;
+ }
  const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); $('body').replaceChildren(); $('title').textContent=sections[key][0];
  for(const b of $('tabs').children)b.setAttribute('aria-current',String(b.dataset.section===key));
+ if(key==='account'){await renderOwnerAccount();return;}
  const feedback=['rankings','submissions'].includes(key);
  const table=feedback?'menu_feedback':key;
  const condition=feedback?'&kind='+ (key==='rankings'?'eq.':'neq.') +encodeURIComponent('تقييم'):'';
