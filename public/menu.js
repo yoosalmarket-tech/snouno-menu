@@ -860,16 +860,51 @@ async function revealPage(){
    const contentHeight=Math.max(1,finish.height-padT-padB-by-measure('border-bottom-width'));
    const naturalRatio=destination.naturalWidth&&destination.naturalHeight
      ?destination.naturalWidth/destination.naturalHeight:start.width/start.height;
-   // Match the artwork visible inside the object-fit:contain logo box, rather
-   // than the image element's outer padding/border box.
    const imageWidth=Math.min(contentWidth,contentHeight*naturalRatio);
    const imageHeight=imageWidth/naturalRatio;
-   const endCenterX=finish.left+bx+padL+contentWidth/2;
-   const endCenterY=finish.top+by+padT+contentHeight/2;
+   // The image contains transparent padding: the painted Snouno logo occupies
+   // only ~77% of the WebP width and ~64% of its height. Comparing outer
+   // element boxes made the handoff appear to SHRINK at the final frame.
+   let alpha={left:0,top:0,right:1,bottom:1};
+   try{
+     const w=Math.min(destination.naturalWidth,600);
+     const h=Math.max(1,Math.round(w/destination.naturalWidth*destination.naturalHeight));
+     const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+     const ctx=canvas.getContext('2d',{willReadFrequently:true});
+     ctx.drawImage(destination,0,0,w,h);
+     const data=ctx.getImageData(0,0,w,h).data;
+     let left=w,top=h,right=0,bottom=0;
+     for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+       if(data[(y*w+x)*4+3]>24){
+         left=Math.min(left,x);top=Math.min(top,y);
+         right=Math.max(right,x+1);bottom=Math.max(bottom,y+1);
+       }
+     }
+     if(right>left&&bottom>top)
+       alpha={left:left/w,top:top/h,right:right/w,bottom:bottom/h};
+   }catch{ /* Cross-origin custom logos: fall back to the complete image box. */ }
+   const view=drawnLogo.viewBox.baseVal;
+   let art;
+   try{art=drawnLogo.getBBox();}catch{art=null;}
+   const svgBounds=art?.width&&art?.height?art:
+     {x:view.x,y:view.y,width:view.width,height:view.height};
+   const svgVisibleWidth=start.width*svgBounds.width/view.width;
+   const svgVisibleHeight=start.height*svgBounds.height/view.height;
+   const targetVisibleWidth=imageWidth*(alpha.right-alpha.left);
+   const targetVisibleHeight=imageHeight*(alpha.bottom-alpha.top);
    const startCenterX=start.left+start.width/2;
    const startCenterY=start.top+start.height/2;
-   const scale=Math.min(imageWidth/start.width,imageHeight/start.height);
-   const deltaX=endCenterX-startCenterX,deltaY=endCenterY-startCenterY;
+   const svgArtCenterX=start.left+start.width*(svgBounds.x-view.x+svgBounds.width/2)/view.width;
+   const svgArtCenterY=start.top+start.height*(svgBounds.y-view.y+svgBounds.height/2)/view.height;
+   const targetArtCenterX=finish.left+bx+padL+(contentWidth-imageWidth)/2+
+      imageWidth*(alpha.left+alpha.right)/2;
+   const targetArtCenterY=finish.top+by+padT+(contentHeight-imageHeight)/2+
+      imageHeight*(alpha.top+alpha.bottom)/2;
+   const scale=Math.min(targetVisibleWidth/svgVisibleWidth,targetVisibleHeight/svgVisibleHeight);
+   // Transform origin is element center, so compensate for the painted art's
+   // own offset within the SVG viewBox when setting the final translation.
+   const deltaX=targetArtCenterX-startCenterX-(svgArtCenterX-startCenterX)*scale;
+   const deltaY=targetArtCenterY-startCenterY-(svgArtCenterY-startCenterY)*scale;
    const duration=2100,easing='cubic-bezier(.19,.84,.16,1)';
    const endHeaderHeight=header.getBoundingClientRect().height;
    // Keep the SAME already-drawn SVG logo visible throughout the travel.
