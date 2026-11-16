@@ -124,7 +124,7 @@ function transparentWelcomeFood(src){
     const enqueue=(p)=>{
       if(visited[p])return;
       visited[p]=1;
-      if(matches(p))queue[back++]=p;
+      if(matches(p)){visited[p]=2;queue[back++]=p;}
     };
     for(let x=0;x<w;x++){enqueue(x);enqueue((h-1)*w+x);}
     for(let y=0;y<h;y++){enqueue(y*w);enqueue(y*w+w-1);}
@@ -142,7 +142,7 @@ function transparentWelcomeFood(src){
     for(let i=0;i<back;i++){
       const p=queue[i],x=p%w,y=Math.floor(p/w);
       const near=[x>0?p-1:-1,x+1<w?p+1:-1,y>0?p-w:-1,y+1<h?p+w:-1];
-      for(const n of near){if(n>=0&&!visited[n]){
+      for(const n of near){if(n>=0&&visited[n]!==2){
          const a=n*4+3;arr[a]=Math.min(arr[a],208);
       }}
     }
@@ -940,8 +940,16 @@ async function revealPage(){
      transition:'none',
      transform:'translate('+logoStart.left+'px,'+logoStart.top+'px)'
    });
+   const loader=$('page-loader');
+   const originalHeight=loader.getBoundingClientRect().height;
    shell.classList.add('loader-morphing');
    shell.classList.remove('loading');
+   // Explicit animation makes the yellow canvas and its curve animate even if
+   // the page switches from loading to morphing in the same animation frame.
+   const shapeMovement=loader.animate([
+     {height:originalHeight+'px',borderRadius:'0px'},
+     {height:header.getBoundingClientRect().height+'px',borderRadius:'0 0 50% 50% / 0 0 19% 19%'}
+   ],{duration,easing:'cubic-bezier(.19,.82,.16,1)',fill:'forwards'});
    const movement=logoSvg.animate([
      {transform:'translate('+logoStart.left+'px,'+logoStart.top+'px) scale(1)'},
      {transform:'translate('+endX+'px,'+endY+'px) scale('+scale+')'}
@@ -949,6 +957,7 @@ async function revealPage(){
    const shadowTimer=setTimeout(()=>shell.classList.add('loader-shadow-intro'),duration-620);
    await Promise.allSettled([
      movement.finished,
+     shapeMovement.finished,
      new Promise(resolve=>setTimeout(resolve,duration+20))
    ]);
    clearTimeout(shadowTimer);
@@ -960,6 +969,7 @@ async function revealPage(){
    shell.classList.remove('loader-finishing','loader-shadow-intro');
    shell.style.removeProperty('--loader-header-height');
    movement.cancel();
+   shapeMovement.cancel();
    return;
   }
  }
