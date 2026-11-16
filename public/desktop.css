@@ -934,3 +934,68 @@
  body:not([data-preview]) #desktop-welcome-hero.wheel-exit,
  body:not([data-preview]) #desktop-welcome-hero.wheel-enter{animation:none!important;}
 }
+
+
+/* Final desktop welcome and ad dimensions: preserve content without padding gaps. */
+@media(min-width:981px){
+ body:not([data-preview]) #welcome .desktop-welcome-top img{
+  margin-top:clamp(19px,2.4svh,28px)!important;
+ }
+ body:not([data-preview]) #welcome .desktop-visual-glow{
+  inset:0 -23% -5% -23%!important;
+  background:radial-gradient(ellipse at 50% 54%,
+   rgba(253,190,45,.27) 0%,
+   rgba(253,190,45,.19) 20%,
+   rgba(253,190,45,.095) 38%,
+   rgba(253,190,45,.028) 61%,
+   transparent 86%)!important;
+  filter:blur(52px)!important;
+  opacity:.95;
+ }
+ body:not([data-preview]) #welcome .desktop-visual-label{display:none!important;}
+ body:not([data-preview]) #welcome #desktop-welcome-hero.is-menu-meal{
+  width:min(105%,850px)!important;
+  height:min(74svh,790px)!important;
+  max-height:74svh!important;
+  object-fit:contain!important;
+ }
+ body:not([data-preview]) #welcome .desktop-sticker{
+  right:11%!important;bottom:22%!important;
+  padding:9px 14px;font-size:13px;gap:2px;
+ }
+ body:not([data-preview]) #welcome .desktop-sticker strong{font-size:18px;}
+ body:not([data-preview]) #welcome .desktop-sticker #desktop-meal-prefix{
+  font-size:12px;font-weight:750;
+ }
+ body:not([data-preview]) #ads{max-width:930px!important;}
+ body:not([data-preview]) #ads .ad-showcase{
+  height:auto!important;max-height:none!important;
+  grid-template-columns:minmax(0,1fr) 135px!important;align-items:stretch;
+ }
+ body:not([data-preview]) #ads .ad-main{
+  height:auto!important;min-height:0!important;
+  aspect-ratio:1080 / 285;
+  border-radius:18px!important;
+  overflow:hidden!important;
+ }
+ body:not([data-preview]) #ads #ad-track,
+ body:not([data-preview]) #ads .ad-product{
+  height:100%!important;min-height:0!important;
+  border-radius:18px!important;overflow:hidden!important;
+ }
+ body:not([data-preview]) #ads .ad-product img{
+  width:100%!important;height:100%!important;
+  aspect-ratio:1080 / 285!important;
+  object-fit:cover!important;object-position:center!important;
+  border-radius:18px!important;
+ }
+ body:not([data-preview]) #ads .ad-desktop-side{
+  height:auto!important;min-height:0!important;
+ }
+}
+@media(min-width:981px) and (max-height:700px){
+ body:not([data-preview]) #welcome #desktop-welcome-hero.is-menu-meal{
+   height:min(67svh,560px)!important;max-height:67svh!important;
+ }
+ body:not([data-preview]) #welcome .desktop-sticker{bottom:14%!important;}
+}
