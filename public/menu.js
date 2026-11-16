@@ -140,6 +140,7 @@ function updateWelcomeLabels(index){
 function resetWelcomeImages(){
  const current=mobileWelcomeIndex;
  const image=$('cover-photo'),next=$('cover-next');
+ $('welcome').removeAttribute('data-meal-direction');
  image.classList.remove('mobile-food-out','mobile-food-in');
  next.classList.remove('is-visible','mobile-food-in');
  setWelcomeImage(image,current);
@@ -156,13 +157,14 @@ function stopWelcomeCarousel(){
 function scheduleWelcomeCarousel(){
  clearTimeout(welcomeCarouselTimer);
  if(!welcomeVisible()||!welcomeCarouselActive)return;
- welcomeCarouselTimer=setTimeout(()=>goToWelcomeMeal((mobileWelcomeIndex+1)%3),welcomeAutoplayMs);
+ welcomeCarouselTimer=setTimeout(()=>goToWelcomeMeal((mobileWelcomeIndex+1)%3,'right'),welcomeAutoplayMs);
 }
-function goToWelcomeMeal(index){
+function goToWelcomeMeal(index,direction='right'){
  index=(index+3)%3;
  if(welcomeCarouselAnimating||!welcomeVisible()||index===mobileWelcomeIndex)return;
  clearTimeout(welcomeCarouselTimer);
- const old=mobileWelcomeIndex,session=welcomeCarouselSession;
+ const session=welcomeCarouselSession;
+ $('welcome').dataset.mealDirection=direction==='left'?'left':'right';
  const current=$('cover-photo'),next=$('cover-next');
 
  welcomeCarouselAnimating=true;
@@ -208,7 +210,9 @@ function startMobileWelcomeCycle(){startWelcomeCarousel()}
 function stopDesktopMealWheel(){stopWelcomeCarousel()}
 function startDesktopMealWheel(){startWelcomeCarousel()}
 document.querySelectorAll('.welcome-stage-rail button').forEach((dot,i)=>{
- dot.onclick=()=>{if(welcomeCarouselAnimating)return;goToWelcomeMeal(i)};
+ dot.onclick=()=>{if(welcomeCarouselAnimating)return;
+  const previous=(mobileWelcomeIndex+welcomeMobileMeals.length-1)%welcomeMobileMeals.length;
+  goToWelcomeMeal(i,i===previous?'left':'right');};
 });
 const stage=$('welcome');
 stage.addEventListener('wheel',event=>{
@@ -216,14 +220,17 @@ stage.addEventListener('wheel',event=>{
  if(Math.abs(event.deltaX)+Math.abs(event.deltaY)<7)return;
  if(!event.target.closest('.welcome-stage,.desktop-visual'))return;
  event.preventDefault();
- goToWelcomeMeal((mobileWelcomeIndex+(event.deltaX+event.deltaY>0?1:2))%3);
+ const forward=event.deltaX+event.deltaY>0;
+ goToWelcomeMeal((mobileWelcomeIndex+(forward?1:2))%3,forward?'right':'left');
 },{passive:false});
 let welcomeSwipeX=null,welcomeSwipeY=null,lastWelcomeSwipe=0;
 function handleWelcomeSwipe(dx,dy){
  if(!welcomeVisible()||welcomeCarouselAnimating||Date.now()-lastWelcomeSwipe<450)return;
  if(Math.abs(dx)<38||Math.abs(dx)<=Math.abs(dy)*1.15)return;
  lastWelcomeSwipe=Date.now();
- goToWelcomeMeal((mobileWelcomeIndex+(dx<0?1:2))%3);
+ // Left: move the food left and reveal the previous meal from the right.
+ // Right: move the food right and reveal the next meal from the left.
+ goToWelcomeMeal((mobileWelcomeIndex+(dx<0?2:1))%3,dx<0?'left':'right');
 }
 stage.addEventListener('pointerdown',event=>{
  if(!welcomeVisible()||!event.target.closest('.welcome-stage'))return;
