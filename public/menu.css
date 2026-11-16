@@ -717,3 +717,18 @@ html.loader-morphing #welcome .desktop-curve-shadow{
   animation:none!important;
  }
 }
+
+
+/* Native drag on <img> used to emit pointercancel before a phone swipe ended.
+   Keep touch input on the stage, with the meal purely decorative for events. */
+@media(max-width:980px){
+ #welcome .welcome-food,
+ #welcome #cover-photo,
+ #welcome #cover-next{
+  pointer-events:none!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+  -webkit-user-drag:none!important;
+ }
+ #welcome .welcome-stage{touch-action:pan-y!important;}
+}
