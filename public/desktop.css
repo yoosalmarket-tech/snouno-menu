@@ -241,3 +241,9 @@
   body:not([data-preview]) #desktop-welcome-hero.wheel-enter{animation:none;}
   body:not([data-preview]) .desktop-welcome-dock a{transition:none;}
 }
+
+
+/* Give the fixed bottom desktop navigation enough breathing room below the footer. */
+@media(min-width:981px){
+  body:not([data-preview]) #inside{padding-bottom:95px;}
+}
