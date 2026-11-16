@@ -70,6 +70,12 @@ async function syncRichMode(){
   if(version!==richRevision||!richDesired||currentPage()!=='menu')return;
   richController=module.createRichMenu({
    host:target,getData:richData,onOpen:detail,
+   onExit:()=>{
+    richDesired=false;
+    richToggle.checked=false;
+    localStorage.setItem('snouno-rich-mode','0');
+    void syncRichMode();
+   },
    onFavorite:meal=>{
     if(favorites.has(meal.id))favorites.delete(meal.id);else favorites.add(meal.id);
     localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));
