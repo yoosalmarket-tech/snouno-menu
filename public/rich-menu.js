@@ -217,8 +217,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  async function changeGroup(index){
   if(swapping||destroyed||index<0||index>=groups.length||index===groupIndex)return;
   swapping=true;const serial=++swapToken,direction=index>groupIndex?1:-1;
-  root.style.setProperty('--rm-shift-out',direction*115+'px');
-  root.style.setProperty('--rm-shift-in',-direction*125+'px');
+  root.style.setProperty('--rm-shift-out',-direction*115+'px');
+  root.style.setProperty('--rm-shift-in',direction*125+'px');
   root.classList.remove('rm-category-in');root.classList.add('rm-category-out');
   await new Promise(r=>setTimeout(r,reduced.matches?0:220));
   if(serial!==swapToken||destroyed)return;
@@ -258,7 +258,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   if(p.axis==='y')goTo(Math.round(k+velocity*7));
   else if(p.axis==='x'){
    const delta=event.clientX-p.x;
-   if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?-1:1));
+   if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?1:-1));
   }else if(p.index!=null){
    if(p.index===front&&Math.abs(k-p.index)<.3){if(dish())onOpen(dish());}
    else goTo(p.index);
