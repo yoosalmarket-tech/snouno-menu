@@ -136,3 +136,43 @@ body[data-preview] *{animation:none!important;transition:none!important}
  #ad-dots button::after{transition:none}
  #ad-dots button[aria-pressed=true]::after{background:#ffc21a}
 }
+
+
+/* Snouno welcome — Hungry Buten-inspired mobile food showcase */
+#welcome{--welcome-yellow:#FDBE2D;position:relative;display:flex;flex-direction:column;min-height:100svh;height:100svh;max-height:1050px;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse 110% 62% at 50% 54%,#332818 0%,#191714 53%,#100f0d 100%);color:#fff;text-align:center;}
+#welcome .welcome-top{position:relative;flex:none;height:clamp(118px,19svh,165px);z-index:4;}
+#welcome .welcome-top-wave{position:absolute;inset:0;width:100%;height:100%;display:block;filter:drop-shadow(0 7px 0 #b78213);}
+#welcome .welcome-top-caption{position:absolute;top:calc(env(safe-area-inset-top) + 14px);left:21px;right:21px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#17130c;font:900 12px/1.2 system-ui,sans-serif;letter-spacing:.25em;}
+#welcome .welcome-logo{position:absolute;z-index:2;top:calc(env(safe-area-inset-top) + 23px);left:50%;transform:translateX(-50%);width:auto;max-width:min(54%,205px);height:clamp(60px,10svh,93px);object-fit:contain;filter:drop-shadow(0 3px 0 rgba(53,37,8,.16));}
+#welcome .welcome-section-caption{flex:none;display:flex;align-items:center;justify-content:center;gap:13px;padding:clamp(10px,1.8svh,17px) 12px 8px;color:#e6d6a7;font-size:12px;letter-spacing:.05em;font-weight:700;}
+#welcome .welcome-caption-line{width:36px;height:1px;background:linear-gradient(90deg,transparent,#a88939);}
+#welcome .welcome-caption-line:last-child{transform:rotate(180deg);}
+#welcome .welcome-category-strip{display:flex;flex:none;gap:8px;overflow-x:auto;scrollbar-width:none;white-space:nowrap;padding:4px 16px 11px;justify-content:safe center;scroll-padding-inline:16px;}
+#welcome .welcome-category-strip::-webkit-scrollbar{display:none}
+#welcome .welcome-category-chip{flex:none;display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:4px 14px;background:#28251f;border:1px solid #524837;color:#e8decd;border-radius:11px;box-shadow:inset 0 1px 0 #ffffff13;font-size:12px;font-weight:700;}
+#welcome .welcome-category-chip.selected{background:var(--welcome-yellow);border-color:var(--welcome-yellow);color:#15130d;box-shadow:0 3px 0 #9d7117;}
+#welcome .welcome-stage{position:relative;flex:1 1 auto;min-height:155px;max-height:480px;width:100%;overflow:visible;}
+#welcome .welcome-stage-word{position:absolute;z-index:0;left:0;right:0;top:2%;text-align:center;font:1000 clamp(52px,17.2vw,94px)/1 system-ui,sans-serif;letter-spacing:-.085em;color:#423724;white-space:nowrap;pointer-events:none;}
+#welcome .welcome-stage-word-ar{position:absolute;z-index:0;left:0;right:0;bottom:12%;font-size:clamp(56px,19vw,112px);font-weight:900;letter-spacing:-.055em;color:#3c3223;opacity:.75;white-space:nowrap;pointer-events:none;}
+#welcome .welcome-stage-halo{position:absolute;left:50%;top:44%;width:min(92%,460px);height:min(92%,400px);transform:translate(-50%,-50%);background:radial-gradient(ellipse,#b58b3638 0%,#98722623 33%,transparent 68%);pointer-events:none;}
+#welcome .welcome-food{position:absolute;z-index:2;left:50%;top:46%;width:min(88%,415px);height:94%;max-height:395px;object-fit:contain;transform:translate(-50%,-50%);filter:drop-shadow(0 18px 20px #000b);animation:snouno-food-rise 1s cubic-bezier(.17,.79,.2,1) both;}
+#welcome .welcome-food-shadow{position:absolute;z-index:1;left:50%;bottom:4%;width:68%;height:30px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse,#080706b8 10%,transparent 72%);filter:blur(6px);}
+#welcome .welcome-food-badge{position:absolute;z-index:3;right:5%;top:10%;transform:rotate(7deg);display:flex;flex-direction:column;gap:2px;align-items:center;padding:8px 15px;background:#151410;color:var(--welcome-yellow);border:1px solid #635232;border-radius:10px;box-shadow:0 5px 0 #090806bd;font-size:11px;line-height:1.25;}
+#welcome .welcome-food-badge strong{font-size:14px;}
+#welcome .welcome-stage-rail{position:absolute;z-index:3;top:39%;left:15px;display:grid;gap:8px;padding:10px 8px;border:1px solid #72604275;border-radius:20px;background:#221f19d9;}
+#welcome .welcome-stage-rail span{height:6px;width:6px;border-radius:50%;background:#7e766b;}
+#welcome .welcome-stage-rail span.active{height:17px;border-radius:4px;background:var(--welcome-yellow);}
+#welcome .welcome-bottom{position:relative;z-index:4;display:flex;flex-direction:column;flex:none;align-items:center;gap:4px;padding:8px 20px max(22px,env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,#100f0d 24%);}
+#welcome .welcome-greeting{font-size:clamp(15px,4.3vw,19px);font-weight:600;color:#e4d7b9;}
+#welcome #brand{margin:0;color:var(--welcome-yellow);font-size:clamp(30px,9.6vw,49px);font-weight:900;line-height:1.3;}
+#welcome .welcome-subtitle{margin:1px 0 12px;font-size:13px;color:#cac1b2;}
+#welcome .welcome-controls{width:100%;max-width:380px;display:grid;justify-items:stretch;gap:7px;text-align:center;}
+#welcome .browse{position:relative;width:100%;min-width:0;min-height:57px;display:flex;align-items:center;justify-content:center;padding:10px 20px;background:var(--welcome-yellow);color:#17130c;border:1px solid #ffde82;border-bottom:4px solid #aa7a11;border-radius:15px;box-shadow:0 8px 22px #0007;font-size:21px;line-height:1.2;font-weight:900;text-decoration:none;transition:transform .2s,box-shadow .2s;}
+#welcome .browse:hover{transform:translateY(-2px);box-shadow:0 10px 24px #0009;}
+#welcome .browse:active{transform:translateY(3px);border-bottom-width:1px;}
+#welcome .welcome-browse-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);font:900 25px/1 system-ui;}
+#welcome #quick{color:#d6c9ad;font:600 12px/1.4 system-ui,Tahoma,sans-serif;min-height:12px;}
+@keyframes snouno-food-rise{from{opacity:0;transform:translate(-50%,-39%) scale(.82);filter:drop-shadow(0 6px 10px #0006)}to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:drop-shadow(0 18px 20px #000b)}}
+@media(max-height:710px){#welcome .welcome-top{height:112px}#welcome .welcome-section-caption{padding:4px 10px 5px}#welcome .welcome-category-strip{padding-bottom:5px}#welcome .welcome-category-chip{min-height:28px}#welcome .welcome-food-badge{top:5%}#welcome .welcome-bottom{padding-top:0;padding-bottom:max(11px,env(safe-area-inset-bottom))}#welcome .welcome-subtitle{margin-bottom:4px}#welcome .browse{min-height:48px}}
+@media(max-width:360px){#welcome .welcome-category-strip{justify-content:flex-start}#welcome .welcome-food-badge{right:2%;padding:5px 9px}#welcome .welcome-top-caption{font-size:10px}}
+@media(prefers-reduced-motion:reduce){#welcome .welcome-food{animation:none}}
