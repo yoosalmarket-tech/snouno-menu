@@ -784,71 +784,110 @@ async function revealPage(){
  const root=document.documentElement;
  if(!root.classList.contains('loading'))return;
  const welcome=currentPage()==='welcome';
- if(welcome){
-  await Promise.allSettled([
-    $('cover-photo').decode(),$('desktop-welcome-hero').decode(),
-    $('welcome-logo').decode(),$('desktop-welcome-logo').decode()
-  ]);
- }
+ await Promise.allSettled([
+  $('welcome-logo').decode(),$('desktop-welcome-logo').decode(),
+  $('cover-photo').decode()
+ ]);
  await document.fonts.ready;
  if(!root.classList.contains('loading'))return;
- const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  if(!reduced){
-  const drawings=$('page-loader').getAnimations({subtree:true});
-  for(const draw of drawings)draw.playbackRate=2;
-  await Promise.allSettled(drawings.map(draw=>draw.finished));
+  const drawing=$('page-loader').getAnimations({subtree:true});
+  for(const animation of drawing)animation.playbackRate=2;
+  await Promise.allSettled(drawing.map(animation=>animation.finished));
  }
  if(welcome&&!reduced){
   const mobile=matchMedia('(max-width:980px)').matches;
   const header=document.querySelector(mobile?'.welcome-top':'.desktop-welcome-top');
   const target=$(mobile?'welcome-logo':'desktop-welcome-logo');
   const loader=$('page-loader');
-  const original=loader.querySelector('svg');
-  if(header&&target&&original){
-   const start=original.getBoundingClientRect(),finish=target.getBoundingClientRect();
+  const tracedLogo=loader.querySelector('svg');
+  const finalWave=mobile?header?.querySelector('.welcome-top-wave'):
+    header?.querySelector('svg:not(.desktop-curve-shadow)');
+  if(header&&target&&tracedLogo&&finalWave){
+   const start=tracedLogo.getBoundingClientRect();
+   const end=target.getBoundingClientRect();
+   const headerHeight=header.getBoundingClientRect().height;
    const duration=2100,easing='cubic-bezier(.19,.84,.16,1)';
    const traveling=target.cloneNode(false);
    traveling.removeAttribute('id');
    traveling.alt='';traveling.setAttribute('aria-hidden','true');
    traveling.className='traveling-welcome-logo';
    Object.assign(traveling.style,{
-    position:'fixed',left:start.left+'px',top:start.top+'px',
-    width:start.width+'px',height:start.height+'px',
-    objectFit:'contain',maxWidth:'none',
-    padding:'0',margin:'0',border:'0',background:'transparent',
-    filter:'brightness(0)',zIndex:'1002',pointerEvents:'none'
+    position:'fixed',left:end.left+'px',top:end.top+'px',
+    width:end.width+'px',height:end.height+'px',maxWidth:'none',
+    objectFit:'contain',objectPosition:'center',margin:'0',padding:'0',
+    border:'0',background:'transparent',filter:'brightness(0)',
+    zIndex:'1002',pointerEvents:'none',transformOrigin:'center center'
    });
    document.body.append(traveling);
-   original.style.visibility='hidden';
-   root.style.setProperty('--loader-header-height',Math.ceil(header.getBoundingClientRect().height)+'px');
+   const fromCenterX=start.left+start.width/2;
+   const fromCenterY=start.top+start.height/2;
+   const toCenterX=end.left+end.width/2;
+   const toCenterY=end.top+end.height/2;
+   const startScale=Math.max(1,start.width/end.width);
+   const fromTransform='translate('+(fromCenterX-toCenterX)+'px,'+(fromCenterY-toCenterY)+'px) scale('+startScale+')';
+   const toTransform='translate(0px,0px) scale(1)';
+   traveling.style.transform=fromTransform;
+   const yellowWave=finalWave.cloneNode(true);
+   yellowWave.classList.add('loader-curve');
+   yellowWave.removeAttribute('aria-hidden');
+   Object.assign(yellowWave.style,{
+    position:'absolute',inset:'0',width:'100%',height:'100%',
+    display:'block',zIndex:'0',pointerEvents:'none',filter:'none'
+   });
+   const shape=yellowWave.querySelector('path');
+   const width=mobile?390:1200,fullHeight=mobile?112:135;
+   const endEdge=mobile?87:112,endControl=mobile?122:159;
+   const finalPath=shape.getAttribute('d');
+   shape.setAttribute('d',`M0 0H${width}V${fullHeight}Q${width/2} ${fullHeight} 0 ${fullHeight}Z`);
+   loader.append(yellowWave);
+   target.style.visibility='hidden';
+   tracedLogo.style.visibility='hidden';
+   loader.style.background='transparent';
+   loader.style.transition='none';
+   loader.style.borderRadius='0';
+   loader.style.height=window.innerHeight+'px';
    root.classList.add('loader-morphing');
    root.classList.remove('loading');
-   const curve=loader.animate([
-    {height:window.innerHeight+'px',borderRadius:'0'},
-    {height:header.getBoundingClientRect().height+'px',
-      borderRadius:'0 0 50% 50% / 0 0 19% 19%'}
+   const fly=traveling.animate([
+     {transform:fromTransform},
+     {transform:toTransform}
    ],{duration,easing,fill:'forwards'});
-   const travel=traveling.animate([
-    {left:start.left+'px',top:start.top+'px',width:start.width+'px',height:start.height+'px'},
-    {left:finish.left+'px',top:finish.top+'px',width:finish.width+'px',height:finish.height+'px'}
+   const fold=loader.animate([
+     {height:window.innerHeight+'px'},
+     {height:headerHeight+'px'}
    ],{duration,easing,fill:'forwards'});
-   const shadowTimer=setTimeout(()=>root.classList.add('loader-shadow-intro'),duration-620);
-   await Promise.allSettled([curve.finished,travel.finished]);
-   clearTimeout(shadowTimer);
-   // Exact same image, box and position: exchange copies without a second scale.
+   let pathFrame=0;
+   const launched=performance.now();
+   const adjustPath=now=>{
+     const t=Math.min(1,(now-launched)/duration);
+     // Ease the arch in, from a rectangular loading canvas to the precise
+     // SVG curve already used by the welcome header.
+     const eased=1-Math.pow(1-t,3);
+     const edge=fullHeight+(endEdge-fullHeight)*eased;
+     const control=fullHeight+(endControl-fullHeight)*eased;
+     shape.setAttribute('d',`M0 0H${width}V${edge}Q${width/2} ${control} 0 ${edge}Z`);
+     if(t<1)pathFrame=requestAnimationFrame(adjustPath);
+   };
+   pathFrame=requestAnimationFrame(adjustPath);
+   await Promise.allSettled([fly.finished,fold.finished]);
+   cancelAnimationFrame(pathFrame);
+   shape.setAttribute('d',finalPath);
+   // The moving image is already identical in size and position to the
+   // welcome image. Cut layers in one frame: no loader opacity fade.
    root.classList.remove('loader-morphing');
-   root.classList.add('loader-finishing');
-   target.style.visibility='visible';
-   traveling.remove();
-   await new Promise(resolve=>setTimeout(resolve,330));
-   root.classList.remove('loader-finishing','loader-shadow-intro');
-   root.style.removeProperty('--loader-header-height');
-   original.style.removeProperty('visibility');
+   root.classList.add('loader-complete');
    target.style.removeProperty('visibility');
-   curve.cancel();travel.cancel();
+   loader.style.display='none';
+   traveling.remove();
+   fly.cancel();fold.cancel();
+   root.style.removeProperty('--loader-header-height');
    return;
   }
  }
  root.classList.remove('loading');
+ root.classList.add('loader-complete');
+ $('page-loader').style.display='none';
 }
 load().finally(revealPage);
