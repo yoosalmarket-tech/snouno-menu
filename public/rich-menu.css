@@ -626,3 +626,31 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-stage-wrap{
   touch-action:none;
   transition:none!important;
 }
+
+/* Raised information backdrop without shrinking the food stage.
+   The faded upper edge overlaps the scene visually, but does not intercept
+   swipes or change the meal images' available animation space. */
+#rich-menu .rm-info{
+  isolation:isolate;
+  --rm-info-backdrop-rise:clamp(28px,4.5svh,44px);
+}
+#rich-menu .rm-info::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  pointer-events:none;
+  top:calc(-1 * var(--rm-info-backdrop-rise));
+  bottom:0;
+  left:50%;
+  width:100vw;
+  transform:translateX(-50%);
+  background:linear-gradient(
+    to bottom,
+    rgba(38,38,38,0) 0,
+    #262626 var(--rm-info-backdrop-rise),
+    #262626 100%
+  );
+}
+@media(max-height:660px){
+  #rich-menu .rm-info{--rm-info-backdrop-rise:24px;}
+}
