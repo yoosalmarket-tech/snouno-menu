@@ -200,3 +200,95 @@ body[data-preview] *{animation:none!important;transition:none!important}
  #contact .contact-form-kicker,
  #contact .contact-form-head>p{display:none}
 }
+
+
+/* Language selector beside the existing light/dark mode toggle. */
+#inside>header .header-actions{display:flex;align-items:center;gap:9px;flex:none;}
+#inside>header #language{
+ width:57px;height:40px;padding:0 6px;border:1px solid #c99b23;
+ border-radius:22px;background:#FDBE2D;color:#18130c;
+ display:grid;place-items:center;font:800 13px/1 system-ui,Tahoma,sans-serif;
+ box-shadow:inset 0 -2px 0 #b78318;cursor:pointer;
+}
+#inside>header #language:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px;}
+#inside>header #theme{flex:none;margin:0;}
+body.lang-en #menu,body.lang-en #contact{direction:ltr;text-align:left;}
+body.lang-en .card-open,body.lang-en .panel{text-align:left;}
+body.lang-en #welcome .welcome-bottom,
+body.lang-en #welcome .welcome-category-strip{direction:ltr;}
+body.lang-en #contact #feedback label{direction:ltr;text-align:left;}
+
+/* On mobile the visual is a meal photo, not the former hand holding a plate. */
+@media(max-width:980px){
+ #welcome .welcome-logo{
+  box-sizing:border-box;top:calc(env(safe-area-inset-top) + 15px);
+  width:min(63%,245px);max-width:245px;height:clamp(75px,11svh,108px);
+  padding:11px 18px;object-fit:contain;object-position:center;
+  border-radius:24px;border:1px solid #fad15c;
+  background:#1b1710;filter:drop-shadow(0 7px 9px #0007);
+ }
+ #welcome .welcome-top-caption{display:none!important;}
+ #welcome .welcome-food{
+  left:50%;top:49%;width:min(81vw,360px);height:min(85%,360px);
+  max-height:360px;aspect-ratio:1;object-fit:cover;
+  border:3px solid #bd8c205c;border-radius:50%;
+  background:#FDBE2D;box-shadow:0 22px 42px #0007;
+  animation:snouno-mobile-first 720ms ease-out both;
+  filter:none;
+ }
+ #welcome .welcome-food.mobile-food-out{
+  animation:snouno-mobile-out 250ms ease-in both!important;
+ }
+ #welcome .welcome-food.mobile-food-in{
+  animation:snouno-mobile-in 420ms cubic-bezier(.12,.74,.19,1) both!important;
+ }
+ #welcome .welcome-stage-rail{top:40%;padding:10px 8px;}
+ #welcome .welcome-stage-rail button{
+  appearance:none;display:block;margin:0 auto;border:0;padding:0;
+  width:6px;height:6px;border-radius:50%;background:#7e766b;cursor:pointer;
+  transition:height 180ms ease,background-color 180ms ease;
+ }
+ #welcome .welcome-stage-rail button[aria-current=true]{
+  height:17px;border-radius:4px;background:#FDBE2D;
+ }
+ #welcome .welcome-stage-rail button:focus-visible{
+  outline:2px solid #fff;outline-offset:4px;
+ }
+ #welcome .welcome-food-badge{top:14%;right:5%;max-width:31vw;}
+ #welcome .welcome-food-badge span{max-width:28vw;overflow-wrap:anywhere;}
+ @keyframes snouno-mobile-first{
+  from{opacity:0;transform:translate(-50%,-44%) scale(.91);}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1);}
+ }
+ @keyframes snouno-mobile-out{
+  from{opacity:1;transform:translate(-50%,-50%) rotate(0deg) scale(1);}
+  to{opacity:0;transform:translate(-57%,-50%) rotate(-9deg) scale(.88);}
+ }
+ @keyframes snouno-mobile-in{
+  from{opacity:0;transform:translate(-44%,-50%) rotate(10deg) scale(.9);}
+  to{opacity:1;transform:translate(-50%,-50%) rotate(0deg) scale(1);}
+ }
+ @media(prefers-reduced-motion:reduce){
+  #welcome .welcome-food,
+  #welcome .welcome-food.mobile-food-out,
+  #welcome .welcome-food.mobile-food-in{animation:none!important;}
+ }
+}
+/* Ads use exactly the welcome screen's pill + three-dot visual, rotated horizontally. */
+#ad-dots{
+ display:flex;align-items:center;justify-content:center;gap:5px;
+ width:max-content;min-height:31px;margin:9px auto 16px;padding:6px 9px;
+ border:1px solid #72604275;border-radius:20px;
+ background:#221f19e8;
+}
+#ad-dots button{display:grid;place-items:center;width:23px;height:18px;border:0;background:none;padding:0;}
+#ad-dots button::after{
+ content:"";display:block;width:6px;height:6px;border-radius:50%;
+ background:#7e766b;transition:width .2s ease,background-color .2s ease;
+}
+#ad-dots button[aria-pressed=true]::after{
+ width:17px;height:6px;border-radius:4px;background:#FDBE2D;
+}
+#ad-dots .ad-progress{display:none!important;}
+#ad-dots button:focus-visible{outline:2px solid #FDBE2D;outline-offset:1px;}
+.favorites-empty{grid-column:1/-1;padding:14px 8px;text-align:center;}
