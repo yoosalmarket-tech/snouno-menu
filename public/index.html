@@ -42,6 +42,35 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <p class="welcome-subtitle">جاهز تختار وجبتك المفضّلة؟</p>
   <div class="welcome-controls"><a class="browse" href="/menu" data-page="menu" id="browse"><span>تصفح المنيو</span><span class="welcome-browse-icon" aria-hidden="true">←</span></a><span id="quick"></span></div>
  </div>
+
+<div class="desktop-welcome" dir="rtl" aria-label="واجهة سنونو للكمبيوتر">
+  <header class="desktop-header">
+    <a href="/welcome" data-page="welcome" class="desktop-logo-link" aria-label="واجهة سنونو"><img id="desktop-welcome-logo" src="/assets/logo.webp" alt="شعار سنونو"></a>
+    <nav aria-label="روابط المنيو"><a href="/welcome" data-page="welcome" aria-current="page">الرئيسية</a><a href="/menu" data-page="menu">قائمة الطعام</a><a href="/contact" data-page="contact">تواصل معنا</a></nav>
+    <a class="desktop-header-cta" href="/menu" data-page="menu">اكتشف الأصناف <span aria-hidden="true">↗</span></a>
+  </header>
+  <div class="desktop-hero">
+    <div class="desktop-copy">
+      <span class="desktop-eyebrow"><span aria-hidden="true" class="desktop-dot"></span> نكهة سنونو في كل لقمة</span>
+      <p class="desktop-greeting" id="desktop-welcome-greeting">أهلاً بك في</p>
+      <h1><span id="desktop-welcome-brand">مطعم سنونو</span><span class="desktop-headline-accent">على مزاجك.</span></h1>
+      <p class="desktop-description">اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.</p>
+      <div class="desktop-welcome-actions"><a class="desktop-main-cta" href="/menu" data-page="menu" id="desktop-welcome-browse"><span>تصفح المنيو</span><span aria-hidden="true">↗</span></a><a class="desktop-secondary-cta" href="/contact" data-page="contact">تواصل معنا <span aria-hidden="true">←</span></a></div>
+      <div class="desktop-divider"></div>
+      <div class="desktop-signature"><span class="desktop-signature-line"></span><span>مطعم سنونو <b>•</b> اختيارات كثيرة، لمّة واحدة</span></div>
+    </div>
+    <div class="desktop-visual" aria-label="طبق مميز من سنونو">
+      <div class="desktop-visual-glow"></div>
+      <div class="desktop-visual-circle"></div>
+      <div class="desktop-visual-ring"></div>
+      <span class="desktop-visual-label" aria-hidden="true">SNOUNO</span>
+      <img id="desktop-welcome-hero" src="/assets/plate.webp" alt="وجبة من منيو سنونو" fetchpriority="high">
+      <div class="desktop-sticker" aria-hidden="true"><span>شو آكل؟</span><strong>من سنونو!</strong></div>
+      <span class="desktop-side-note" aria-hidden="true">FRESH • MADE FOR YOU</span>
+    </div>
+  </div>
+  <footer class="desktop-welcome-footer"><span>SNOUNO RESTAURANT</span><span>استكشف القائمة من أي جهاز</span><span>01 / MENU</span></footer>
+</div>
 </section>
 <div id="inside" hidden><header><a class="brand-home" href="/welcome" data-page="welcome" aria-label="العودة إلى واجهة سنونو"><img id="logo" src="/assets/logo.webp" alt="سنونو"></a><button id="theme" aria-label="تغيير مظهر المنيو">☾</button></header>
 <section id="menu"><section id="ads" aria-label="إعلانات المطعم" hidden><div id="ad-track" tabindex="0" aria-label="اسحب لتصفح الإعلانات"></div><div id="ad-dots" aria-label="اختيار الإعلان"></div></section><label class="search"><span aria-hidden="true">⌕</span><input type="search" id="search" placeholder="ابحث عن طبقك أو مشروبك المفضل..." aria-label="البحث عن طبق"></label><div class="chips" id="chips"></div><div id="cards"></div></section>
