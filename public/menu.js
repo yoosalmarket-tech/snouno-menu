@@ -274,7 +274,6 @@ let desktopWheelSwapTimer=null;
 let desktopWheelFinishTimer=null;
 let desktopWheelGeneration=0;
 let desktopWheelCursor=0;
-let desktopWheelAngle=0;
 let desktopWheelMeals=[];
 function stopDesktopMealWheel(){
   ++desktopWheelGeneration;
@@ -290,76 +289,52 @@ function canPlayDesktopWheel(){
     &&matchMedia('(min-width:981px)').matches&&dishes.length>0;
 }
 function startDesktopMealWheel(){
-  if(!canPlayDesktopWheel()){
-    if(desktopWheelTimer)stopDesktopMealWheel();
-    return;
-  }
-  if(desktopWheelTimer)return;
-  const available=dishes.filter(d=>d.available!==false&&asset(d.image)&&
-    !/مشروبات|صوصات|مشروب|صلصة/.test(categories.find(c=>c.id===d.category_id)?.name||''));
-  const firstPerCategory=[],other=[],seen=new Set();
-  for(const meal of available){
-    if(!seen.has(meal.category_id)){seen.add(meal.category_id);firstPerCategory.push(meal);}
-    else other.push(meal);
-  }
-  desktopWheelMeals=[...firstPerCategory,...other].slice(0,12);
-  if(!desktopWheelMeals.length)return;
-  desktopWheelCursor=0;
-  const hero=$('desktop-welcome-hero');
-  const ring=document.querySelector('.desktop-visual-ring');
-  const label=$('desktop-meal-name');
-  if(!hero||!label)return;
-  // Warm the first menu images so a transition never shows an empty frame.
-  for(const meal of desktopWheelMeals.slice(0,4)){
-    const preload=new Image();preload.src=asset(meal.image);
-  }
-  const first=desktopWheelMeals[0];
-  hero.src=asset(first.image);
-  hero.alt=displayName(first);
-  hero.classList.add('is-menu-meal','wheel-has-rotated');
-  label.textContent=displayName(first);
-  desktopWheelCursor=1;
-  const generation=desktopWheelGeneration;
-  transparentWelcomeFood(asset(first.image)).then(clean=>{
-    if(generation===desktopWheelGeneration&&hero.getAttribute('src')===asset(first.image))hero.src=clean;
-  });
-  const rotate=()=>{
-    if(!canPlayDesktopWheel()||generation!==desktopWheelGeneration)return;
-    const meal=desktopWheelMeals[desktopWheelCursor++%desktopWheelMeals.length];
-    const source=asset(meal.image);
-    if(!source||hero.classList.contains('wheel-exit'))return;
-    transparentWelcomeFood(source).then(nextSrc=>{
-      if(generation!==desktopWheelGeneration||!canPlayDesktopWheel())return;
-    const nextImage=new Image();
-    let transitionStarted=false;
-    const showNextMeal=()=>{
-      if(transitionStarted)return;
-      transitionStarted=true;
-      if(generation!==desktopWheelGeneration||!canPlayDesktopWheel())return;
-      hero.classList.remove('wheel-enter');
-      hero.classList.add('wheel-has-rotated','wheel-exit');
-      desktopWheelAngle+=45;
-      if(ring)ring.style.setProperty('--wheel-angle',desktopWheelAngle+'deg');
-      desktopWheelSwapTimer=setTimeout(()=>{
-        if(generation!==desktopWheelGeneration)return;
-        hero.src=nextSrc;
-        hero.alt=displayName(meal);
-        hero.classList.add('is-menu-meal');
-        label.textContent=displayName(meal);
-        hero.classList.remove('wheel-exit');
-        hero.classList.add('wheel-enter');
-        desktopWheelFinishTimer=setTimeout(()=>{
-          if(generation===desktopWheelGeneration)hero.classList.remove('wheel-enter');
-        },580);
-      },360);
-    };
-    nextImage.onload=showNextMeal;
-    nextImage.onerror=()=>{}; // Skip an unavailable image without changing the current meal.
-    nextImage.src=nextSrc;
-    if(nextImage.complete&&nextImage.naturalWidth)showNextMeal();
-    });
-  };
-  desktopWheelTimer=setInterval(rotate,2000);
+ if(!canPlayDesktopWheel()){
+   if(desktopWheelTimer)stopDesktopMealWheel();
+   return;
+ }
+ if(desktopWheelTimer)return;
+ // The desktop showcase uses exactly the same three hero dishes as mobile.
+ desktopWheelMeals=welcomeMobileMeals.map(entry=>{
+   const row=dishes.find(d=>Number(d.sonbol_listing_id)===entry.listing || d.name===entry.name);
+   return {name:row?.name||entry.name,image:asset(row?.image)||entry.src,
+     id:row?.id||entry.listing,listing:entry.listing,record:row};
+ });
+ const hero=$('desktop-welcome-hero');
+ const label=$('desktop-meal-name');
+ if(!hero||!label)return;
+ desktopWheelCursor=0;
+ const version=desktopWheelGeneration;
+ const first=desktopWheelMeals[0];
+ hero.src=first.image;
+ hero.alt=displayName(first.record||first);
+ hero.classList.add('is-menu-meal','wheel-has-rotated');
+ label.textContent=displayName(first.record||first);
+ transparentWelcomeFood(first.image).then(clean=>{
+   if(version===desktopWheelGeneration && hero.getAttribute('src')===first.image)hero.src=clean;
+ });
+ const tick=()=>{
+   if(!canPlayDesktopWheel()||version!==desktopWheelGeneration)return;
+   const item=desktopWheelMeals[++desktopWheelCursor%desktopWheelMeals.length];
+   transparentWelcomeFood(item.image).then(clean=>{
+     if(!canPlayDesktopWheel()||version!==desktopWheelGeneration)return;
+     hero.classList.remove('wheel-enter');
+     hero.classList.add('wheel-exit');
+     desktopWheelSwapTimer=setTimeout(()=>{
+       if(version!==desktopWheelGeneration)return;
+       hero.src=clean;
+       hero.alt=displayName(item.record||item);
+       label.textContent=displayName(item.record||item);
+       hero.classList.remove('wheel-exit');
+       void hero.offsetWidth;
+       hero.classList.add('wheel-enter');
+       desktopWheelFinishTimer=setTimeout(()=>{
+         if(version===desktopWheelGeneration)hero.classList.remove('wheel-enter');
+       },520);
+     },320);
+   });
+ };
+ desktopWheelTimer=setInterval(tick,2000);
 }
 window.addEventListener('pagechange',startDesktopMealWheel);
 window.addEventListener('resize',startDesktopMealWheel);
