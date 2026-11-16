@@ -200,22 +200,30 @@ function showMobileWelcomeMeal(index,animate=true){
  const src=asset(record?.image)||choice.src;
  const name=record?displayName(record):(isEnglish()?({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville Burger'}[choice.listing]):choice.name);
  const version=mobileWelcomeVersion;
+ const currentIndex=index;
  const setLabel=()=>{
   badge.textContent=name;
   dots.forEach((dot,i)=>dot.setAttribute('aria-current',String(i===index)));
  };
  clearTimeout(mobileWelcomeSwap);
  if(!animate||matchMedia('(prefers-reduced-motion: reduce)').matches){
-  hero.src=src;hero.alt=name;
+  setLabel();
   hero.classList.remove('mobile-food-out','mobile-food-in');
   incoming.classList.remove('mobile-food-in','is-visible');
-  setLabel();return;
+  transparentWelcomeFood(src).then(clean=>{
+    if(version===mobileWelcomeVersion&&mobileWelcomeIndex===currentIndex){
+      hero.src=clean;hero.alt=name;
+    }
+  });
+  return;
  }
+ transparentWelcomeFood(src).then(clean=>{
+ if(version!==mobileWelcomeVersion||mobileWelcomeIndex!==currentIndex)return;
  const next=new Image();let begun=false;
  const begin=()=>{
   if(begun||version!==mobileWelcomeVersion)return;
   begun=true;
-  incoming.src=src;incoming.alt='';
+  incoming.src=clean;incoming.alt='';
   hero.classList.remove('mobile-food-in');
   incoming.classList.remove('mobile-food-in');
   incoming.classList.add('is-visible');
@@ -226,14 +234,15 @@ function showMobileWelcomeMeal(index,animate=true){
   setLabel();
   mobileWelcomeSwap=setTimeout(()=>{
    if(version!==mobileWelcomeVersion)return;
-   hero.src=src;hero.alt=name;
+   hero.src=clean;hero.alt=name;
    hero.classList.remove('mobile-food-out');
    incoming.classList.remove('mobile-food-in','is-visible');
   },600);
  };
  next.onload=begin;next.onerror=()=>{};
- next.src=src;
+ next.src=clean;
  if(next.complete&&next.naturalWidth)begin();
+ });
 }
 function startMobileWelcomeCycle(){
   if(!canPlayMobileWelcome()){if(mobileWelcomeTimer)stopMobileWelcomeCycle();return;}
@@ -311,11 +320,16 @@ function startDesktopMealWheel(){
   label.textContent=displayName(first);
   desktopWheelCursor=1;
   const generation=desktopWheelGeneration;
+  transparentWelcomeFood(asset(first.image)).then(clean=>{
+    if(generation===desktopWheelGeneration&&hero.getAttribute('src')===asset(first.image))hero.src=clean;
+  });
   const rotate=()=>{
     if(!canPlayDesktopWheel()||generation!==desktopWheelGeneration)return;
     const meal=desktopWheelMeals[desktopWheelCursor++%desktopWheelMeals.length];
-    const nextSrc=asset(meal.image);
-    if(!nextSrc||hero.classList.contains('wheel-exit'))return;
+    const source=asset(meal.image);
+    if(!source||hero.classList.contains('wheel-exit'))return;
+    transparentWelcomeFood(source).then(nextSrc=>{
+      if(generation!==desktopWheelGeneration||!canPlayDesktopWheel())return;
     const nextImage=new Image();
     let transitionStarted=false;
     const showNextMeal=()=>{
@@ -343,6 +357,7 @@ function startDesktopMealWheel(){
     nextImage.onerror=()=>{}; // Skip an unavailable image without changing the current meal.
     nextImage.src=nextSrc;
     if(nextImage.complete&&nextImage.naturalWidth)showNextMeal();
+    });
   };
   desktopWheelTimer=setInterval(rotate,2000);
 }
