@@ -224,6 +224,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    velocity+=(target-k)*.07*dt;
    velocity*=Math.pow(.8,dt);
    k+=velocity*dt;
+   // Hard stops prevent rubber-band movement on fast flings at either edge.
+   const maxIndex=Math.max(0,(group()?.items.length||1)-1);
+   if(k<=0){k=0;if(velocity<0)velocity=0;}
+   if(k>=maxIndex){k=maxIndex;if(velocity>0)velocity=0;}
   }
   const g=group();
   if(g){
@@ -268,13 +272,14 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    p.axis=Math.abs(dy)>Math.abs(dx)?'y':'x';
   }
   if(p.axis==='y'){
-   let value=p.startK+dy/160;
    const len=group()?.items.length||1;
-   if(value<0)value*=.35;
-   if(value>len-1)value=len-1+(value-(len-1))*.35;
+   // No elastic overshoot: a rapid edge swipe stays on the end meal.
+   const value=clamp(p.startK+dy/160,0,len-1);
    const now=performance.now(),dt=Math.max((now-p.lastT)/16.67,.5);
    velocity=velocity*.5+(value-k)/dt*.5;
-   k=value;p.lastT=now;
+   k=value;
+   if((k===0&&velocity<0)||(k===len-1&&velocity>0))velocity=0;
+   p.lastT=now;
   }
  }
  function pointerUp(event){
