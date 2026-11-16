@@ -134,7 +134,8 @@ async function syncRichMode(){
     else if(selection?.categoryId)noteSelection('category',selection.categoryId);
    },
    onShare:async meal=>{
-    if(meal?.id)await copyMenuLink('meal',meal.id,'interactive');
+    if(meal?.id)return copyMenuLink('meal',meal.id,'interactive');
+    return {copied:false};
    },
    onExit:()=>{
     richDesired=false;
