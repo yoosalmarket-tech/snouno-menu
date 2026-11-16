@@ -69,23 +69,23 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <img id="welcome-logo" class="welcome-logo" src="/assets/logo.webp" alt="شعار مطعم سنونو">
   <button type="button" class="language-switch welcome-language mobile-welcome-language" aria-label="Switch to English" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="language-label" lang="en">EN</span></button>
  </div>
- <div class="welcome-section-caption" dir="rtl"><span class="welcome-caption-line"></span><span>أهلاً وسهلاً</span><span class="welcome-caption-line"></span></div>
+ <div class="welcome-section-caption" dir="rtl"><span class="welcome-caption-line"></span><span id="mobile-welcome-caption">أهلاً وسهلاً</span><span class="welcome-caption-line"></span></div>
  
  <div class="welcome-stage" dir="ltr">
-  <div class="welcome-stage-word" aria-hidden="true">SNOUNO</div>
+  
   <div class="welcome-stage-word-ar" aria-hidden="true">سنونو</div>
   <div class="welcome-stage-halo" aria-hidden="true"></div>
   <div class="welcome-food-shadow" aria-hidden="true"></div>
   <img id="cover-photo" class="welcome-food" src="/assets/welcome/2468.webp" alt="بوكس المشاركة من سنونو" fetchpriority="high">
   <img id="cover-next" class="welcome-food welcome-next" src="/assets/welcome/2465.webp" alt="" aria-hidden="true" decoding="async">
   <div class="welcome-smoke mobile-smoke" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-  <div class="welcome-food-badge"><strong>من سنونو</strong><span id="mobile-meal-name">بوكس المشاركة</span></div>
+  <div class="welcome-food-badge"><strong id="mobile-meal-prefix">من سنونو</strong><span id="mobile-meal-name">بوكس المشاركة</span></div>
   <div class="welcome-stage-rail" aria-label="أطباق الترحيب"><button type="button" aria-label="بوكس المشاركة" aria-current="true"></button><button type="button" aria-label="نوك أوت" aria-current="false"></button><button type="button" aria-label="ناشفيل" aria-current="false"></button></div>
  </div>
  <div class="welcome-bottom" dir="rtl">
   <span id="greeting" class="welcome-greeting">أهلاً بك في</span>
   <h1 id="brand">مطعم سنونو</h1>
-  <p class="welcome-subtitle">جاهز تختار وجبتك المفضّلة؟</p>
+  <p class="welcome-subtitle" id="welcome-subtitle">جاهز تختار وجبتك المفضّلة؟</p>
   <div class="welcome-controls"><a class="browse" href="/menu" data-page="menu" id="browse"><span>تصفح المنيو</span><span class="welcome-browse-icon" aria-hidden="true">←</span></a><span id="quick"></span></div>
  </div>
 
@@ -99,10 +99,10 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <div class="desktop-hero">
     <div class="desktop-copy">
       
-      <span class="desktop-section-caption"><span></span>أهلاً وسهلاً<span></span></span>
+      <span class="desktop-section-caption"><span></span><span id="desktop-welcome-caption">أهلاً وسهلاً</span><span></span></span>
       <p class="desktop-greeting" id="desktop-welcome-greeting">أهلاً بك في</p>
-      <h1><span id="desktop-welcome-brand">مطعم سنونو</span><span class="desktop-headline-accent">على مزاجك.</span></h1>
-      <p class="desktop-description">اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.</p>
+      <h1><span id="desktop-welcome-brand">مطعم سنونو</span><span class="desktop-headline-accent" id="desktop-welcome-accent">على مزاجك.</span></h1>
+      <p class="desktop-description" id="desktop-welcome-description">اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.</p>
       <div class="desktop-welcome-actions"><a class="desktop-main-cta" href="/menu" data-page="menu" id="desktop-welcome-browse"><span>تصفح المنيو</span><span aria-hidden="true">↗</span></a></div>
       <div class="desktop-divider"></div>
       <div class="desktop-signature"><span class="desktop-signature-line"></span><span>مطعم سنونو <b>•</b> اختيارات كثيرة، لمّة واحدة</span></div>
@@ -112,10 +112,10 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
       <svg class="desktop-playful-stroke desktop-wave-line" viewBox="0 0 780 250" preserveAspectRatio="none" aria-hidden="true" focusable="false">
         <path class="desktop-playful-main" d="M-40 145 C86 43 192 49 294 137 S502 231 614 132 S738 80 825 110"/>
       </svg>
-      <span class="desktop-visual-label" aria-hidden="true">SNOUNO</span>
+      
       <img id="desktop-welcome-hero" class="is-menu-meal wheel-has-rotated" src="/assets/welcome/2468.webp" alt="وجبة من منيو سنونو" fetchpriority="high">
       <div class="welcome-smoke desktop-smoke" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-      <div class="desktop-sticker" aria-hidden="true"><span>شو آكل؟</span><strong id="desktop-meal-name">بوكس المشاركة</strong></div>
+      <div class="desktop-sticker" aria-hidden="true"><span id="desktop-meal-question">شو آكل؟</span><span id="desktop-meal-prefix">من سنونو</span><strong id="desktop-meal-name">بوكس المشاركة</strong></div>
       <span class="desktop-side-note" aria-hidden="true">FRESH • MADE FOR YOU</span>
     </div>
   </div>
