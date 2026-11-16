@@ -572,15 +572,45 @@ let previousY=0;
    }
    previousY=y;
  },{passive:true});
-window.addEventListener('popstate',route);
-window.addEventListener('hashchange',route);
+// Start the welcome's fade as soon as Browse Menu is clicked, instead of
+// switching routes first. All other navigation keeps its original behavior.
+let browseFadeTimer=0;
+const cancelBrowseFade=()=>{
+ if(browseFadeTimer)clearTimeout(browseFadeTimer);
+ browseFadeTimer=0;
+ $('welcome').classList.remove('welcome-browsing-out');
+};
+window.addEventListener('popstate',()=>{cancelBrowseFade();route();});
+window.addEventListener('hashchange',()=>{cancelBrowseFade();route();});
 document.addEventListener('click',event=>{
  const link=event.target.closest('a[data-page]');
  if(!link||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
  event.preventDefault();
- const url=pageUrl(link.dataset.page);
- if(location.pathname+location.search!==url)history.pushState(null,'',url);
- route();
+ const destination=link.dataset.page;
+ const navigate=()=>{
+  const url=pageUrl(destination);
+  if(location.pathname+location.search!==url)history.pushState(null,'',url);
+  route();
+ };
+ if(destination==='menu'&&currentPage()==='welcome'&&!isPreview&&
+    (link.id==='browse'||link.id==='desktop-welcome-browse')){
+  if(browseFadeTimer)return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){navigate();return;}
+  // The visual fade starts now. Navigation follows its 220ms exit.
+  $('welcome').classList.add('welcome-browsing-out');
+  browseFadeTimer=setTimeout(()=>{
+   browseFadeTimer=0;
+   if(currentPage()==='welcome'){
+    $('inside').classList.add('menu-browsing-in');
+    navigate();
+    setTimeout(()=>$('inside').classList.remove('menu-browsing-in'),230);
+   }
+   $('welcome').classList.remove('welcome-browsing-out');
+  },220);
+  return;
+ }
+ cancelBrowseFade();
+ navigate();
 });
 const moonIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 15.5A8 8 0 0 1 8.5 3.9a8.2 8.2 0 1 0 11.6 11.6Z"/><path d="m18.3 3.4.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5Z"/></svg>';
 const sunIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';
