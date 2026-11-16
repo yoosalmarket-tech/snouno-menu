@@ -171,7 +171,7 @@ async function goToWelcomeMeal(index,direction='right'){
  clearTimeout(welcomeCarouselTimer);
  const session=welcomeCarouselSession;
  const current=$('cover-photo'),incoming=$('cover-next');
- const forward=direction==='left'?-1:1;
+ const forward=direction==='left'?1:-1;
  welcomeCarouselAnimating=true;
  const src=welcomeMobileMeals[index].src;
  try{
