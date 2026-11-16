@@ -47,7 +47,7 @@ async function syncRichMode(){
  const target=$('rich-menu');
  if(!target||!richToggle)return;
  const version=++richRevision;
- document.body.classList.toggle('rich-menu-active',enabled);
+ document.body.classList.toggle('rich-menu-active',enabled&&currentPage()==='menu');
  updateRichToggle();
  if(!enabled||currentPage()!=='menu'){
   if(richController)richController.setActive(false);
