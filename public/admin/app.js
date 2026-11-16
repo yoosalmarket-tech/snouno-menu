@@ -403,6 +403,52 @@ function setupUnusedUploadCleanup(box){
  });
  cleanup.form.append(scan);
 }
+async function renderActionReports(){
+ const area=$('body'),ticket=generation;
+ const [events,meals]=await Promise.all([
+  api('/rest/v1/menu_action_events?select=created_at,action,element_id,route,mode,meal_id,category_id&order=created_at.desc&limit=1000'),
+  api('/rest/v1/dishes?select=id,name')
+ ]);
+ if(ticket!==generation)return;
+ const names=new Map(meals.map(m=>[String(m.id),m.name]));
+ const cutoff=Date.now()-7*86400000;
+ const week=events.filter(e=>new Date(e.created_at).getTime()>=cutoff);
+ const grouped=(rows,key)=>{const m=new Map();for(const r of rows){const k=r[key];if(k)m.set(k,(m.get(k)||0)+1);}return [...m].sort((a,b)=>b[1]-a[1]);};
+ const table=(titles,rows)=>{
+  const el=node('table');el.className='action-report-table';
+  const head=node('thead'),tr=node('tr');
+  for(const text of titles)tr.append(node('th',text));
+  head.append(tr);el.append(head);
+  const body=node('tbody');
+  for(const items of rows){const row=node('tr');for(const value of items){
+   const cell=node('td');if(value instanceof Node)cell.append(value);else cell.textContent=String(value??'—');row.append(cell);
+  }body.append(row);}
+  el.append(body);return el;
+ };
+ const block=(id,heading,headers,rows)=>{
+  const box=node('section');box.id=id;box.className='analytics-report';
+  box.append(node('h2',heading),table(headers,rows));return box;
+ };
+ const summary=node('section');summary.id='action-report-summary';summary.className='analytics-report';
+ summary.append(
+  node('h2','الإجراءات المسجلة خلال آخر 7 أيام'),
+  node('p','الإجراءات: '+week.length+' | الطلب: '+week.filter(e=>e.action==='order_platform_click').length+' | المفضلة: '+week.filter(e=>e.action==='favorite_toggle').length),
+  node('p','يعرض التقرير آخر 1000 إجراء مسجل كحد أقصى. لا نخزن أسماء الزوار أو أرقام الهواتف أو الرسائل أو معرّفات المستخدمين.')
+ );
+ const actions=block('action-report-types','الإجراءات الأكثر استخداماً',['الإجراء','العدد'],grouped(week,'action').slice(0,40));
+ const controls=block('action-report-controls','الأزرار والروابط الأكثر استخداماً',['معرّف العنصر','العدد'],grouped(week,'element_id').slice(0,40));
+ const dishRows=grouped(week,'meal_id').slice(0,30).map(([id,n])=>{
+  const link=node('a',names.get(id)||id);link.href=menuLink('meal',id);link.target='_blank';link.rel='noopener noreferrer';
+  return [link,n];
+ });
+ const dishesBox=block('action-report-meals','الوجبات الأكثر تفاعلاً',['الوجبة','الإجراءات'],dishRows);
+ const recent=block('action-report-recent','آخر الإجراءات',['التاريخ','الإجراء','المعرّف','الوضع'],events.slice(0,60).map(e=>[
+  new Date(e.created_at).toLocaleString('ar'),e.action,e.element_id,e.mode
+ ]));
+ const refresh=action('تحديث التقرير',()=>renderActionReports());
+ refresh.id='admin-report-refresh';refresh.dataset.trackAction='admin_report_refresh';
+ area.replaceChildren(refresh,summary,actions,controls,dishesBox,recent);
+}
 async function openSection(key){
  if(['menu_staff','account','events'].includes(key)&&role!=='owner'){
   notice('هذه الصفحة متاحة للمالك فقط');return;
