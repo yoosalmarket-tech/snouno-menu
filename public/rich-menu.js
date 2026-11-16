@@ -6,8 +6,8 @@ const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 const validImage=value=>{if(!value)return '';try{const u=new URL(value,location.origin);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
 const categoryWords=name=>{const a=String(name||'SNOUNO').trim().split(/\s+/);return [a.slice(0,Math.ceil(a.length/2)).join(' '),a.slice(Math.ceil(a.length/2)).join(' ')]};
-export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
- const root=mk('div','rm-app');root.dir='ltr';
+export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelection,onShare}){
+ const root=mk('div','rm-app');root.dir='ltr';root.id='rich-interactive-stage';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
  '<button type="button" class="rm-exit" aria-label="العودة إلى المنيو العادي" title="العودة إلى المنيو العادي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>',
@@ -37,6 +37,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  '<button type="button" class="rm-sheet-close" aria-label="إغلاق">×</button></header>',
  '<div class="rm-sheet-body"></div></dialog>'
  ].join('');
+ const share=mk('button','rm-share','↗');
+ share.type='button';share.id='rich-share-meal';share.dataset.trackAction='share_meal_click';
+ share.setAttribute('aria-label','نسخ رابط الوجبة');
+ at(root,'.rm-info-actions').insertBefore(share,at(root,'.rm-info-fav'));
  host.replaceChildren(root);
  const u={
   stage:at(root,'.rm-stage'),wrap:at(root,'.rm-stage-wrap'),
@@ -49,7 +53,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   railUp:at(root,'.rm-rail-up'),railDown:at(root,'.rm-rail-down'),
   info:at(root,'.rm-info'),rating:at(root,'.rm-info-rating'),title:at(root,'.rm-info-name'),
   desc:at(root,'.rm-info-desc'),price:at(root,'.rm-info-price'),
-  details:at(root,'.rm-info-details'),fav:at(root,'.rm-info-fav'),
+  details:at(root,'.rm-info-details'),share:at(root,'.rm-share'),fav:at(root,'.rm-info-fav'),
   customize:at(root,'.rm-customize'),sheet:at(root,'.rm-sheet'),
   sheetTitle:at(root,'.rm-sheet-title'),sheetSubtitle:at(root,'.rm-sheet-subtitle'),
   sheetBody:at(root,'.rm-sheet-body')
@@ -72,6 +76,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   u.categories.replaceChildren();categoryEls=[];
   groups.forEach((g,i)=>{
    const button=mk('button','rm-cat');button.type='button';button.setAttribute('role','tab');
+   button.id='rich-category-'+g.id;button.dataset.categoryId=String(g.id);
+   button.dataset.trackAction='category_select';
+   button.dataset.permalink='/menu?category='+encodeURIComponent(g.id)+'&mode=interactive';
    button.setAttribute('aria-label',g.name);
    button.append(mk('strong',null,g.english||g.name),mk('span',null,g.name));
    button.addEventListener('click',()=>changeGroup(i));
@@ -95,6 +102,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   u.stage.setAttribute('aria-label',g.name);
   g.items.forEach((meal,i)=>{
    const frame=mk('div','rm-dish');
+   frame.id='rich-meal-'+meal.id;frame.dataset.mealId=String(meal.id);
+   frame.dataset.categoryId=String(g.id);
    frame.dataset.idx=String(i);frame.setAttribute('role','option');
    frame.setAttribute('aria-label',getName(meal));frame.tabIndex=-1;
    frame.append(mk('div','rm-dish-shadow'));
@@ -120,6 +129,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    for(let n=0;n<4;n++)smoke.append(mk('i'));
    frame.append(smoke);u.stage.append(frame);dishesEls.push(frame);
    const thumbnail=mk('button','rm-thumb');thumbnail.type='button';
+   thumbnail.id='rich-thumb-'+meal.id;
+   thumbnail.dataset.mealId=String(meal.id);thumbnail.dataset.categoryId=String(g.id);
+   thumbnail.dataset.trackAction='meal_select';
    thumbnail.title=getName(meal);thumbnail.setAttribute('aria-label',getName(meal));
    if(photo){const img=mk('img');img.src=photo;img.alt='';img.loading='lazy';img.draggable=false;thumbnail.append(img);}
    else thumbnail.textContent='•';
@@ -143,6 +155,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  function info(){
   const m=dish();if(!m)return;
   u.title.textContent=getName(m);
+  u.fav.dataset.mealId=String(m.id);u.share.dataset.mealId=String(m.id);
+  u.customize.dataset.mealId=String(m.id);
+  u.share.title=isEnglish()?'Copy meal link':'نسخ رابط الوجبة';
   const ratingValue=m.rating==null||m.rating===''?NaN:Number(m.rating);
   const hasRating=Number.isFinite(ratingValue)&&ratingValue>=0&&ratingValue<=5;
   u.rating.hidden=!hasRating;
@@ -268,6 +283,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  function goTo(index){
   const g=group();if(!g)return;
   target=clamp(index,0,g.items.length-1);
+  if(typeof onSelection==='function')onSelection({mealId:g.items[target]?.id,categoryId:g.id});
   if(reduced.matches){k=target;velocity=0;updateFront(target);draw();}
  }
  const step=delta=>{
@@ -297,6 +313,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   await new Promise(r=>setTimeout(r,reduced.matches?0:550));
   if(serial!==swapToken||destroyed)return;
   root.classList.remove('rm-category-in');swapping=false;
+  if(typeof onSelection==='function')onSelection({categoryId:group()?.id});
  }
  function pointerDown(event){
   if(event.button!==0||swapping||!active)return;
@@ -381,6 +398,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    if(!href)return null;
    const isDirect=!!safeLink(direct);
    const el=mk('a','rm-sheet-link');el.href=href;el.target='_blank';el.rel='noopener noreferrer';
+   el.id='rich-link-'+channel+'-'+(meal?.id||'restaurant');
+   el.dataset.trackAction='order_platform_click';
+   if(meal?.id)el.dataset.mealId=String(meal.id);
    el.dataset.platform=channel;
    const mark=mk('span','rm-sheet-link-mark');
    const img=mk('img');img.src=info.icon;img.alt='';img.loading='lazy';mark.append(img);
