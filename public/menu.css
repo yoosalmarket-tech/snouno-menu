@@ -292,3 +292,36 @@ body.lang-en #contact #feedback label{direction:ltr;text-align:left;}
 #ad-dots .ad-progress{display:none!important;}
 #ad-dots button:focus-visible{outline:2px solid #FDBE2D;outline-offset:1px;}
 .favorites-empty{grid-column:1/-1;padding:14px 8px;text-align:center;}
+
+
+/* Category design adapted from user's original Hungry Buten HTML:
+   bilingual two-line labels, inset dark cards and raised yellow selected chip. */
+#chips{display:block;overflow:visible;padding:9px 0 13px;background:var(--paper);}
+.category-nav-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 3px 11px;}
+.category-nav-title{display:inline-flex;align-items:baseline;gap:7px;flex-wrap:wrap;}
+.category-nav-title strong{font:900 11px/1.2 system-ui,sans-serif;letter-spacing:.10em;color:var(--ink);}
+.category-nav-title>span{font-size:12px;color:var(--soft);}
+.category-nav-controls{display:flex;align-items:center;gap:9px;}
+.category-nav-controls #category-position{font:850 12px/1 system-ui,sans-serif;white-space:nowrap;color:var(--ink);}
+.category-nav-arrow{display:grid;place-items:center;width:33px;height:33px;padding:0;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;box-shadow:inset 0 -2px 0 #0000000f;}
+.category-nav-arrow:active{transform:scale(.96);}
+.category-rail{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:none;padding:4px 2px 7px;touch-action:pan-x;}
+.category-rail::-webkit-scrollbar{display:none;}
+#chips .chip{scroll-snap-align:center;flex:none;min-width:131px;min-height:53px;height:53px;padding:6px 15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+ border:1px solid #5c5750;border-radius:17px;background:#28262c;color:#f9f5ed;text-align:center;
+ box-shadow:inset 0 -3px 0 #0004,0 3px 8px #0002;
+ transition:background .22s ease,color .22s ease,box-shadow .22s ease,transform .15s ease;}
+#chips .chip:active{transform:scale(.96);}
+#chips .chip-en{font:900 12px/1.15 system-ui,sans-serif;letter-spacing:.045em;white-space:nowrap;}
+#chips .chip-ar{font:500 11px/1.2 Snouno,Tahoma,sans-serif;white-space:nowrap;color:#c6bfb4;}
+#chips .chip[aria-current=location]{background:#FDBE2D;color:#1a160d;border-color:#e8ae25;box-shadow:0 4px 0 #9d7117,0 8px 15px #0003;}
+#chips .chip[aria-current=location] .chip-ar{color:#3d300e;}
+#chips .chip:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px;}
+/* The actual meal-card badge ("شارة الطبق") uses a tangible floating shadow. */
+.card .badge{box-shadow:0 3px 0 #ab7912,0 8px 14px #0004;border:1px solid #edb32b;padding:3px 9px;border-radius:9px;z-index:2;}
+@media(max-width:420px){
+  #chips .chip{min-width:119px;padding-inline:10px;}
+  #chips .chip-en{font-size:10.5px;letter-spacing:.012em;}
+  .category-nav-head{padding-inline:5px;}
+}
+@media(prefers-reduced-motion:reduce){#chips .chip{transition:none;}}
