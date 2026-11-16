@@ -1057,3 +1057,121 @@
    color:inherit!important;
  }
 }
+
+
+/* Desktop welcome is a focused, text-only hero: no meal artwork and one CTA. */
+@media(min-width:981px){
+ body:not([data-preview]) #welcome .desktop-welcome{
+  grid-template-rows:clamp(105px,15svh,146px) minmax(0,1fr)!important;
+  height:100svh!important;min-height:0!important;
+  max-height:100svh!important;padding-top:0!important;
+  padding-inline:clamp(24px,5vw,90px)!important;
+ }
+ body:not([data-preview]) #welcome .desktop-hero{
+  grid-row:2!important;
+  display:flex!important;grid-template-columns:none!important;
+  align-items:center!important;justify-content:center!important;
+  height:100%!important;min-height:0!important;max-height:100%!important;
+  width:100%!important;overflow:hidden!important;
+ }
+ body:not([data-preview]) #welcome .desktop-copy{
+  box-sizing:border-box!important;
+  display:flex!important;flex-direction:column!important;
+  justify-content:center!important;align-items:center!important;
+  align-self:center!important;justify-self:center!important;
+  width:min(100%,900px)!important;max-width:900px!important;
+  margin:auto!important;padding:clamp(14px,3svh,38px) 12px!important;
+  text-align:center!important;direction:rtl;
+  overflow:visible!important;
+ }
+ body:not([data-preview]) #welcome .desktop-section-caption{
+  display:inline-flex!important;align-items:center!important;
+  justify-content:center!important;gap:16px!important;
+  width:auto!important;height:auto!important;
+  margin:0 auto clamp(15px,3svh,32px)!important;
+  text-align:center!important;line-height:1.6!important;
+  font-size:clamp(15px,1.25vw,20px)!important;
+ }
+ body:not([data-preview]) #welcome .desktop-section-caption span:first-child,
+ body:not([data-preview]) #welcome .desktop-section-caption span:last-child{
+  flex:none;width:36px!important;height:1px!important;background:#bd9450!important;
+ }
+ body:not([data-preview]) #welcome #desktop-welcome-caption{
+  width:auto!important;height:auto!important;
+  background:none!important;display:inline-block!important;
+  white-space:nowrap!important;line-height:1.6!important;
+ }
+ body:not([data-preview]) #welcome .desktop-copy h1{
+  max-width:100%!important;
+  margin:0 auto clamp(16px,3svh,34px)!important;
+  font-size:clamp(45px,min(6.4vw,10.5svh),111px)!important;
+  line-height:1.19!important;text-align:center!important;
+  letter-spacing:-.025em!important;
+ }
+ body:not([data-preview]) #welcome .desktop-copy h1>span{
+  display:block!important;text-align:center!important;
+ }
+ body:not([data-preview]) #welcome .desktop-description{
+  max-width:690px!important;
+  margin:0 auto clamp(23px,4svh,44px)!important;
+  font-size:clamp(15px,1.3vw,19px)!important;
+  line-height:1.85!important;text-align:center!important;
+  direction:rtl;
+ }
+ body:not([data-preview]) #welcome .desktop-welcome-actions{
+  display:flex!important;align-items:center!important;
+  justify-content:center!important;width:100%!important;
+  margin:0 auto!important;text-align:center!important;
+ }
+ body:not([data-preview]) #welcome .desktop-main-cta{
+  min-width:clamp(245px,23vw,330px)!important;
+  min-height:60px!important;padding:15px 24px!important;
+  justify-content:center!important;gap:30px!important;
+  font-size:clamp(19px,1.5vw,24px)!important;
+ }
+ body:not([data-preview]) #welcome .desktop-visual,
+ body:not([data-preview]) #welcome .desktop-welcome-footer,
+ body:not([data-preview]) #welcome .desktop-divider,
+ body:not([data-preview]) #welcome .desktop-signature,
+ body:not([data-preview]) #welcome .desktop-greeting{display:none!important;}
+ /* Separate the desktop language label from its globe, without a clipped box. */
+ body:not([data-preview]) #welcome .desktop-welcome-top .desktop-welcome-language{
+  position:absolute!important;z-index:15!important;
+  top:clamp(24px,5svh,55px)!important;
+  right:clamp(22px,5vw,88px)!important;left:auto!important;
+  display:inline-flex!important;flex-direction:row!important;
+  align-items:center!important;justify-content:center!important;
+  gap:10px!important;box-sizing:border-box!important;
+  width:104px!important;min-width:104px!important;
+  max-width:104px!important;height:44px!important;
+  margin:0!important;padding:0 13px!important;
+  color:#1e180c!important;background:#fff4ca!important;
+  border:1px solid #956c15!important;border-radius:25px!important;
+  direction:ltr!important;white-space:nowrap!important;
+ }
+ body:not([data-preview]) #welcome .desktop-welcome-language svg{
+  display:block!important;flex:none!important;
+  width:20px!important;height:20px!important;
+  stroke:currentColor!important;opacity:1!important;
+ }
+ body:not([data-preview]) #welcome .desktop-welcome-language .language-label{
+  display:inline-block!important;flex:none!important;
+  min-width:24px!important;font:900 13px/1 system-ui,sans-serif!important;
+  text-align:center!important;letter-spacing:.02em!important;
+  color:#1e180c!important;direction:ltr!important;
+ }
+}
+@media(min-width:981px) and (max-height:650px){
+ body:not([data-preview]) #welcome .desktop-welcome{
+  grid-template-rows:clamp(82px,14svh,105px) minmax(0,1fr)!important;
+ }
+ body:not([data-preview]) #welcome .desktop-copy h1{
+  font-size:clamp(38px,8svh,70px)!important;
+  margin-bottom:13px!important;
+ }
+ body:not([data-preview]) #welcome .desktop-section-caption{margin-bottom:12px!important;}
+ body:not([data-preview]) #welcome .desktop-description{
+  font-size:14px!important;line-height:1.5!important;margin-bottom:14px!important;
+ }
+ body:not([data-preview]) #welcome .desktop-main-cta{min-height:48px!important;}
+}
