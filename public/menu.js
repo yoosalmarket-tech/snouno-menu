@@ -8,7 +8,7 @@ let favorites=new Set(JSON.parse(localStorage.getItem('snouno-favorites')||'[]')
 const money=value=>Number(value)+' ₪';
 const isPreview=window.parent!==window&&new URLSearchParams(location.search).get('preview')==='1';
 
-let currentLanguage=localStorage.getItem('snouno-language')==='en'?'en':'ar';
+let currentLanguage='ar'; // Start every new visit in Arabic; visitors may switch to English.
 const originalTextNodes=new WeakMap();
 const isEnglish=()=>currentLanguage==='en';
 const tr=value=>isEnglish()?enText(value):value;
@@ -54,7 +54,6 @@ function applyLanguage(){
 }
 $('language').onclick=()=>{
  currentLanguage=isEnglish()?'ar':'en';
- localStorage.setItem('snouno-language',currentLanguage);
  applyLanguage();
 };
 
@@ -377,11 +376,25 @@ document.addEventListener('click',event=>{
  if(location.pathname+location.search!==url)history.pushState(null,'',url);
  route();
 });
-function theme(dark){document.body.classList.toggle('dark',dark);$('theme').textContent=dark?'☀':'☾';}
+function theme(dark){
+ document.body.classList.toggle('dark',dark);
+ const toggle=$('theme');
+ toggle.textContent=dark?'☀':'☾';
+ toggle.setAttribute('aria-pressed',String(dark));
+ toggle.setAttribute('aria-label',dark?'استخدام الوضع الفاتح':'استخدام الوضع الداكن');
+ document.documentElement.style.colorScheme=dark?'dark':'light';
+}
 const systemTheme=matchMedia('(prefers-color-scheme:dark)');
-theme(systemTheme.matches);
-systemTheme.addEventListener('change',event=>theme(event.matches));
-$('theme').onclick=()=>{const dark=!document.body.classList.contains('dark');theme(dark);};
+const storedTheme=localStorage.getItem('snouno-theme');
+theme(storedTheme==='dark'||(storedTheme!=='light'&&systemTheme.matches));
+systemTheme.addEventListener('change',event=>{
+ if(localStorage.getItem('snouno-theme')===null)theme(event.matches);
+});
+$('theme').onclick=()=>{
+ const dark=!document.body.classList.contains('dark');
+ localStorage.setItem('snouno-theme',dark?'dark':'light');
+ theme(dark);
+};
 let activeCategory=null,categoryFrame=0;
 const favoritesCategory={id:'favorites',name:'المفضلة',icon:'★'};
 let menuSections=[];
@@ -397,7 +410,11 @@ function highlightCategory(id){
  if(!button)return;
  button.setAttribute('aria-current','location');
  const strip=$('chips'),bounds=strip.getBoundingClientRect(),tab=button.getBoundingClientRect();
- strip.scrollBy({left:tab.left+tab.width/2-bounds.left-bounds.width/2,behavior:scrollBehavior()});
+ if(matchMedia('(min-width:981px)').matches){
+   strip.scrollBy({top:tab.top+tab.height/2-bounds.top-bounds.height/2,behavior:scrollBehavior()});
+ }else{
+   strip.scrollBy({left:tab.left+tab.width/2-bounds.left-bounds.width/2,behavior:scrollBehavior()});
+ }
 }
 function updateVisibleCategory(){
  categoryFrame=0;
@@ -430,7 +447,13 @@ function renderChips(groups){
  const strip=$('chips');strip.replaceChildren();categoryButtons.clear();activeCategory=null;
  for(const {category,section} of groups){
    const button=make('button');button.type='button';button.className='chip';
-   button.append(make('span',category.icon||''),tr(category.name));
+   // Bilingual stacked category chips, following the provided Hungry Buten HTML.
+   const english=make('span',(categoryEnglish[category.name]||category.name).toLocaleUpperCase('en'));
+   english.className='chip-en';english.lang='en';english.dir='ltr';
+   const arabic=make('span',category.name);
+   arabic.className='chip-ar';arabic.lang='ar';arabic.dir='rtl';
+   button.append(english,arabic);
+   button.setAttribute('aria-label',tr(category.name));
    button.setAttribute('aria-controls',section.id);
    button.onclick=()=>scrollToSection(section);
    strip.append(button);categoryButtons.set(category.id,button);
