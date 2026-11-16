@@ -38,12 +38,20 @@ const sections = {
   menu_staff: ['المستخدمون', [['email','بريد المحرر','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]],
   account: ['حساب المالك', []]
 };
-let session = JSON.parse(sessionStorage.getItem('snouno-session') || 'null');
+const sessionKey='snouno-session';
+let rememberMe=!!localStorage.getItem(sessionKey);
+let session=JSON.parse(localStorage.getItem(sessionKey)||sessionStorage.getItem(sessionKey)||'null');
 let role, section = 'dishes', generation = 0;
 const notice = message => { $('status').textContent = message; };
 function node(tag, text) { const el=document.createElement(tag); if(text!==undefined) el.textContent=text; return el; }
 function action(label, fn) { const b=node('button',label); b.type='button'; b.onclick=()=>Promise.resolve(fn()).catch(e=>notice(e.message)); return b; }
-function persist(value) { session=value; if(value) sessionStorage.setItem('snouno-session',JSON.stringify(value)); else sessionStorage.removeItem('snouno-session'); }
+function persist(value){
+ session=value;
+ if(!value){localStorage.removeItem(sessionKey);sessionStorage.removeItem(sessionKey);return;}
+ const chosen=rememberMe?localStorage:sessionStorage;
+ (rememberMe?sessionStorage:localStorage).removeItem(sessionKey);
+ chosen.setItem(sessionKey,JSON.stringify(value));
+}
 async function request(path, {method='GET', body, token, headers={}}={}) {
   const raw=body instanceof File;
   const response=await fetch(endpoint+path,{method,headers:{apikey:apiKey,...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':raw?body.type:'application/json'}:{}),...headers},body:body?(raw?body:JSON.stringify(body)):undefined});
