@@ -157,7 +157,11 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   const next=clamp(index,0,g.items.length-1);
   if(next===front)return;
   front=next;info();
-  u.info.animate?.([{opacity:.75,transform:'translateY(10px)'},{opacity:1,transform:'none'}],{duration:230,easing:'cubic-bezier(.28,.8,.2,1)'});
+  // Only the changing meal copy animates. Keep the contact and favorite
+  // buttons completely steady as users swipe between dishes.
+  for(const el of [u.title,u.desc,u.price]){
+   el.animate?.([{opacity:.75,transform:'translateY(10px)'},{opacity:1,transform:'none'}],{duration:230,easing:'cubic-bezier(.28,.8,.2,1)'});
+  }
  }
  function draw(){
   const g=group();if(!g)return;
@@ -206,8 +210,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    label.setAttribute('aria-current',String(i===front));
   }
   const fade=Math.min(1,Math.abs(k-Math.round(k))*2.6+(k<-.4?1:0));
-  u.info.style.opacity=(1-fade).toFixed(3);
-  u.info.style.transform='translateY('+(fade*12).toFixed(1)+'px)';
+  for(const el of [u.title,u.desc,u.price]){
+   el.style.opacity=(1-fade).toFixed(3);
+   el.style.transform='translateY('+(fade*12).toFixed(1)+'px)';
+  }
   const pulse=Math.min(Math.abs(velocity),.4);
   u.shadow.style.transform='translateX(-50%) scale('+(1+pulse*.15).toFixed(3)+','+(1-pulse*.1).toFixed(3)+')';
  }
