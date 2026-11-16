@@ -325,3 +325,43 @@ body.lang-en #contact #feedback label{direction:ltr;text-align:left;}
   .category-nav-head{padding-inline:5px;}
 }
 @media(prefers-reduced-motion:reduce){#chips .chip{transition:none;}}
+
+
+/* Seamless upward-feed of three featured meals on small screens. */
+@media(max-width:980px){
+ #welcome .welcome-stage{overflow:hidden;isolation:isolate;}
+ #welcome .welcome-food{animation:none;}
+ #welcome #cover-next{
+   pointer-events:none;visibility:hidden;opacity:0;z-index:3;animation:none;
+ }
+ #welcome #cover-next.is-visible{visibility:visible;opacity:1;}
+ #welcome #cover-photo.mobile-food-out{
+   animation:welcome-meal-slide-up 560ms cubic-bezier(.46,.0,.76,.45) both!important;
+ }
+ #welcome #cover-next.mobile-food-in{
+   animation:welcome-meal-slide-from-bottom 560ms cubic-bezier(.24,.73,.2,1) both!important;
+ }
+ @keyframes welcome-meal-slide-up{
+   from{opacity:1;transform:translate(-50%,-50%);}
+   to{opacity:.15;transform:translate(-50%,-162%);}
+ }
+ @keyframes welcome-meal-slide-from-bottom{
+   from{opacity:.15;transform:translate(-50%,64%);}
+   to{opacity:1;transform:translate(-50%,-50%);}
+ }
+ /* The real black logo sits directly on the yellow curve with no black plate. */
+ #welcome .welcome-logo{
+   background:transparent;border:0;border-radius:0;padding:0;
+   filter:brightness(0);object-fit:contain;
+   width:min(68%,235px);max-width:235px;
+   top:calc(env(safe-area-inset-top) + 12px);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #welcome #cover-photo.mobile-food-out,
+ #welcome #cover-next.mobile-food-in{animation:none!important;}
+}
+/* The whole loader and its logo travel into the curved yellow header. */
+html.loader-morphing,html.loader-finishing{overflow:hidden;}
+html.loader-morphing #welcome .welcome-logo,
+html.loader-morphing #welcome .desktop-welcome-top img{visibility:hidden;}
