@@ -33,10 +33,12 @@ function translateStaticContent(){
 function applyLanguage(){
  document.documentElement.lang=isEnglish()?'en':'ar';
  document.body.classList.toggle('lang-en',isEnglish());
- const toggle=$('language');
- toggle.querySelector('.language-label').textContent=isEnglish()?'AR':'EN';
- toggle.setAttribute('aria-pressed',String(isEnglish()));
- toggle.setAttribute('aria-label',isEnglish()?'العودة إلى العربية':'Switch to English');
+ for(const toggle of document.querySelectorAll('.language-switch')){
+   toggle.querySelector('.language-label').textContent=isEnglish()?'AR':'EN';
+   toggle.setAttribute('aria-pressed',String(isEnglish()));
+   toggle.setAttribute('aria-label',isEnglish()?'Switch to Arabic':'Switch to English');
+   toggle.title=isEnglish()?'العربية':'English';
+ }
  $('search').placeholder=tr('ابحث عن طبقك أو مشروبك المفضل...');
  $('search').setAttribute('aria-label',tr('البحث عن طبق'));
  for(const input of document.querySelectorAll('#contact input[placeholder],#contact textarea[placeholder]')){
@@ -52,10 +54,12 @@ function applyLanguage(){
  }
  translateStaticContent();
 }
-$('language').onclick=()=>{
- currentLanguage=isEnglish()?'ar':'en';
- applyLanguage();
-};
+for(const switcher of document.querySelectorAll('.language-switch')){
+ switcher.onclick=()=>{
+   currentLanguage=isEnglish()?'ar':'en';
+   applyLanguage();
+ };
+}
 
 function asset(src){if(!src)return '';if(isPreview&&src.startsWith('blob:'+location.origin+'/'))return src;try{const u=new URL(src,location.origin);return /^(https?:)$/.test(u.protocol)?u.href:'';}catch{return '';}}
 function setText(id,text){$(id).textContent=text||'';}
@@ -258,7 +262,7 @@ function renderAds() {
  const ads=advertisements.filter(ad=>asset(ad.image));
  const track=$('ad-track'), dots=$('ad-dots'),thumbs=$('ad-thumbnails');
  track.replaceChildren(); dots.replaceChildren();thumbs.replaceChildren(); $('ads').hidden=!ads.length;
- const duration=5000;
+ const duration=3000;
  const motion=matchMedia('(prefers-reduced-motion: reduce)');
  let timer,progress,frame,active=0,dragging=false;
  const listeners=new AbortController();
@@ -420,10 +424,12 @@ document.addEventListener('click',event=>{
  if(location.pathname+location.search!==url)history.pushState(null,'',url);
  route();
 });
+const moonIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 15.5A8 8 0 0 1 8.5 3.9a8.2 8.2 0 1 0 11.6 11.6Z"/><path d="m18.3 3.4.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5Z"/></svg>';
+const sunIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';
 function theme(dark){
  document.body.classList.toggle('dark',dark);
  const toggle=$('theme');
- toggle.textContent=dark?'☀':'☾';
+ toggle.innerHTML=dark?sunIcon:moonIcon;
  toggle.setAttribute('aria-pressed',String(dark));
  toggle.setAttribute('aria-label',dark?'استخدام الوضع الفاتح':'استخدام الوضع الداكن');
  document.documentElement.style.colorScheme=dark?'dark':'light';
@@ -500,11 +506,11 @@ function renderChips(groups){
  const arabic=make('span','التصنيفات');arabic.lang='ar';arabic.dir='rtl';
  titles.append(english,arabic);
  const controls=make('div');controls.className='category-nav-controls';
- const previous=make('button','←');previous.type='button';previous.className='category-nav-arrow';
+ const previous=make('button',isEnglish()?'←':'→');previous.type='button';previous.className='category-nav-arrow';
  previous.setAttribute('aria-label',isEnglish()?'Previous category':'الصنف السابق');
  const position=make('span');position.id='category-position';position.dir='ltr';
  position.textContent='1 / '+groups.length;
- const next=make('button','→');next.type='button';next.className='category-nav-arrow';
+ const next=make('button',isEnglish()?'→':'←');next.type='button';next.className='category-nav-arrow';
  next.setAttribute('aria-label',isEnglish()?'Next category':'الصنف التالي');
  controls.append(previous,position,next);
  head.append(titles,controls);
