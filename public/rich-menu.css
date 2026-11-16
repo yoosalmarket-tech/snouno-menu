@@ -461,3 +461,34 @@ body.rich-menu-active:not([data-preview]) #shell{
  z-index:9!important;
  pointer-events:none!important;
 }
+
+
+/* Interactive meal information hierarchy: bring the name and description
+   closer to the food, emphasize the price, and lift the bottom action. */
+#rich-menu .rm-info-name,
+#rich-menu .rm-info-desc{
+  position:relative;
+  top:-7px;
+}
+#rich-menu .rm-info-price{
+  font-size:clamp(21px,3vw,26px)!important;
+  font-weight:800!important;
+  line-height:1.2!important;
+  margin:2px 0 5px!important;
+}
+@media(max-width:980px){
+  #rich-menu .rm-info{
+    padding-bottom:clamp(20px,3svh,27px)!important;
+  }
+}
+@media(min-width:981px){
+  #rich-menu .rm-info{
+    padding-bottom:clamp(24px,3.2svh,35px)!important;
+  }
+}
+@media(max-height:660px){
+  #rich-menu .rm-info-name,
+  #rich-menu .rm-info-desc{top:-4px;}
+  #rich-menu .rm-info-price{font-size:20px!important;}
+  #rich-menu .rm-info{padding-bottom:16px!important;}
+}
