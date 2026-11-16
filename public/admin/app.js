@@ -35,7 +35,8 @@ const sections = {
   menu_ads: ['إدارة الإعلانات', [['name','عنوان الإعلان'],['image','صورة الإعلان','image'],['dish_id','الطبق المرتبط','product']]],
   rankings: ['تقييمات الأطباق', []],
   submissions: ['رسائل التواصل', []],
-  menu_staff: ['المستخدمون', [['email','بريد المحرر','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]]
+  menu_staff: ['المستخدمون', [['email','بريد المحرر','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]],
+  account: ['حساب المالك', []]
 };
 let session = JSON.parse(sessionStorage.getItem('snouno-session') || 'null');
 let role, section = 'dishes', generation = 0;
