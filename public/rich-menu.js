@@ -187,7 +187,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   const g=group();if(!g)return;
   const len=g.items.length,position=clamp(k,-.5,len-.5);
   const height=u.wrap.clientHeight;
-  const scale=clamp(height/380,height<200?.42:.5,1)*.88;
+  // Desktop makes better use of the wide food showroom, while preserving
+  // the existing mobile animation and its swipe physics.
+  const desktop=window.matchMedia('(min-width:981px)').matches;
+  const scale=clamp(height/380,height<200?.42:.5,1)*(desktop?1.02:.88);
   for(let i=0;i<dishesEls.length;i++){
    const el=dishesEls[i],dif=i-k;
    if(dif< -1.3||dif>5.6){el.style.visibility='hidden';continue;}
@@ -222,7 +225,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    el.setAttribute('aria-current',String(i===front));
   });
   u.thumbTrack.style.transform='none';
-  const unit=34;
+  // Larger desktop thumbnails need matching stationary label slots.
+  const unit=desktop?46:34;
   for(const label of u.labels.children){
    const i=Number(label.dataset.index);
    label.style.top=((i-visibleStart)*unit)+'px';
