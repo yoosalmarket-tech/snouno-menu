@@ -1,4 +1,5 @@
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js';
+import {installActionReporting,menuLink,copyMenuLink} from './action-tracking.js?v=links-actions-20261116';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
@@ -7,13 +8,29 @@ let dishes=[],categories=[],links=[],advertisements=[],settings={};
 let favorites=new Set(JSON.parse(localStorage.getItem('snouno-favorites')||'[]'));
 const money=value=>Number(value)+' ₪';
 const isPreview=window.parent!==window&&new URLSearchParams(location.search).get('preview')==='1';
+const explicitMode=new URLSearchParams(location.search).get('mode');
+const reporting=installActionReporting({
+ route:()=>currentPage(),
+ mode:()=>document.body.classList.contains('rich-menu-active')?'interactive':'standard',
+ preview:()=>isPreview
+});
+let appliedDeepLink='';
+function noteSelection(kind,id){
+ if(isPreview||currentPage()!=='menu'||!id)return;
+ const url=new URL(location.href);
+ url.searchParams.delete('dish');url.searchParams.delete('category');
+ url.searchParams.set(kind==='meal'?'dish':'category',String(id));
+ history.replaceState(null,'',url.pathname+url.search+url.hash);
+ appliedDeepLink=url.search;
+}
+
 
 /* Rich menu is an explicit, bandwidth-sensitive opt-in. Nothing from the
    immersive stage is fetched until its switch is on. */
-let richDesired=!isPreview&&localStorage.getItem('snouno-rich-mode')==='1';
+let richDesired=!isPreview&&(explicitMode==='interactive'||(explicitMode!=='standard'&&localStorage.getItem('snouno-rich-mode')==='1'));
 // Test the first visit during the yellow loading screen. Returning visitors
 // keep their saved preference instead of repeating the network check.
-const firstVisitModeCheck=!isPreview&&localStorage.getItem('snouno-rich-mode')===null;
+const firstVisitModeCheck=!isPreview&&!['interactive','standard'].includes(explicitMode)&&localStorage.getItem('snouno-rich-mode')===null;
 const firstVisitStartedAt=performance.now();
 let richController=null,richImport=null,richBusy=false,richRevision=0;
 const richToggle=document.getElementById('rich-mode-toggle');
@@ -65,6 +82,7 @@ async function syncRichMode(){
  }
  if(richController){
   richController.refresh();richController.setActive(true);
+  applyDeepLink();
   return;
  }
  richBusy=true;updateRichToggle();
@@ -74,6 +92,13 @@ async function syncRichMode(){
   if(version!==richRevision||!richDesired||currentPage()!=='menu')return;
   richController=module.createRichMenu({
    host:target,getData:richData,onOpen:detail,
+   onSelection:selection=>{
+    if(selection?.mealId)noteSelection('meal',selection.mealId);
+    else if(selection?.categoryId)noteSelection('category',selection.categoryId);
+   },
+   onShare:async meal=>{
+    if(meal?.id)await copyMenuLink('meal',meal.id,'interactive');
+   },
    onExit:()=>{
     richDesired=false;
     richToggle.checked=false;
@@ -87,6 +112,7 @@ async function syncRichMode(){
    }
   });
   richController.setActive(true);
+  applyDeepLink();
  }catch(error){
   console.error('Snouno rich menu:',error);
   richDesired=false;localStorage.removeItem('snouno-rich-mode');
@@ -171,6 +197,9 @@ function contactLinks(container,channels,meal) {
    if(!link||!url||!/^https?:\/\//i.test(url))continue;
    const a=make('a');a.href=url;a.dataset.channel=channel;
    a.setAttribute('aria-label',tr(link.name));
+   a.id='order-'+channel+'-'+(meal?.id||'restaurant');
+   a.dataset.trackAction='order_platform_click';
+   if(meal?.id)a.dataset.mealId=meal.id;
    a.append(image('/assets/'+channel+'.svg',''),make('span',tr(link.name)));
    if(ordering.includes(channel))a.classList.add('order-action');
    container.append(a);
@@ -453,15 +482,15 @@ function renderAds() {
    const count=$('ad-total');
    if(count)count.textContent=String(index+1).padStart(2,'0')+' / '+String(ads.length).padStart(2,'0');
  }
- for (const [index,{image:url,name:label,dish_id:dishId}] of ads.entries()) {
+ for (const [index,{id:adId,image:url,name:label,dish_id:dishId}] of ads.entries()) {
    const title=label||('إعلان '+(index+1));
-   const slide=make('button');slide.type='button';slide.className='ad-product';slide.setAttribute('aria-label','عرض '+title);
+   const slide=make('button');slide.type='button';slide.className='ad-product';slide.setAttribute('aria-label','عرض '+title);slide.id='ad-'+(adId||index);slide.dataset.trackAction='ad_open';if(dishId)slide.dataset.mealId=dishId;
    slide.append(image(url,title));slide.onclick=()=>detail(dishes.find(d=>d.id===dishId)||{name:title,image:url,available:true});
    track.append(slide);
-   const dot=make('button');dot.type='button';dot.setAttribute('aria-label',title);
+   const dot=make('button');dot.type='button';dot.setAttribute('aria-label',title);dot.id='ad-dot-'+(adId||index);dot.dataset.trackAction='ad_select';
    const fill=make('span');fill.className='ad-progress';dot.append(fill);
    dot.onclick=()=>{select(index);restart();};dots.append(dot);
-   const thumb=make('button');thumb.type='button';thumb.className='ad-thumb';
+   const thumb=make('button');thumb.type='button';thumb.className='ad-thumb';thumb.id='ad-thumb-'+(adId||index);thumb.dataset.trackAction='ad_select';
    const thumbImage=image(url,title);thumbImage.loading='lazy';
    const thumbDetails=make('span');thumbDetails.className='ad-thumb-text';
    const number=make('small',String(index+1).padStart(2,'0'));
