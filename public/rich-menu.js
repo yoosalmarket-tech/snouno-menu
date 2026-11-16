@@ -114,8 +114,11 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    thumbnail.title=getName(meal);thumbnail.setAttribute('aria-label',getName(meal));
    if(photo){const img=mk('img');img.src=photo;img.alt='';img.loading='lazy';img.draggable=false;thumbnail.append(img);}
    else thumbnail.textContent='•';
+   const thumbName=mk('span','rm-thumb-name',getName(meal));
+   thumbName.dir='rtl';thumbnail.append(thumbName);
    thumbnail.addEventListener('click',()=>goTo(i));
-   u.thumbTrack.append(thumbnail);thumbEls.push(thumbnail);
+   // Reverse rail order to follow the direction of the main food motion.
+   u.thumbTrack.prepend(thumbnail);thumbEls.push(thumbnail);
   });
  }
  function labelRail(){
@@ -183,9 +186,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    el.style.transform='scale('+Math.max(.8,1-distance*.07).toFixed(3)+')';
    el.setAttribute('aria-current',String(i===front));
   });
-  const unit=34,h=u.thumbWindow.clientHeight,th=len*unit-4;
-  const y=clamp(h/2-position*unit-15,Math.min(0,h-th),0);
-  u.thumbTrack.style.transform='translateY('+y.toFixed(1)+'px)';
+  // Highest meal index at the top: the thumbnail rail advances downwards
+  // as the main dish approaches from depth, matching its physical motion.
+  const unit=54,h=u.thumbWindow.clientHeight,th=len*unit-5;
+  const visualIndex=len-1-position;
+  const y=th<=h?(h-th)/2:clamp(h/2-visualIndex*unit-(unit-5)/2,h-th,0);
+  u.thumbTrack.style.transform='translate3d(0,'+y.toFixed(1)+'px,0)';
   const fade=Math.min(1,Math.abs(k-Math.round(k))*2.6+(k<-.4?1:0));
   u.info.style.opacity=(1-fade).toFixed(3);
   u.info.style.transform='translateY('+(fade*12).toFixed(1)+'px)';
@@ -260,8 +266,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    const delta=event.clientX-p.x;
    if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?1:-1));
   }else if(p.index!=null){
-   if(p.index===front&&Math.abs(k-p.index)<.3){if(dish())onOpen(dish());}
-   else goTo(p.index);
+   const selected=group()?.items[p.index];
+   if(selected){goTo(p.index);openRichSheet('order',selected);}
   }
  }
  function wheel(event){
@@ -276,7 +282,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   else if(event.key==='ArrowDown')step(1);
   else if(event.key==='ArrowLeft')changeGroup(groupIndex+1);
   else if(event.key==='ArrowRight')changeGroup(groupIndex-1);
-  else if(event.key==='Enter'||event.key===' '){if(dish())onOpen(dish());}
+  else if(event.key==='Enter'||event.key===' '){if(dish())openRichSheet('order',dish());}
   else return;
   event.preventDefault();
  }
@@ -356,7 +362,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  u.stage.addEventListener('keydown',key);
  u.catPrev.onclick=()=>changeGroup(groupIndex-1);
  u.catNext.onclick=()=>changeGroup(groupIndex+1);
- u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
+ u.railUp.onclick=()=>step(1);u.railDown.onclick=()=>step(-1);
  u.details.onclick=()=>openRichSheet('contact');
  u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
  u.fav.onclick=()=>{
