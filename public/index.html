@@ -22,7 +22,7 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
 <section id="welcome" aria-label="واجهة مطعم سنونو">
  <div class="welcome-top" dir="ltr">
   <svg class="welcome-top-wave" viewBox="0 0 390 112" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0H390V87Q195 122 0 87Z" fill="#FDBE2D"/></svg>
-  <div class="welcome-top-caption" aria-hidden="true"><span>SNOUNO</span><span>MENU</span></div>
+
   <img id="welcome-logo" class="welcome-logo" src="/assets/logo.webp" alt="شعار مطعم سنونو">
  </div>
  <div class="welcome-section-caption" dir="rtl"><span class="welcome-caption-line"></span><span>أهلاً وسهلاً</span><span class="welcome-caption-line"></span></div>
@@ -32,9 +32,9 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <div class="welcome-stage-word-ar" aria-hidden="true">سنونو</div>
   <div class="welcome-stage-halo" aria-hidden="true"></div>
   <div class="welcome-food-shadow" aria-hidden="true"></div>
-  <img id="cover-photo" class="welcome-food" src="/assets/plate.webp" alt="وجبة من مطعم سنونو" fetchpriority="high">
-  <div class="welcome-food-badge"><strong>من سنونو</strong><span>للّمة أحلى طعم</span></div>
-  <div class="welcome-stage-rail" aria-hidden="true"><span class="active"></span><span></span><span></span></div>
+  <img id="cover-photo" class="welcome-food" src="/assets/meals/2468.webp" alt="بوكس المشاركة من سنونو" fetchpriority="high">
+  <div class="welcome-food-badge"><strong>من سنونو</strong><span id="mobile-meal-name">بوكس المشاركة</span></div>
+  <div class="welcome-stage-rail" aria-label="أطباق الترحيب"><button type="button" aria-label="بوكس المشاركة" aria-current="true"></button><button type="button" aria-label="نوك أوت" aria-current="false"></button><button type="button" aria-label="ناشفيل" aria-current="false"></button></div>
  </div>
  <div class="welcome-bottom" dir="rtl">
   <span id="greeting" class="welcome-greeting">أهلاً بك في</span>
@@ -51,7 +51,7 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
       <p class="desktop-greeting" id="desktop-welcome-greeting">أهلاً بك في</p>
       <h1><span id="desktop-welcome-brand">مطعم سنونو</span><span class="desktop-headline-accent">على مزاجك.</span></h1>
       <p class="desktop-description">اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.</p>
-      <div class="desktop-welcome-actions"><a class="desktop-main-cta" href="/menu" data-page="menu" id="desktop-welcome-browse"><span>تصفح المنيو</span><span aria-hidden="true">↗</span></a><a class="desktop-secondary-cta" href="/contact" data-page="contact">تواصل معنا <span aria-hidden="true">←</span></a></div>
+      <div class="desktop-welcome-actions"><a class="desktop-main-cta" href="/menu" data-page="menu" id="desktop-welcome-browse"><span>تصفح المنيو</span><span aria-hidden="true">↗</span></a></div>
       <div class="desktop-divider"></div>
       <div class="desktop-signature"><span class="desktop-signature-line"></span><span>مطعم سنونو <b>•</b> اختيارات كثيرة، لمّة واحدة</span></div>
     </div>
@@ -65,18 +65,10 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
       <span class="desktop-side-note" aria-hidden="true">FRESH • MADE FOR YOU</span>
     </div>
   </div>
-  <nav class="desktop-welcome-dock" aria-label="التنقل في الموقع">
-    <a href="/menu" data-page="menu">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v7c0 2 5 2 5 0V3m-2.5 0v18M18 3c-3 2-4 7-4 10h4m0-10v18"/></svg>القائمة
-    </a>
-    <a href="/contact" data-page="contact">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 11h.1m4 0h.1m4 0h.1"/></svg>تواصل معنا
-    </a>
-  </nav>
   <footer class="desktop-welcome-footer"><span>SNOUNO RESTAURANT</span><span>استكشف القائمة من أي جهاز</span><span>01 / MENU</span></footer>
 </div>
 </section>
-<div id="inside" hidden><header><a class="brand-home" href="/welcome" data-page="welcome" aria-label="العودة إلى واجهة سنونو"><img id="logo" src="/assets/logo.webp" alt="سنونو"></a><button id="theme" aria-label="تغيير مظهر المنيو">☾</button></header>
+<div id="inside" hidden><header><a class="brand-home" href="/welcome" data-page="welcome" aria-label="العودة إلى واجهة سنونو"><img id="logo" src="/assets/logo.webp" alt="سنونو"></a><div class="header-actions"><button id="language" type="button" aria-label="Switch to English" aria-pressed="false" lang="en">EN</button><button id="theme" aria-label="تغيير مظهر المنيو">☾</button></div></header>
 <section id="menu"><section id="ads" aria-label="إعلانات المطعم" hidden><div id="ad-track" tabindex="0" aria-label="اسحب لتصفح الإعلانات"></div><div id="ad-dots" aria-label="اختيار الإعلان"></div></section><label class="search"><span aria-hidden="true">⌕</span><input type="search" id="search" placeholder="ابحث عن طبقك أو مشروبك المفضل..." aria-label="البحث عن طبق"></label><div class="chips" id="chips"></div><div id="cards"></div></section>
 <section id="contact" hidden>
   <div class="contact-hero">
