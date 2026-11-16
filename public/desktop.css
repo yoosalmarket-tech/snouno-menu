@@ -1376,3 +1376,20 @@
   width:100%!important;min-height:0!important;
  }
 }
+
+
+/* The immersive stage is the entire browser on desktop (not below header).
+   Stronger, later override for the previous height:calc(100dvh - 94px). */
+@media(min-width:981px){
+ html body.rich-menu-active:not([data-preview]) #shell #inside #menu{
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:0!important;
+  margin:0!important;
+ }
+ html body.rich-menu-active:not([data-preview]) #inside>header,
+ html body.rich-menu-active:not([data-preview]) #dock,
+ html body.rich-menu-active:not([data-preview]) #menu>#experience-switch{
+  display:none!important;
+ }
+}
