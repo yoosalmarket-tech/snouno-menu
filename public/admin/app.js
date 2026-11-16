@@ -4,7 +4,27 @@ const $ = id => document.getElementById(id);
 const sections = {
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق','image'],['position','ترتيب العرض','integer'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف'],['position','ترتيب العرض','integer']]],
-  menu_settings: ['تفاصيل المنيو', [['name','اسم المطعم'],['welcome','عبارة الترحيب'],['contact','نص صفحة التواصل','textarea'],['address','العنوان'],['hours','ساعات العمل'],['logo','الشعار','image'],['hero','صورة الترحيب','image'],['hotline','رقم التواصل السريع'],['welcome_button','زر الترحيب'],['credit','تذييل الصفحات','locked']]],
+  menu_settings: ['تفاصيل المنيو', [
+    ['name','اسم المطعم'],
+    ['welcome','عبارة الترحيب'],
+    ['welcome_caption','العبارة الصغيرة أعلى شاشة الترحيب'],
+    ['welcome_subtitle','النص تحت اسم المطعم'],
+    ['welcome_question','السؤال على ملصق الوجبة'],
+    ['welcome_label','العبارة بجانب الوجبة (مثل: من سنونو)'],
+    ['welcome_meal_1','اسم الوجبة الأولى (بوكس المشاركة)'],
+    ['welcome_image_1','صورة الترحيب الأولى — بوكس المشاركة','image'],
+    ['welcome_meal_2','اسم الوجبة الثانية (نوك أوت)'],
+    ['welcome_image_2','صورة الترحيب الثانية — نوك أوت','image'],
+    ['welcome_meal_3','اسم الوجبة الثالثة (ناشفيل)'],
+    ['welcome_image_3','صورة الترحيب الثالثة — ناشفيل','image'],
+    ['welcome_desktop_accent','السطر الأصفر الكبير في ترحيب الكمبيوتر'],
+    ['welcome_description','وصف صفحة الترحيب للكمبيوتر','textarea'],
+    ['welcome_button','نص زر تصفح المنيو'],
+    ['logo','شعار سنونو','image'],
+    ['contact','نص صفحة التواصل','textarea'],
+    ['address','العنوان'],['hours','ساعات العمل'],
+    ['hotline','رقم التواصل السريع']
+  ]],
   menu_links: ['روابط الطلب والتواصل', [['url','الرابط','url']]],
   menu_ads: ['إدارة الإعلانات', [['name','عنوان الإعلان'],['image','صورة الإعلان','image'],['dish_id','الطبق المرتبط','product'],['position','ترتيب العرض','integer']]],
   rankings: ['تقييمات الأطباق', []],
@@ -112,7 +132,7 @@ async function edit(key,row){
  if(key==='dishes'&&!cats.length){notice('أضف صنفاً أولاً لتضع الطبق فيه.');return;}
  const dishes=key==='menu_ads'?await api('/rest/v1/dishes?select=id,name&order=name'):[];
  const uploads={};
- const sizes={image:key==='menu_ads'?'1080 × 285':'1200 × 740',hero:'1024 × 1536',logo:'564 × 183',banner:'1080 × 285',banner_two:'1080 × 285',banner_three:'1080 × 285'};
+ const sizes={image:key==='menu_ads'?'1080 × 285':'1200 × 740',logo:'564 × 183',welcome_image_1:'صورة شفافة 720 × 720',welcome_image_2:'صورة شفافة 720 × 720',welcome_image_3:'صورة شفافة 720 × 720',banner:'1080 × 285',banner_two:'1080 × 285',banner_three:'1080 × 285'};
  if(key==='menu_links')form.append(node('p',row.name));
 
  for(const [field,caption,type='text'] of sections[key][1]){
@@ -134,7 +154,7 @@ async function edit(key,row){
    label.append(input);
    if(field==='sonbol_url')label.append(node('small','الصق رابط الوجبة من سنبل ليظهر زر طلبها في نافذة الطبق.'));
    if(field==='ingredients')label.append(node('small','افصل المكونات بفاصلة، أو اكتب «خضار: خس، خيار» في سطر لكل مجموعة.'));
-   if(type==='image'){const hint=node('small', 'المقاس المقترح '+sizes[field]+' بكسل');label.append(hint);const upload=node('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';label.append(upload);uploads[field]=upload;}
+   if(type==='image'){const hint=node('small', 'المقاس المقترح: '+(sizes[field]||'1200 × 740')+' — يُفضّل WebP أو PNG بخلفية شفافة');label.append(hint);const upload=node('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';label.append(upload);uploads[field]=upload;}
    form.append(label);
  }
  const error=node('p');error.setAttribute('role','alert'); const save=node('button','حفظ');
