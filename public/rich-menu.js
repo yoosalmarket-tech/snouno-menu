@@ -19,10 +19,11 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  '<div class="rm-categories-track" role="tablist"></div></nav>',
  '<div class="rm-stage-wrap"><div class="rm-stage-word" aria-hidden="true"><span></span><span></span></div>',
  '<div class="rm-shadow" aria-hidden="true"></div><div class="rm-stage" role="listbox" tabindex="0"></div>',
+ '<button type="button" class="rm-customize" aria-label="اطلب الآن"><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><span><strong lang="en">ORDER NOW</strong><span dir="rtl">اطلب الآن</span></span></button></div>',
+ // The entire sidebar is a sibling of the 3D scene, not its descendant.
  '<aside class="rm-thumbs" aria-label="اختيار وجبة"><button type="button" class="rm-rail-button rm-rail-up" aria-label="السابق">⌃</button>',
  '<div class="rm-rail-row"><div class="rm-rail-labels" aria-hidden="true"></div><div class="rm-rail-window"><div class="rm-rail-track"></div></div></div><button type="button" class="rm-rail-button rm-rail-down" aria-label="التالي">⌄</button>',
  '<span class="rm-rail-count" dir="ltr">1 / 1</span></aside>',
- '<button type="button" class="rm-customize" aria-label="اطلب الآن"><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><span><strong lang="en">ORDER NOW</strong><span dir="rtl">اطلب الآن</span></span></button></div>',
  '<section class="rm-info" aria-live="polite"><h2 class="rm-info-name"></h2><p class="rm-info-desc"></p>',
  '<span class="rm-info-price" dir="ltr"></span><div class="rm-info-actions">',
  '<button type="button" class="rm-info-details">＋ عرض تفاصيل الوجبة</button>',
