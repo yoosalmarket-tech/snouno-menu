@@ -15,13 +15,41 @@ const reporting=installActionReporting({
  preview:()=>isPreview
 });
 let appliedDeepLink='';
+function applyDeepLink(){
+ if(isPreview||currentPage()!=='menu'||!dishes.length)return;
+ const params=new URLSearchParams(location.search);
+ const hashDish=location.hash.startsWith('#meal-')?location.hash.slice(6):'';
+ const hashCategory=location.hash.startsWith('#category-')?location.hash.slice(10):'';
+ const mealId=params.get('dish')||hashDish;
+ const categoryId=params.get('category')||hashCategory;
+ if(!mealId&&!categoryId)return;
+ const fingerprint=location.search+'|'+location.hash;
+ if(appliedDeepLink===fingerprint)return;
+ if(richDesired){
+  if(!richController)return;
+  const matched=richController.focusLink({mealId,categoryId});
+  if(matched)appliedDeepLink=fingerprint;
+  return;
+ }
+ if(mealId){
+  const found=dishes.find(row=>String(row.id)===mealId);
+  if(!found)return;
+  appliedDeepLink=fingerprint;
+  detail(found);
+ }else if(categoryId){
+  const section=document.getElementById('category-'+categoryId);
+  if(!section)return;
+  appliedDeepLink=fingerprint;
+  requestAnimationFrame(()=>scrollToSection(section));
+ }
+}
 function noteSelection(kind,id){
  if(isPreview||currentPage()!=='menu'||!id)return;
  const url=new URL(location.href);
  url.searchParams.delete('dish');url.searchParams.delete('category');
  url.searchParams.set(kind==='meal'?'dish':'category',String(id));
  history.replaceState(null,'',url.pathname+url.search+url.hash);
- appliedDeepLink=url.search;
+ appliedDeepLink=url.search+'|'+url.hash;
 }
 
 
@@ -589,6 +617,7 @@ function route(){
  $('inside').querySelector('header').classList.remove('tucked');pageHeader.style.transform='';previousY=0;
  if($('dish').open)$('dish').close();window.scrollTo(0,0);
  window.dispatchEvent(new Event('pagechange'));
+ applyDeepLink();
 }
 let previousY=0;
  const pageHeader=$('inside').querySelector('header');
@@ -1024,6 +1053,7 @@ async function load(){
   }));
   [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   void syncRichMode();
+  applyDeepLink();
   return true;
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);return false;}
 }
