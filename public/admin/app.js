@@ -1,3 +1,4 @@
+import {installActionReporting,menuLink} from '../action-tracking.js?v=links-actions-20261116';
 const endpoint = 'https://wknpuzdyemwkllmxehyy.supabase.co';
 const apiKey = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const $ = id => document.getElementById(id);
@@ -34,6 +35,7 @@ const sections = {
   menu_links: ['روابط الطلب والتواصل', [['url','الرابط','url']]],
   menu_ads: ['إدارة الإعلانات', [['name','عنوان الإعلان'],['image','صورة الإعلان','image'],['dish_id','الطبق المرتبط','product']]],
   rankings: ['تقييمات الأطباق', []],
+  events: ['إحصائيات التفاعل', []],
   submissions: ['رسائل التواصل', []],
   menu_staff: ['المستخدمون', [['email','بريد المحرر','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]],
   account: ['حساب المالك', []]
@@ -42,6 +44,10 @@ const sessionKey='snouno-session';
 let rememberMe=!!localStorage.getItem(sessionKey);
 let session=JSON.parse(localStorage.getItem(sessionKey)||sessionStorage.getItem(sessionKey)||'null');
 let role, section = 'dishes', generation = 0;
+const adminReporting=installActionReporting({
+ route:()=> 'admin',mode:()=> 'dashboard',
+ token:()=>session?.access_token||null,preview:()=>!session?.access_token
+});
 const notice = message => { $('status').textContent = message; };
 function node(tag, text) { const el=document.createElement(tag); if(text!==undefined) el.textContent=text; return el; }
 function action(label, fn) { const b=node('button',label); b.type='button'; b.onclick=()=>Promise.resolve(fn()).catch(e=>notice(e.message)); return b; }
@@ -78,11 +84,11 @@ async function enter(){
   if(!own.length) throw new Error('لا توجد صلاحية لهذا الحساب');
   role=own[0].role; $('login').hidden=true; $('logout').hidden=false; $('tabs').replaceChildren();
   for(const [key,[label]] of Object.entries(sections)){
-    if(['menu_staff','account'].includes(key)&&role!=='owner') continue;
-    const b=action(label,()=>openSection(key)); b.dataset.section=key; $('tabs').append(b);
+    if(['menu_staff','account','events'].includes(key)&&role!=='owner') continue;
+    const b=action(label,()=>openSection(key)); b.dataset.section=key;b.id='admin-tab-'+key; $('tabs').append(b);
   }
   const saved=location.hash.slice(1);
-  await openSection(Object.hasOwn(sections,saved)&&(!['menu_staff','account'].includes(saved)||role==='owner')?saved:'dishes');
+  await openSection(Object.hasOwn(sections,saved)&&(!['menu_staff','account','events'].includes(saved)||role==='owner')?saved:'dishes');
 }
 $('remember-me').checked=rememberMe;
 $('access').onsubmit=async e=>{
@@ -398,12 +404,13 @@ function setupUnusedUploadCleanup(box){
  cleanup.form.append(scan);
 }
 async function openSection(key){
- if(['menu_staff','account'].includes(key)&&role!=='owner'){
+ if(['menu_staff','account','events'].includes(key)&&role!=='owner'){
   notice('هذه الصفحة متاحة للمالك فقط');return;
  }
  const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); $('body').replaceChildren(); $('title').textContent=sections[key][0];
  for(const b of $('tabs').children)b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='account'){await renderOwnerAccount();return;}
+ if(key==='events'){await renderActionReports();return;}
  const feedback=['rankings','submissions'].includes(key);
  const table=feedback?'menu_feedback':key;
  const condition=feedback?'&kind='+ (key==='rankings'?'eq.':'neq.') +encodeURIComponent('تقييم'):'';
@@ -436,7 +443,7 @@ async function openSection(key){
    }
  }
  for(const row of rows){
-   const card=node('article');
+   const card=node('article');card.id='admin-'+key+'-'+(row.id||'row');
    if(['dishes','categories','menu_ads'].includes(key)){
      if(key==='dishes')card.dataset.dishId=row.id;
      else card.dataset.sortId=row.id;
