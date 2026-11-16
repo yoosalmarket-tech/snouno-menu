@@ -1325,3 +1325,28 @@
   background:#fff7e9;border-color:#e8d5ae;color:#805d14;
  }
 }
+
+
+/* Keep the original desktop grid intact with the new opt-in switch as its
+   own first row. Only the interactive setting changes the menu layout. */
+@media(min-width:981px){
+ body:not([data-preview]):not(.rich-menu-active) #menu{
+  grid-template-rows:auto auto auto minmax(300px,auto);
+ }
+ body:not([data-preview]):not(.rich-menu-active) #menu>#experience-switch{
+  grid-column:1/-1!important;grid-row:1!important;
+  max-width:1200px;width:100%;justify-self:center;
+ }
+ body:not([data-preview]):not(.rich-menu-active) #menu>#ads{
+  grid-column:1/-1!important;grid-row:2!important;
+ }
+ body:not([data-preview]):not(.rich-menu-active) #menu>.search{
+  grid-column:1!important;grid-row:3!important;
+ }
+ body:not([data-preview]):not(.rich-menu-active) #menu>#chips{
+  grid-column:2!important;grid-row:3/span 2!important;
+ }
+ body:not([data-preview]):not(.rich-menu-active) #menu>#cards{
+  grid-column:1!important;grid-row:4!important;
+ }
+}
