@@ -2,7 +2,7 @@ const endpoint = 'https://wknpuzdyemwkllmxehyy.supabase.co';
 const apiKey = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const $ = id => document.getElementById(id);
 const sections = {
-  dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق','image'],['position','ترتيب العرض','integer'],['available','متوفر','checkbox']]],
+  dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف'],['position','ترتيب العرض','integer']]],
   menu_settings: ['تفاصيل المنيو', [
     ['name','اسم المطعم'],
@@ -76,6 +76,90 @@ $('register').onclick=async()=>{
  try {await request('/auth/v1/signup?redirect_to='+encodeURIComponent(location.origin+'/admin/'),{method:'POST',body:Object.fromEntries(new FormData(form))});notice('تحقق من بريدك لتفعيل الحساب، ثم سجّل الدخول.');} catch(e){notice(e.message);}
 };
 $('logout').onclick=async()=>{try{await api('/auth/v1/logout',{method:'POST'});} finally {persist(null);loggedOut();notice('تم تسجيل الخروج');}};
+/* Drag handles preserve category membership while updating real menu order.
+   Mouse, touch, pen, and keyboard are supported. */
+function setupDishSorting(categoryGroups,rows){
+ let saving=false,drag=null,activeHandle=null,changed=false;
+ const original=new Map(rows.map(row=>[row.id,row.position]));
+ const save=async()=>{
+  if(saving)return;
+  const updates=[];
+  for(const group of categoryGroups.values()){
+   [...group.querySelectorAll('article[data-dish-id]')].forEach((card,index)=>{
+    const id=card.dataset.dishId,position=index+1;
+    if(original.get(id)!==position)updates.push({id,position});
+   });
+  }
+  if(!updates.length)return;
+  saving=true;const area=$('body');area.classList.add('is-saving-order');
+  notice('جارٍ حفظ ترتيب الأطباق...');
+  try{
+   // Sequential writes keep the resulting positions deterministic.
+   for(const update of updates){
+    await api('/rest/v1/dishes?id=eq.'+encodeURIComponent(update.id),
+       {method:'PATCH',body:{position:update.position}});
+    original.set(update.id,update.position);
+   }
+   notice('تم حفظ الترتيب الجديد ✓');
+  }catch(error){
+   notice('تعذّر حفظ الترتيب: '+error.message+'. تم تحديث القائمة للتحقق من الترتيب.');
+   await openSection('dishes');
+  }finally{saving=false;area.classList.remove('is-saving-order');}
+ };
+ const applyArrow=async(card,direction)=>{
+  if(saving)return;
+  const peer=direction<0?card.previousElementSibling:card.nextElementSibling;
+  if(!peer||!peer.matches('article[data-dish-id]'))return;
+  if(direction<0)peer.before(card);else peer.after(card);
+  card.querySelector('.dish-drag-handle')?.focus();
+  await save();
+ };
+ for(const group of categoryGroups.values()){
+  for(const card of group.querySelectorAll('article[data-dish-id]')){
+   const handle=card.querySelector('.dish-drag-handle');
+   if(!handle)continue;
+   handle.addEventListener('keydown',event=>{
+     if(event.key==='ArrowUp'||event.key==='ArrowDown'){
+       event.preventDefault();
+       applyArrow(card,event.key==='ArrowUp'?-1:1);
+     }
+   });
+   handle.addEventListener('pointerdown',event=>{
+     if(saving||event.button!==0)return;
+     event.preventDefault();
+     drag={id:event.pointerId,card,group};
+     changed=false;activeHandle=handle;
+     handle.setPointerCapture(event.pointerId);
+     card.classList.add('is-dragging');
+   });
+   handle.addEventListener('pointermove',event=>{
+     if(!drag||event.pointerId!==drag.id)return;
+     const under=document.elementFromPoint(event.clientX,event.clientY);
+     const target=under?.closest('article[data-dish-id]');
+     if(!target||target===drag.card||target.parentElement!==drag.group)return;
+     const halfway=target.getBoundingClientRect().top+target.offsetHeight/2;
+     if(event.clientY<halfway)target.before(drag.card);
+     else target.after(drag.card);
+     changed=true;
+   });
+   const finish=async event=>{
+     if(!drag||event.pointerId!==drag.id)return;
+     drag.card.classList.remove('is-dragging');drag=null;
+     try{activeHandle?.releasePointerCapture(event.pointerId)}catch{}
+     if(changed)await save();
+     changed=false;activeHandle=null;
+   };
+   handle.addEventListener('pointerup',finish);
+   handle.addEventListener('pointercancel',finish);
+   handle.addEventListener('lostpointercapture',event=>{
+     if(drag?.id!==event.pointerId)return;
+     drag.card.classList.remove('is-dragging');drag=null;
+     if(changed)save();
+     changed=false;activeHandle=null;
+   });
+  }
+ }
+}
 async function openSection(key){
  const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); $('body').replaceChildren(); $('title').textContent=sections[key][0];
  for(const b of $('tabs').children)b.setAttribute('aria-current',String(b.dataset.section===key));
@@ -84,12 +168,35 @@ async function openSection(key){
  const condition=feedback?'&kind='+ (key==='rankings'?'eq.':'neq.') +encodeURIComponent('تقييم'):'';
  const order=feedback?'created_at.desc':key==='menu_staff'?'email':key==='menu_settings'?'id':'position,name';
  const rows=await api('/rest/v1/'+table+'?select=*&order='+order+condition);
+ const categoryRows=key==='dishes'?await api('/rest/v1/categories?select=id,name,position&order=position,name'):[];
  if(ticket!==generation)return;
  const area=$('body');
  if(!feedback&&!['menu_settings','menu_links'].includes(key))area.append(action('إضافة',()=>edit(key,{})));
  if(!rows.length)area.append(node('p','لا توجد عناصر بعد.'));
+ const categoryGroups=new Map();
+ if(key==='dishes'){
+   const hint=node('p','اسحب الطبق من المقبض ⋮⋮ وضعه فوق أو تحت طبق آخر داخل نفس الصنف. يتم حفظ الترتيب تلقائياً.');
+   hint.className='dish-sort-hint';area.append(hint);
+   for(const category of categoryRows){
+     const section=node('section');section.className='dish-sort-section';
+     section.append(node('h2',category.name));
+     const group=node('div');group.className='dish-sort-list';
+     group.dataset.categoryId=category.id;
+     section.append(group);area.append(section);
+     categoryGroups.set(category.id,group);
+   }
+ }
  for(const row of rows){
    const card=node('article');
+   if(key==='dishes'){
+     card.dataset.dishId=row.id;
+     card.classList.add('dish-sort-card');
+     const handle=node('button','⋮⋮');handle.type='button';
+     handle.className='dish-drag-handle';
+     handle.title='اسحب لتغيير الترتيب';
+     handle.setAttribute('aria-label','تغيير ترتيب '+row.name+' بالسحب أو بأسهم لوحة المفاتيح');
+     card.append(handle);
+   }
    if(key==='dishes'&&row.image){const photo=node('img');photo.src=row.image;photo.className='dish-thumb';photo.alt='';card.append(photo);}
    if(key==='menu_links'&&row.channel){const icon=node('img');icon.src='/assets/'+row.channel+'.svg';icon.className='channel-icon';icon.alt='';card.append(icon);}
    card.append(node('strong',key==='rankings'?(row.meal_name||'طبق محذوف قبل تسجيل اسمه'):(row.name||row.email||row.kind)));
@@ -122,8 +229,12 @@ async function openSection(key){
      if(!confirm('تأكيد إزالة '+(row.meal_name||row.name||row.email||row.kind)+'؟'))return;
      await api('/rest/v1/'+table+'?'+filter(row)+condition,{method:'DELETE'});await openSection(key);
    }));
-   area.append(card);
+   if(key==='dishes'){
+     const group=categoryGroups.get(row.category_id);
+     (group||area).append(card);
+   }else area.append(card);
  }
+ if(key==='dishes')setupDishSorting(categoryGroups,rows);
 }
 const filter=row=>row.id!==undefined?'id=eq.'+row.id:'email=eq.'+encodeURIComponent(row.email);
 async function edit(key,row){
@@ -177,7 +288,13 @@ async function edit(key,row){
          data[field]=endpoint+'/storage/v1/object/public'+path;
        }
      }
-     if(key==='dishes'&&!data.sonbol_url)data.sonbol_url=null;
+     if(key==='dishes'){
+       if(!data.sonbol_url)data.sonbol_url=null;
+       if(!row.id){
+         const existing=await api('/rest/v1/dishes?select=position&category_id=eq.'+encodeURIComponent(data.category_id)+'&order=position.desc&limit=1');
+         data.position=(Number(existing[0]?.position)||0)+1;
+       }
+     }
      if(key==='menu_ads'&&!data.image)throw new Error('أضف صورة للإعلان');
      const result=key==='menu_staff'?await api('/functions/v1/menu-staff',{method:'POST',body:data}):await api('/rest/v1/'+key+(row.id?'?'+filter(row):''),{method:row.id?'PATCH':'POST',body:data});
      $('dialog').close();await openSection(key);notice(result?.message||'تم الحفظ');
