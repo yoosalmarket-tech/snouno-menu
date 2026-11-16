@@ -1106,7 +1106,7 @@ async function chooseFirstVisitMode(initialMenu){
   const deadline=new Promise(resolve=>{timer=setTimeout(()=>resolve(false),remaining);});
   const probe=Promise.all([initialMenu,richAssets()]).then(async([loaded])=>{
    if(!loaded||!dishes.length)return false;
-   const meal=dishes.find(d=>asset(d.rich_image||d.image));
+   const meal=dishes.find(d=>asset(d.rich_image))||dishes.find(d=>asset(d.image));
    if(!meal)return false;
    const sample=new Image();
    sample.src=asset(meal.rich_image||meal.image);
