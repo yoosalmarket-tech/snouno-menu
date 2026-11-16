@@ -365,3 +365,12 @@ body.lang-en #contact #feedback label{direction:ltr;text-align:left;}
 html.loader-morphing,html.loader-finishing{overflow:hidden;}
 html.loader-morphing #welcome .welcome-logo,
 html.loader-morphing #welcome .desktop-welcome-top img{visibility:hidden;}
+
+
+/* Desktop ad feature scaffolding becomes transparent on phones; no extra content above ads. */
+#ads .ad-desktop-heading,#ads .ad-desktop-side{display:none;}
+#ads .ad-showcase,#ads .ad-main{display:contents;}
+@media(max-width:980px){
+ #ads #ad-track{width:100%;min-width:0;}
+ #ads #ad-dots{position:relative;z-index:2;}
+}
