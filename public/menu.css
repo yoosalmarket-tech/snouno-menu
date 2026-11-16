@@ -1011,3 +1011,14 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
  #welcome.welcome-browsing-out{transition:none!important;}
  #inside.menu-browsing-in{animation:none!important;}
 }
+
+/* Small, clear share action in the standard meal popup. */
+#dish .share-meal-link{
+ display:inline-flex;align-items:center;justify-content:center;
+ margin:14px 0 8px;padding:11px 16px;
+ border:1px solid #c99d3b;border-radius:12px;
+ color:var(--ink);background:var(--gold);
+ font:700 14px/1.45 Snouno,Tahoma,sans-serif;
+ cursor:pointer;
+}
+#dish .share-meal-link:focus-visible{outline:3px solid #86600a;outline-offset:3px;}
