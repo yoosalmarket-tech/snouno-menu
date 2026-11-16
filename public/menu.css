@@ -179,3 +179,24 @@ body[data-preview] *{animation:none!important;transition:none!important}
 
 /* Desktop has its own independent welcome UI; keep it entirely out of the mobile layout. */
 .desktop-welcome{display:none}
+
+
+/* Preserve the original mobile contact composition despite desktop-only semantic wrappers. */
+@media(max-width:980px){
+ #contact .contact-hero,
+ #contact .contact-layout,
+ #contact .contact-aside,
+ #contact .contact-info-block,
+ #contact .contact-info-text,
+ #contact .contact-detail-row,
+ #contact .contact-detail-row>div,
+ #contact .contact-channels,
+ #contact .contact-form-head{display:contents}
+ #contact .contact-kicker,
+ #contact .contact-card-top,
+ #contact .contact-row-icon,
+ #contact .contact-channels>h3,
+ #contact .contact-channels>p,
+ #contact .contact-form-kicker,
+ #contact .contact-form-head>p{display:none}
+}
