@@ -8,6 +8,92 @@ let favorites=new Set(JSON.parse(localStorage.getItem('snouno-favorites')||'[]')
 const money=value=>Number(value)+' ₪';
 const isPreview=window.parent!==window&&new URLSearchParams(location.search).get('preview')==='1';
 
+/* Rich menu is an explicit, bandwidth-sensitive opt-in. Nothing from the
+   immersive stage is fetched until its switch is on. */
+let richDesired=!isPreview&&localStorage.getItem('snouno-rich-mode')==='1';
+let richController=null,richImport=null,richBusy=false,richRevision=0;
+const richToggle=document.getElementById('rich-mode-toggle');
+function updateRichToggle(){
+ if(!richToggle)return;
+ richToggle.checked=richDesired;
+ richToggle.disabled=richBusy;
+ const english=typeof isEnglish==='function'&&isEnglish();
+ const title=document.getElementById('experience-switch-title');
+ const hint=document.getElementById('experience-switch-hint');
+ const status=document.getElementById('experience-switch-status');
+ if(title)title.textContent=english?'Interactive mode':'الوضع التفاعلي';
+ if(hint)hint.textContent=english?'3D food animations · best with fast internet':'حركة ثلاثية الأبعاد وصور أكثر · يُفضّل اتصال سريع';
+ if(status)status.textContent=richBusy?(english?'Loading':'تحميل'):richDesired?(english?'ON':'متقدم'):(english?'OFF':'عادي');
+}
+async function richAssets(){
+ if(richImport)return richImport;
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css';
+ link.dataset.richStyles='1';
+ const css=new Promise((resolve,reject)=>{
+  link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
+ });
+ document.head.append(link);
+ richImport=Promise.all([css,import('./rich-menu.js')]).then(([,module])=>module).catch(error=>{
+  richImport=null;link.remove();throw error;
+ });
+ return richImport;
+}
+function richData(){
+ return {categories,dishes,favorites,settings,lang:currentLanguage,categoryEnglish,
+  displayName,displayDescription};
+}
+async function syncRichMode(){
+ const enabled=richDesired&&!isPreview;
+ const target=$('rich-menu');
+ if(!target||!richToggle)return;
+ const version=++richRevision;
+ document.body.classList.toggle('rich-menu-active',enabled);
+ updateRichToggle();
+ if(!enabled||currentPage()!=='menu'){
+  if(richController)richController.setActive(false);
+  target.hidden=true;
+  return;
+ }
+ target.hidden=false;
+ if(!dishes.length){
+  target.textContent=isEnglish()?'Loading menu…':'جاري تحميل المنيو…';
+  return;
+ }
+ if(richController){
+  richController.refresh();richController.setActive(true);
+  return;
+ }
+ richBusy=true;updateRichToggle();
+ target.textContent=isEnglish()?'Preparing interactive experience…':'جاري تجهيز التجربة التفاعلية…';
+ try{
+  const module=await richAssets();
+  if(version!==richRevision||!richDesired||currentPage()!=='menu')return;
+  richController=module.createRichMenu({
+   host:target,getData:richData,onOpen:detail,
+   onFavorite:meal=>{
+    if(favorites.has(meal.id))favorites.delete(meal.id);else favorites.add(meal.id);
+    localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));
+    renderCards();
+   }
+  });
+  richController.setActive(true);
+ }catch(error){
+  console.error('Snouno rich menu:',error);
+  richDesired=false;localStorage.removeItem('snouno-rich-mode');
+  document.body.classList.remove('rich-menu-active');
+  target.hidden=true;
+  $('network').hidden=false;
+  $('network').textContent=isEnglish()?'Interactive mode unavailable; the standard menu remains active.':'تعذّر تحميل الوضع التفاعلي، المنيو العادي متاح.';
+ }finally{richBusy=false;updateRichToggle();}
+}
+richToggle?.addEventListener('change',()=>{
+ richDesired=richToggle.checked;
+ localStorage.setItem('snouno-rich-mode',richDesired?'1':'0');
+ void syncRichMode();
+});
+window.addEventListener('pagechange',()=>{void syncRichMode();});
+
+
 let currentLanguage='ar'; // Start every new visit in Arabic; visitors may switch to English.
 const originalTextNodes=new WeakMap();
 const isEnglish=()=>currentLanguage==='en';
@@ -53,6 +139,8 @@ function applyLanguage(){
    updateWelcomeLabels(mobileWelcomeIndex);
  }
  translateStaticContent();
+ updateRichToggle();
+ if(richController)richController.refresh();
 }
 for(const switcher of document.querySelectorAll('.language-switch')){
  switcher.onclick=()=>{
@@ -629,6 +717,7 @@ function renderCards(){
  }
  if(!visible.length&&q){const p=make('p',tr('لا توجد أطباق مطابقة.'));p.className='empty';grid.append(p);}
  menuSections=groups.map(group=>group.section);renderChips(groups);
+ if(richController)richController.refresh();
 }
 function startingScore(value){
  const score=make('span');score.className='rating';
@@ -835,6 +924,7 @@ async function load(){
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
   [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  void syncRichMode();
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
 async function revealPage(){
