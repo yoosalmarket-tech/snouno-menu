@@ -787,6 +787,24 @@ async function revealPage(){
   for(const stroke of strokes)stroke.playbackRate=2;
   await Promise.allSettled(strokes.map(stroke=>stroke.finished));
  }
+ if(onWelcome&&!reduced){
+   const header=matchMedia('(min-width:981px)').matches
+     ?document.querySelector('.desktop-welcome-top')
+     :document.querySelector('.welcome-top');
+   if(header){
+     shell.style.setProperty('--loader-header-height',Math.round(header.getBoundingClientRect().height)+'px');
+     // Reveal the page from beneath the yellow loader while its logo travels upward.
+     shell.classList.add('loader-morphing');
+     shell.classList.remove('loading');
+     await new Promise(resolve=>setTimeout(resolve,1080));
+     shell.classList.add('loader-finishing');
+     shell.classList.remove('loader-morphing');
+     await new Promise(resolve=>setTimeout(resolve,330));
+     shell.classList.remove('loader-finishing');
+     shell.style.removeProperty('--loader-header-height');
+     return;
+   }
+ }
  shell.classList.remove('loading');
 }
 load().finally(revealPage);
