@@ -468,9 +468,11 @@ body.rich-menu-active:not([data-preview]) #shell{
 #rich-menu .rm-info-name,
 #rich-menu .rm-info-desc{
   position:relative;
-  top:-7px;
+  top:-17px;
 }
 #rich-menu .rm-info-price{
+  position:relative;
+  top:-7px;
   font-size:clamp(21px,3vw,26px)!important;
   font-weight:800!important;
   line-height:1.2!important;
@@ -488,7 +490,7 @@ body.rich-menu-active:not([data-preview]) #shell{
 }
 @media(max-height:660px){
   #rich-menu .rm-info-name,
-  #rich-menu .rm-info-desc{top:-4px;}
-  #rich-menu .rm-info-price{font-size:20px!important;}
+  #rich-menu .rm-info-desc{top:-12px;}
+  #rich-menu .rm-info-price{top:-4px;font-size:20px!important;}
   #rich-menu .rm-info{padding-bottom:16px!important;}
 }
