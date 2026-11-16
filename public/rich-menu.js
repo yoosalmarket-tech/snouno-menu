@@ -155,9 +155,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   u.price.replaceChildren();
   if(Number.isFinite(price)){
    u.price.append(mk('span','rm-current-price',formatPrice(price)));
-   // Only show a crossed-out former price for an actual discount.
-   if(Number.isFinite(oldPrice)&&oldPrice>price){
-    u.price.append(mk('del','rm-old-price',formatPrice(oldPrice)));
+   // A previous price may be lower (increase) or higher (discount).
+   if(Number.isFinite(oldPrice)&&oldPrice!==price){
+    const old=mk('del','rm-old-price',formatPrice(oldPrice));
+    old.title='السعر السابق';
+    old.setAttribute('aria-label','السعر السابق '+formatPrice(oldPrice));
+    u.price.append(old);
    }
   }
   u.details.textContent=isEnglish()?'⌖ LOCATION & CONTACT':'⌖ موقعنا و التواصل';
