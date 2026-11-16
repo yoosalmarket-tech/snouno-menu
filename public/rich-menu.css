@@ -77,8 +77,10 @@
 #rich-menu .rm-info-fav[aria-pressed="true"]{background:var(--rm-yellow);color:#201a0b}
 #rich-menu .rm-instruction{font-size:10px;color:#bbb3a5;letter-spacing:.02em;line-height:1.1}
 #rich-menu .rm-boot{min-height:410px;display:grid;place-items:center;text-align:center;color:#d6cbb0;padding:50px 20px}
-#rich-menu .rm-app.rm-category-out .rm-stage-wrap{animation:rm-category-exit .23s cubic-bezier(.3,.65,.55,1) both}
-#rich-menu .rm-app.rm-category-in .rm-stage-wrap{animation:rm-category-enter .55s cubic-bezier(.05,.7,.1,1) both}
+/* Animate only the food scene during category changes. The controls and
+   entire side-meal rail remain anchored to the same screen position. */
+#rich-menu .rm-app.rm-category-out :is(.rm-stage,.rm-stage-word,.rm-shadow){animation:rm-category-exit .23s cubic-bezier(.3,.65,.55,1) both}
+#rich-menu .rm-app.rm-category-in :is(.rm-stage,.rm-stage-word,.rm-shadow){animation:rm-category-enter .55s cubic-bezier(.05,.7,.1,1) both}
 @keyframes rm-category-exit{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(var(--rm-shift-out,120px))}}
 @keyframes rm-category-enter{from{opacity:0;transform:translateX(var(--rm-shift-in,-120px))}to{opacity:1;transform:none}}
 @media(max-width:600px){
@@ -601,4 +603,26 @@ body.rich-menu-active:not([data-preview]) #shell{
 }
 @media(max-height:660px){
   #rich-menu .rm-instruction{margin-top:12px!important;}
+}
+
+/* Fast swipes at the first/last dish must not rubber-band the viewport or
+   move the rail's outer box. Leave the category strip's pan-x intact. */
+html:has(body.rich-menu-active:not([data-preview])){
+  overscroll-behavior:none;
+  overflow:hidden;
+}
+body.rich-menu-active:not([data-preview]){
+  overscroll-behavior:none!important;
+}
+body.rich-menu-active:not([data-preview]) #rich-menu,
+body.rich-menu-active:not([data-preview]) #rich-menu .rm-app,
+body.rich-menu-active:not([data-preview]) #rich-menu .rm-stage-wrap{
+  overscroll-behavior:none!important;
+}
+#rich-menu .rm-stage-wrap{
+  touch-action:none;
+}
+#rich-menu .rm-thumbs{
+  touch-action:none;
+  transition:none!important;
 }
