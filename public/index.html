@@ -44,10 +44,14 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
  </div>
 
 <div class="desktop-welcome" dir="rtl" aria-label="واجهة سنونو للكمبيوتر">
+  <div class="desktop-welcome-top" aria-label="مطعم سنونو">
+    <svg viewBox="0 0 1200 135" preserveAspectRatio="none" aria-hidden="true"><path fill="#FDBE2D" d="M0 0H1200V112Q600 159 0 112Z"/></svg>
+    <img id="desktop-welcome-logo" src="/assets/logo.webp" alt="شعار مطعم سنونو">
+  </div>
   <div class="desktop-hero">
     <div class="desktop-copy">
-      <div class="desktop-hero-mark"><img id="desktop-welcome-logo" src="/assets/logo.webp" alt="شعار سنونو"></div>
-      <span class="desktop-eyebrow"><span aria-hidden="true" class="desktop-dot"></span> نكهة سنونو في كل لقمة</span>
+      <div class="desktop-category-strip" aria-label="أصناف منيو سنونو"><span class="selected">وجبات سنونو</span><span>الشاورما</span><span>البرجر</span><span>المقبلات</span></div>
+      <span class="desktop-section-caption"><span></span>أهلاً وسهلاً<span></span></span>
       <p class="desktop-greeting" id="desktop-welcome-greeting">أهلاً بك في</p>
       <h1><span id="desktop-welcome-brand">مطعم سنونو</span><span class="desktop-headline-accent">على مزاجك.</span></h1>
       <p class="desktop-description">اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.</p>
