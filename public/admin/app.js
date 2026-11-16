@@ -2,7 +2,7 @@ const endpoint = 'https://wknpuzdyemwkllmxehyy.supabase.co';
 const apiKey = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const $ = id => document.getElementById(id);
 const sections = {
-  dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['makook_url','رابط الوجبة المباشر من مكوك (اختياري)','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
+  dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['makook_url','رابط الوجبة المباشر من مكوك (اختياري)','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
   menu_settings: ['مطعم السنونو', [
     ['name','اسم المطعم'],
@@ -470,7 +470,7 @@ async function edit(key,row,inline=false){
    else input.value=row[field]??(type==='select'?cats[0].id:field==='position'?0:'');
    if(type==='position'){
      input.min='5';input.max='95';input.step='1';
-     input.value=row[field]??(field.includes('_x_')?82:28);
+     input.value=row[field]??(field.startsWith('rich_badge_')?(field.endsWith('_x')?77:36):(field.includes('_x_')?82:28));
      const value=node('output',input.value+'%');value.className='position-value';
      input.addEventListener('input',()=>{value.textContent=input.value+'%';});
      label.classList.add('position-setting');label.append(value);
@@ -484,6 +484,7 @@ async function edit(key,row,inline=false){
    if(field==='sonbol_url')label.append(node('small','الصق رابط الوجبة من سنبل ليظهر زر طلبها في نافذة الطبق.'));
    if(field==='makook_url')label.append(node('small','اختياري: رابط وجبة مباشر من مكوك؛ عند تركه فارغاً يظهر رابط مطعم سنونو العام على مكوك في الوضع التفاعلي.'));
    if(field==='rich_image')label.append(node('small','خاص بالوضع التفاعلي فقط. حمّل صورة PNG/WebP شفافة مع الحفاظ على صورة الطبق العادي كما هي؛ عند تركه فارغاً نعرض الصورة العادية.'));
+   if(field==='rich_badge_x')label.append(node('small','لكل طبق موضع مستقل. يمكنك سحب الشارة فوق الصورة في المعاينة بالأسفل أو تعديل النسبة.'));
    if(field==='ingredients')label.append(node('small','افصل المكونات بفاصلة، أو اكتب «خضار: خس، خيار» في سطر لكل مجموعة.'));
    if(type==='image'){const hint=node('small', 'المقاس المقترح: '+(sizes[field]||'1200 × 740')+' — يُفضّل WebP أو PNG بخلفية شفافة');label.append(hint);const upload=node('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';label.append(upload);uploads[field]=upload;}
    form.append(label);
@@ -532,6 +533,7 @@ async function edit(key,row,inline=false){
  if(inline){
    setupWelcomeLabelPositionPreviews(form,row,uploads);
  }else{
+   if(key==='dishes')setupRichBadgePositionPreview(form,row,uploads);
    setupPreview(key,row,uploads);
    $('dialog').showModal();
  }
@@ -605,6 +607,81 @@ function setupWelcomeLabelPositionPreviews(form,row,uploads){
    field.parentNode.insertBefore(widget,field);
  }
 }
+/* Per-dish interactive badge position editor. The preview uses the same
+   image-box percentage coordinates and Qatar badge style as rich-menu. */
+function setupRichBadgePositionPreview(form,row,uploads){
+ const x=form.elements.namedItem('rich_badge_x');
+ const y=form.elements.namedItem('rich_badge_y');
+ const badgeText=form.elements.namedItem('badge');
+ const richImage=form.elements.namedItem('rich_image');
+ const normalImage=form.elements.namedItem('image');
+ if(!x||!y||!badgeText)return;
+ const section=node('section');section.className='rich-badge-editor';
+ const title=node('h3','معاينة موضع الشارة في الوضع التفاعلي');
+ const hint=node('p','اسحب الشارة إلى المكان المناسب فوق الصورة، أو استخدم شريطي الموضع الأفقي والعمودي. التعديل خاص بهذا الطبق وبالوضع التفاعلي فقط.');
+ const stage=node('div');stage.className='rich-badge-preview';
+ const image=node('img');image.className='rich-badge-preview-image';image.alt='معاينة الطبق';image.draggable=false;
+ const badge=node('span');badge.className='rich-badge-preview-tag';
+ badge.tabIndex=0;badge.setAttribute('role','slider');badge.setAttribute('aria-label','موضع شارة هذا الطبق');
+ stage.append(image,badge);section.append(title,hint,stage);
+ const yLabel=y.closest('label');
+ yLabel.after(section);
+ const clamp=v=>Math.min(95,Math.max(5,Math.round(v)));
+ const redraw=()=>{
+   badge.style.left=x.value+'%';
+   badge.style.top=y.value+'%';
+   badge.textContent=badgeText.value.trim()||'شارة الطبق';
+   badge.classList.toggle('is-placeholder',!badgeText.value.trim());
+   badge.setAttribute('aria-valuetext','أفقي '+x.value+' بالمئة، عمودي '+y.value+' بالمئة');
+ };
+ x.addEventListener('input',redraw);
+ y.addEventListener('input',redraw);
+ badgeText.addEventListener('input',redraw);
+ let activePointer=null;
+ const move=e=>{
+   const r=stage.getBoundingClientRect();
+   x.value=clamp((e.clientX-r.left)/r.width*100);
+   y.value=clamp((e.clientY-r.top)/r.height*100);
+   x.dispatchEvent(new Event('input',{bubbles:true}));
+   y.dispatchEvent(new Event('input',{bubbles:true}));
+ };
+ badge.addEventListener('pointerdown',e=>{
+   if(e.button!==0)return;
+   e.preventDefault();e.stopPropagation();
+   activePointer=e.pointerId;
+   badge.setPointerCapture(e.pointerId);
+   move(e);
+ });
+ badge.addEventListener('pointermove',e=>{
+   if(activePointer===e.pointerId)move(e);
+ });
+ const release=e=>{if(activePointer===e.pointerId)activePointer=null;};
+ badge.addEventListener('pointerup',release);
+ badge.addEventListener('pointercancel',release);
+ badge.addEventListener('keydown',e=>{
+   const step={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+   if(!step)return;
+   e.preventDefault();x.value=clamp(Number(x.value)+step[0]);y.value=clamp(Number(y.value)+step[1]);
+   x.dispatchEvent(new Event('input',{bubbles:true}));
+   y.dispatchEvent(new Event('input',{bubbles:true}));
+ });
+ let previewUrl='';
+ const loadImage=()=>{
+   if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl='';}
+   const richFile=uploads.rich_image?.files?.[0];
+   const normalFile=uploads.image?.files?.[0];
+   const file=richFile||(!richImage?.value?normalFile:null);
+   if(file){previewUrl=URL.createObjectURL(file);image.src=previewUrl;}
+   else image.src=richImage?.value||normalImage?.value||'/assets/welcome/2468.webp';
+ };
+ richImage?.addEventListener('input',loadImage);
+ normalImage?.addEventListener('input',loadImage);
+ uploads.rich_image?.addEventListener('change',loadImage);
+ uploads.image?.addEventListener('change',loadImage);
+ $('dialog').addEventListener('close',()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);},{once:true});
+ redraw();loadImage();
+}
+
 function setupPreview(key,row,uploads){
  const panel=$('preview'),dialog=$('dialog'),form=$('edit');
  const enabled=['dishes','categories','menu_settings','menu_links'].includes(key);
