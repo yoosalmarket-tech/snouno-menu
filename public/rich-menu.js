@@ -19,9 +19,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  '<div class="rm-categories-track" role="tablist"></div></nav>',
  '<div class="rm-stage-wrap"><div class="rm-stage-word" aria-hidden="true"><span></span><span></span></div>',
  '<div class="rm-shadow" aria-hidden="true"></div><div class="rm-stage" role="listbox" tabindex="0"></div>',
- '<div class="rm-rail-labels" aria-hidden="true"></div>',
  '<aside class="rm-thumbs" aria-label="اختيار وجبة"><button type="button" class="rm-rail-button rm-rail-up" aria-label="السابق">⌃</button>',
- '<div class="rm-rail-window"><div class="rm-rail-track"></div></div><button type="button" class="rm-rail-button rm-rail-down" aria-label="التالي">⌄</button>',
+ '<div class="rm-rail-row"><div class="rm-rail-labels" aria-hidden="true"></div><div class="rm-rail-window"><div class="rm-rail-track"></div></div></div><button type="button" class="rm-rail-button rm-rail-down" aria-label="التالي">⌄</button>',
  '<span class="rm-rail-count" dir="ltr">1 / 1</span></aside>',
  '<button type="button" class="rm-customize"><i aria-hidden="true">☷</i><span><strong lang="en">CUSTOMIZE</strong><span dir="rtl">الكمية والتفاصيل</span></span></button></div>',
  '<section class="rm-info" aria-live="polite"><h2 class="rm-info-name"></h2><p class="rm-info-desc"></p>',
@@ -128,9 +127,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  function labelRail(){
   const g=group();if(!g)return;
   u.labels.replaceChildren();
-  for(let i=front-2;i<=front+2;i++){
-   if(!g.items[i])continue;
+  // Show the same three nearby dishes as the compact thumbnail selector.
+  const start=clamp(front-1,0,Math.max(0,g.items.length-3));
+  for(let i=start;i<Math.min(g.items.length,start+3);i++){
    const name=mk('span',null,getName(g.items[i]));
+   name.dataset.index=String(i);
+   name.setAttribute('dir','rtl');
    name.setAttribute('aria-current',String(i===front));
    u.labels.append(name);
   }
@@ -184,17 +186,24 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    el.setAttribute('aria-selected',String(i===front));
   }
   u.railCount.textContent=(front+1)+' / '+len;
+  const visibleStart=clamp(Math.round(position)-1,0,Math.max(0,len-3));
   thumbEls.forEach((el,i)=>{
    const distance=Math.abs(i-position);
+   el.style.visibility=i>=visibleStart&&i<visibleStart+3?'visible':'hidden';
    el.style.opacity=Math.max(.4,1-distance*.2).toFixed(2);
    el.style.transform='scale('+Math.max(.8,1-distance*.07).toFixed(3)+')';
    el.setAttribute('aria-current',String(i===front));
   });
-  // Highest meal index at the top: the thumbnail rail advances downwards
-  // as the main dish approaches from depth, matching its physical motion.
+  // Match each label's vertical position to its thumbnail while scrolling.
   const unit=34,h=u.thumbWindow.clientHeight,th=len*unit-4;
-  const y=clamp(h/2-position*unit-15,Math.min(0,h-th),0);
+  const y=th<=h?(h-th)/2:clamp(h/2-position*unit-15,Math.min(0,h-th),0);
   u.thumbTrack.style.transform='translateY('+y.toFixed(1)+'px)';
+  for(const label of u.labels.children){
+   const i=Number(label.dataset.index),top=y+i*unit;
+   label.style.top=top.toFixed(1)+'px';
+   label.style.display=i>=visibleStart&&i<visibleStart+3&&top<h&&top+30>0?'grid':'none';
+   label.setAttribute('aria-current',String(i===front));
+  }
   const fade=Math.min(1,Math.abs(k-Math.round(k))*2.6+(k<-.4?1:0));
   u.info.style.opacity=(1-fade).toFixed(3);
   u.info.style.transform='translateY('+(fade*12).toFixed(1)+'px)';
