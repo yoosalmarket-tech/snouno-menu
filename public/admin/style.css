@@ -212,3 +212,41 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
  background:#fff!important;
  backdrop-filter:none!important;
 }
+
+
+/* On touch devices the page scrolls freely. Reordering is available
+   ONLY from the dedicated grip ⋮⋮, not the meal's picture or text. */
+@media(max-width:700px){
+ .dish-sort-card,.dish-sort-card *:not(.dish-drag-handle){
+  touch-action:pan-y!important;
+ }
+ .dish-sort-card{cursor:auto!important;user-select:auto!important;-webkit-user-select:auto!important;}
+ .dish-sort-card .dish-drag-handle{
+  touch-action:none!important;cursor:grab!important;user-select:none!important;
+  -webkit-user-select:none!important;flex:none;
+ }
+ .dish-sort-card .dish-thumb{pointer-events:none;}
+}
+/* Account settings */
+#body .account-settings{display:grid;gap:16px;}
+#body .account-card{
+ display:grid;gap:13px;max-width:720px;padding:20px;
+ background:#fff;border:1px solid #dfd9ca;border-radius:16px;
+}
+#body .account-card h2{font-size:20px;}
+#body .account-card p{margin:0;color:#6e6555;line-height:1.7;}
+#body .account-card form{display:grid;gap:12px;max-width:540px;}
+#body .account-card form button{justify-self:start;background:#FDBE2D;color:#231d10;font-weight:800;}
+#body .account-card .account-message{min-height:0;color:#685015;font-size:14px;}
+#body .account-card .account-message:empty{display:none;}
+#body .account-card select{min-height:43px;}
+#body .account-warning{background:#fff3d4;border:1px solid #e8cd8b;padding:12px;border-radius:10px;color:#66470a!important;}
+#login .remember-control{
+ display:flex;align-items:center;gap:10px;cursor:pointer;
+ font-weight:600;color:#51432b;
+}
+#login .remember-control input{width:19px;height:19px;flex:none;accent-color:#b8860b;}
+@media(max-width:700px){
+ #body .account-card{padding:15px;}
+ #body .account-card form button{width:100%;}
+}
