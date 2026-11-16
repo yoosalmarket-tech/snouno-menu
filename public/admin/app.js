@@ -78,14 +78,101 @@ $('register').onclick=async()=>{
 $('logout').onclick=async()=>{try{await api('/auth/v1/logout',{method:'POST'});} finally {persist(null);loggedOut();notice('تم تسجيل الخروج');}};
 /* Drag handles preserve category membership while updating real menu order.
    Mouse, touch, pen, and keyboard are supported. */
+/* Drag-to-reorder with a stable drag source: do not move a captured
+   element during pointermove. Move it only on pointerup; this fixes lost
+   pointer capture on Chrome/mobile and makes every drop reliably persist. */
+function wireSortableList(list, selector, persist, canDrag=()=>true){
+ const cards=[...list.querySelectorAll(':scope > '+selector)];
+ if(cards.length<2)return;
+ let active=null,marker=null,position='before',startY=0,changing=false;
+ const clearMarker=()=>{
+  if(marker)marker.classList.remove('sort-drop-before','sort-drop-after');
+  marker=null;
+ };
+ const finish=async event=>{
+  if(!active||active.pointer!==event.pointerId)return;
+  const state=active;active=null;
+  window.removeEventListener('pointermove',move,true);
+  window.removeEventListener('pointerup',finish,true);
+  window.removeEventListener('pointercancel',cancel,true);
+  window.removeEventListener('blur',cancel,true);
+  state.card.classList.remove('is-dragging');
+  document.body.classList.remove('is-sorting');
+  if(marker&&marker!==state.card&&state.didMove){
+   const target=marker;
+   if(position==='before')target.before(state.card);
+   else target.after(state.card);
+   clearMarker();
+   await persist();
+  }else clearMarker();
+ };
+ const cancel=()=>{
+  if(!active)return;
+  active.card.classList.remove('is-dragging');
+  active=null;clearMarker();document.body.classList.remove('is-sorting');
+  window.removeEventListener('pointermove',move,true);
+  window.removeEventListener('pointerup',finish,true);
+  window.removeEventListener('pointercancel',cancel,true);
+  window.removeEventListener('blur',cancel,true);
+ };
+ const move=event=>{
+  if(!active||event.pointerId!==active.pointer)return;
+  event.preventDefault();
+  const elements=[...list.querySelectorAll(':scope > '+selector)].filter(x=>x!==active.card);
+  if(!elements.length)return;
+  const y=event.clientY;
+  // Always choose a target, even if the pointer falls in a gap between cards.
+  let target=elements.reduce((best,card)=>{
+   const r=card.getBoundingClientRect(),center=r.top+r.height/2;
+   const distance=Math.abs(center-y);
+   return !best||distance<best.distance?{card,distance}:best;
+  },null)?.card;
+  if(!target)return;
+  const bounds=target.getBoundingClientRect();
+  const desired=y<bounds.top+bounds.height/2?'before':'after';
+  if(marker!==target||position!==desired){
+   clearMarker();marker=target;position=desired;
+   marker.classList.add('sort-drop-'+position);
+  }
+  active.didMove=Math.abs(y-startY)>7;
+  if(y<68)window.scrollBy(0,-12);
+  else if(y>window.innerHeight-68)window.scrollBy(0,12);
+ };
+ for(const card of cards){
+  const handle=card.querySelector('.dish-drag-handle');
+  if(!handle)continue;
+  handle.draggable=false;
+  handle.addEventListener('keydown',async event=>{
+   if(!['ArrowUp','ArrowDown'].includes(event.key)||changing||!canDrag())return;
+   event.preventDefault();
+   const peer=event.key==='ArrowUp'?card.previousElementSibling:card.nextElementSibling;
+   if(!peer?.matches(selector))return;
+   if(event.key==='ArrowUp')peer.before(card);else peer.after(card);
+   handle.focus();
+   await persist();
+  });
+  handle.addEventListener('pointerdown',event=>{
+   if(active||changing||!canDrag()||event.button!==0)return;
+   event.preventDefault();event.stopPropagation();
+   active={pointer:event.pointerId,card,didMove:false};
+   startY=event.clientY;
+   card.classList.add('is-dragging');
+   document.body.classList.add('is-sorting');
+   window.addEventListener('pointermove',move,{capture:true,passive:false});
+   window.addEventListener('pointerup',finish,true);
+   window.addEventListener('pointercancel',cancel,true);
+   window.addEventListener('blur',cancel,true);
+  });
+ }
+}
 function setupDishSorting(categoryGroups,rows){
- let saving=false,drag=null,activeHandle=null,changed=false;
- const original=new Map(rows.map(row=>[row.id,row.position]));
+ let saving=false;
+ const original=new Map(rows.map(row=>[String(row.id),Number(row.position)]));
  const save=async()=>{
   if(saving)return;
   const updates=[];
   for(const group of categoryGroups.values()){
-   [...group.querySelectorAll('article[data-dish-id]')].forEach((card,index)=>{
+   [...group.querySelectorAll(':scope > article[data-dish-id]')].forEach((card,index)=>{
     const id=card.dataset.dishId,position=index+1;
     if(original.get(id)!==position)updates.push({id,position});
    });
@@ -94,144 +181,45 @@ function setupDishSorting(categoryGroups,rows){
   saving=true;const area=$('body');area.classList.add('is-saving-order');
   notice('جارٍ حفظ ترتيب الأطباق...');
   try{
-   // Sequential writes keep the resulting positions deterministic.
-   for(const update of updates){
-    await api('/rest/v1/dishes?id=eq.'+encodeURIComponent(update.id),
-       {method:'PATCH',body:{position:update.position}});
-    original.set(update.id,update.position);
+   for(const row of updates){
+    await api('/rest/v1/dishes?id=eq.'+encodeURIComponent(row.id),
+      {method:'PATCH',body:{position:row.position}});
+    original.set(row.id,row.position);
    }
-   notice('تم حفظ الترتيب الجديد ✓');
+   notice('تم حفظ ترتيب الأطباق ✓');
   }catch(error){
-   notice('تعذّر حفظ الترتيب: '+error.message+'. تم تحديث القائمة للتحقق من الترتيب.');
+   notice('تعذّر حفظ الترتيب: '+error.message);
    await openSection('dishes');
   }finally{saving=false;area.classList.remove('is-saving-order');}
  };
- const applyArrow=async(card,direction)=>{
-  if(saving)return;
-  const peer=direction<0?card.previousElementSibling:card.nextElementSibling;
-  if(!peer||!peer.matches('article[data-dish-id]'))return;
-  if(direction<0)peer.before(card);else peer.after(card);
-  card.querySelector('.dish-drag-handle')?.focus();
-  await save();
- };
  for(const group of categoryGroups.values()){
-  for(const card of group.querySelectorAll('article[data-dish-id]')){
-   const handle=card.querySelector('.dish-drag-handle');
-   if(!handle)continue;
-   handle.addEventListener('keydown',event=>{
-     if(event.key==='ArrowUp'||event.key==='ArrowDown'){
-       event.preventDefault();
-       applyArrow(card,event.key==='ArrowUp'?-1:1);
-     }
-   });
-   handle.addEventListener('pointerdown',event=>{
-     if(saving||event.button!==0)return;
-     event.preventDefault();
-     drag={id:event.pointerId,card,group};
-     changed=false;activeHandle=handle;
-     handle.setPointerCapture(event.pointerId);
-     card.classList.add('is-dragging');
-   });
-   handle.addEventListener('pointermove',event=>{
-     if(!drag||event.pointerId!==drag.id)return;
-     const under=document.elementFromPoint(event.clientX,event.clientY);
-     const target=under?.closest('article[data-dish-id]');
-     if(!target||target===drag.card||target.parentElement!==drag.group)return;
-     const halfway=target.getBoundingClientRect().top+target.offsetHeight/2;
-     if(event.clientY<halfway)target.before(drag.card);
-     else target.after(drag.card);
-     changed=true;
-   });
-   const finish=async event=>{
-     if(!drag||event.pointerId!==drag.id)return;
-     drag.card.classList.remove('is-dragging');drag=null;
-     try{activeHandle?.releasePointerCapture(event.pointerId)}catch{}
-     if(changed)await save();
-     changed=false;activeHandle=null;
-   };
-   handle.addEventListener('pointerup',finish);
-   handle.addEventListener('pointercancel',finish);
-   handle.addEventListener('lostpointercapture',event=>{
-     if(drag?.id!==event.pointerId)return;
-     drag.card.classList.remove('is-dragging');drag=null;
-     if(changed)save();
-     changed=false;activeHandle=null;
-   });
-  }
+  wireSortableList(group,'article[data-dish-id]',save,()=>!saving);
  }
 }
-/* Reorder categories and advertisements by dragging, with keyboard support.
-   This replaces manual numeric position fields in their edit dialogs. */
 function setupFlatSorting(key,rows){
  const container=$('body');
- const cards=[...container.querySelectorAll('article[data-sort-id]')];
- if(cards.length<2)return;
+ let saving=false;
  const original=new Map(rows.map(row=>[String(row.id),Number(row.position)]));
- let busy=false,active=null,moved=false;
- const persistOrder=async()=>{
-  if(busy)return;
-  const order=[...container.querySelectorAll('article[data-sort-id]')];
+ const save=async()=>{
+  if(saving)return;
+  const order=[...container.querySelectorAll(':scope > article[data-sort-id]')];
   const updates=order.map((card,i)=>({id:card.dataset.sortId,position:i+1}))
-    .filter(x=>original.get(x.id)!==x.position);
+   .filter(x=>original.get(x.id)!==x.position);
   if(!updates.length)return;
-  busy=true;container.classList.add('is-saving-order');notice('جارٍ حفظ ترتيب العرض...');
+  saving=true;container.classList.add('is-saving-order');notice('جارٍ حفظ ترتيب العرض...');
   try{
-   for(const item of updates){
-    await api('/rest/v1/'+key+'?id=eq.'+encodeURIComponent(item.id),
-      {method:'PATCH',body:{position:item.position}});
-    original.set(item.id,item.position);
+   for(const row of updates){
+    await api('/rest/v1/'+key+'?id=eq.'+encodeURIComponent(row.id),
+      {method:'PATCH',body:{position:row.position}});
+    original.set(row.id,row.position);
    }
-   notice('تم حفظ الترتيب الجديد ✓');
-  }catch(e){
-   notice('تعذّر حفظ ترتيب العرض: '+e.message);
+   notice('تم حفظ ترتيب العرض ✓');
+  }catch(error){
+   notice('تعذّر حفظ ترتيب العرض: '+error.message);
    await openSection(key);
-  }finally{busy=false;container.classList.remove('is-saving-order');}
+  }finally{saving=false;container.classList.remove('is-saving-order');}
  };
- for(const card of cards){
-  const handle=card.querySelector('.dish-drag-handle');
-  if(!handle)continue;
-  handle.addEventListener('keydown',async event=>{
-   if(!['ArrowUp','ArrowDown'].includes(event.key)||busy)return;
-   event.preventDefault();
-   const peer=event.key==='ArrowUp'?card.previousElementSibling:card.nextElementSibling;
-   if(!peer?.matches('article[data-sort-id]'))return;
-   event.key==='ArrowUp'?peer.before(card):peer.after(card);
-   handle.focus();await persistOrder();
-  });
-  handle.addEventListener('pointerdown',e=>{
-   if(busy||e.button!==0)return;
-   e.preventDefault();
-   active=e.pointerId;moved=false;
-   handle.setPointerCapture(e.pointerId);
-   card.classList.add('is-dragging');
-  });
-  handle.addEventListener('pointermove',e=>{
-   if(active!==e.pointerId||busy)return;
-   // Use positions rather than elementFromPoint, because the dragged card
-   // may cover the element immediately above or below it.
-   const other=[...container.querySelectorAll('article[data-sort-id]')].filter(x=>x!==card);
-   const target=other.find(x=>{const r=x.getBoundingClientRect();return e.clientY>=r.top&&e.clientY<=r.bottom;});
-   if(!target)return;
-   const bounds=target.getBoundingClientRect();
-   e.clientY<bounds.top+bounds.height/2?target.before(card):target.after(card);
-   moved=true;
-   if(e.clientY<75)window.scrollBy(0,-20);
-   else if(e.clientY>window.innerHeight-75)window.scrollBy(0,20);
-  });
-  const finish=async e=>{
-   if(active!==e.pointerId)return;
-   active=null;card.classList.remove('is-dragging');
-   try{handle.releasePointerCapture(e.pointerId)}catch{}
-   if(moved){moved=false;await persistOrder();}
-  };
-  handle.addEventListener('pointerup',finish);
-  handle.addEventListener('pointercancel',finish);
-  handle.addEventListener('lostpointercapture',()=>{
-   if(active===null)return;
-   active=null;card.classList.remove('is-dragging');
-   if(moved){moved=false;persistOrder();}
-  });
- }
+ wireSortableList(container,'article[data-sort-id]',save,()=>!saving);
 }
 async function openSection(key){
  const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); $('body').replaceChildren(); $('title').textContent=sections[key][0];
