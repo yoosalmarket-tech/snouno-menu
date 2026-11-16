@@ -25,6 +25,76 @@ function contactLinks(container,channels,meal) {
  }
 }
 
+
+/* Mobile welcome: three exact Snouno meals and the original vertical indicator. */
+const welcomeMobileMeals=[
+  {listing:2468,name:'بوكس المشاركة',src:'/assets/meals/2468.webp'},
+  {listing:2465,name:'نوك أوت',src:'/assets/meals/2465.webp'},
+  {listing:2472,name:'ناشفيل',src:'/assets/meals/2472.webp'}
+];
+let mobileWelcomeTimer=null,mobileWelcomeSwap=null,mobileWelcomeIndex=0,mobileWelcomeVersion=0;
+function stopMobileWelcomeCycle(){
+  ++mobileWelcomeVersion;
+  clearInterval(mobileWelcomeTimer);clearTimeout(mobileWelcomeSwap);
+  mobileWelcomeTimer=mobileWelcomeSwap=null;
+  $('cover-photo')?.classList.remove('mobile-food-out','mobile-food-in');
+}
+function canPlayMobileWelcome(){
+  return !isPreview&&!document.hidden&&currentPage()==='welcome'
+     &&matchMedia('(max-width:980px)').matches;
+}
+function showMobileWelcomeMeal(index,animate=true){
+  const hero=$('cover-photo'),badge=$('mobile-meal-name');
+  const dots=[...document.querySelectorAll('.welcome-stage-rail button')];
+  const choice=welcomeMobileMeals[index];
+  const record=dishes.find(d=>Number(d.sonbol_listing_id)===choice.listing||d.name===choice.name);
+  const src=asset(record?.image)||choice.src;
+  const name=record?displayName(record):(isEnglish()?({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville Burger'}[choice.listing]):choice.name);
+  const version=mobileWelcomeVersion;
+  const setImage=()=>{
+    if(version!==mobileWelcomeVersion)return;
+    hero.src=src;hero.alt=name;badge.textContent=name;
+    dots.forEach((dot,i)=>dot.setAttribute('aria-current',String(i===index)));
+    hero.classList.remove('mobile-food-out','mobile-food-in');
+    if(animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      void hero.offsetWidth;hero.classList.add('mobile-food-in');
+    }
+  };
+  clearTimeout(mobileWelcomeSwap);
+  if(!animate||matchMedia('(prefers-reduced-motion: reduce)').matches){setImage();return;}
+  const next=new Image();next.onload=()=>{
+    if(version!==mobileWelcomeVersion)return;
+    hero.classList.remove('mobile-food-in');
+    hero.classList.add('mobile-food-out');
+    mobileWelcomeSwap=setTimeout(setImage,250);
+  };
+  next.onerror=()=>{};next.src=src;
+  if(next.complete&&next.naturalWidth)next.onload();
+}
+function startMobileWelcomeCycle(){
+  if(!canPlayMobileWelcome()){if(mobileWelcomeTimer)stopMobileWelcomeCycle();return;}
+  if(mobileWelcomeTimer)return;
+  ++mobileWelcomeVersion;
+  mobileWelcomeIndex=0;
+  showMobileWelcomeMeal(0,false);
+  mobileWelcomeTimer=setInterval(()=>{
+    if(!canPlayMobileWelcome())return;
+    mobileWelcomeIndex=(mobileWelcomeIndex+1)%welcomeMobileMeals.length;
+    showMobileWelcomeMeal(mobileWelcomeIndex);
+  },2000);
+}
+document.querySelectorAll('.welcome-stage-rail button').forEach((dot,index)=>{
+  dot.onclick=()=>{
+    mobileWelcomeIndex=index;
+    showMobileWelcomeMeal(index,false);
+    clearInterval(mobileWelcomeTimer);mobileWelcomeTimer=null;
+    if(canPlayMobileWelcome())startMobileWelcomeCycle();
+  };
+});
+window.addEventListener('pagechange',startMobileWelcomeCycle);
+window.addEventListener('resize',startMobileWelcomeCycle);
+document.addEventListener('visibilitychange',startMobileWelcomeCycle);
+
 /* Desktop-only rotating meal showcase: actual available dishes, every two seconds.
    The visual wheel moves between plates; no mobile navigation or product data changes. */
 let desktopWheelTimer=null;
@@ -194,7 +264,7 @@ function renderSettings(){
  $('desktop-welcome-browse').querySelector('span').textContent=buttonText;
  setText('desktop-welcome-brand',s.name);setText('desktop-welcome-greeting',s.welcome);
  const hero=asset(s.hero)||'/assets/plate.webp',logo=asset(s.logo)||'/assets/logo.webp';
- $('cover-photo').src=hero;$('desktop-welcome-hero').src=hero;
+ $('desktop-welcome-hero').src=hero;
  $('logo').src=logo;$('welcome-logo').src=logo;$('desktop-welcome-logo').src=logo;
  renderAds();
  setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
@@ -551,7 +621,7 @@ async function load(){
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();renderCards();installPreview();startDesktopMealWheel();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();applyLanguage();installPreview();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
 async function revealPage(){
