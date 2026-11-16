@@ -1350,3 +1350,29 @@
   grid-column:1!important;grid-row:4!important;
  }
 }
+
+/* Keep the rich menu fullscreen on desktop, overriding the normal menu grid
+   and its 1280px / 1460px content-width limits. */
+@media(min-width:981px){
+ html body.rich-menu-active:not([data-preview]) #shell #inside{
+  width:100%!important;max-width:none!important;
+  height:100dvh!important;min-height:0!important;
+  padding:0!important;overflow:hidden!important;
+ }
+ html body.rich-menu-active:not([data-preview]) #shell #inside #menu{
+  box-sizing:border-box!important;
+  display:flex!important;flex-direction:column!important;
+  width:100%!important;max-width:none!important;
+  height:calc(100dvh - 94px)!important;min-height:0!important;
+  padding:0!important;margin:0!important;
+  row-gap:0!important;column-gap:0!important;
+  overflow:hidden!important;
+ }
+ html body.rich-menu-active:not([data-preview]) #menu>#experience-switch{
+  width:100%!important;max-width:none!important;margin:0!important;
+ }
+ html body.rich-menu-active:not([data-preview]) #rich-menu{
+  display:flex!important;flex:1 1 0!important;
+  width:100%!important;min-height:0!important;
+ }
+}
