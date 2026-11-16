@@ -1185,3 +1185,10 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
  #welcome .welcome-subtitle{margin-bottom:6px;}
  #welcome .browse{min-height:44px;font-size:clamp(18px,5vw,23px);}
 }
+
+/* Scale the two transparent mobile welcome carousel layers uniformly by 20%.
+   Individual scale composes with the JS swipe translate/scale animations. */
+@media(max-width:980px){
+ #welcome #cover-photo,
+ #welcome #cover-next{scale:1.2;transform-origin:center center;}
+}
