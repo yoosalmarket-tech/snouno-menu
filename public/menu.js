@@ -1105,12 +1105,18 @@ async function chooseFirstVisitMode(initialMenu){
   const remaining=Math.max(0,5000-(performance.now()-firstVisitStartedAt));
   const deadline=new Promise(resolve=>{timer=setTimeout(()=>resolve(false),remaining);});
   const probe=Promise.all([initialMenu,richAssets()]).then(async([loaded])=>{
-   if(!loaded||!dishes.length)return false;
-   const meal=dishes.find(d=>asset(d.rich_image))||dishes.find(d=>asset(d.image));
-   if(!meal)return false;
-   const sample=new Image();
-   sample.src=asset(meal.rich_image||meal.image);
-   await sample.decode();
+   if(!loaded||!categories.length)return false;
+   // Only the first three meals of the first menu category count.
+   // Honor the database's position/name ordering used by the actual menu.
+   const firstCategory=categories[0];
+   const firstThree=dishes.filter(meal=>String(meal.category_id)===String(firstCategory.id)).slice(0,3);
+   if(firstThree.length!==3)return false;
+   const sources=firstThree.map(meal=>asset(meal.rich_image||meal.image));
+   if(sources.some(src=>!src))return false;
+   // Full decoding, not merely a successful HTTP connection, is the green
+   // flag. Any failed image or an elapsed five-second deadline falls back.
+   const samples=sources.map(src=>{const img=new Image();img.decoding='async';img.src=src;return img;});
+   await Promise.all(samples.map(img=>img.decode()));
    return true;
   }).catch(()=>false);
   const fast=await Promise.race([probe,deadline]);
