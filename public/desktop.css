@@ -247,3 +247,77 @@
 @media(min-width:981px){
   body:not([data-preview]) #inside{padding-bottom:95px;}
 }
+
+
+/* Welcome desktop is an intentionally non-scrolling, one-viewport landing screen.
+   Overrides legacy fixed 550/620px min-heights that caused page overflow. */
+@media(min-width:981px){
+ body:not([data-preview]) #shell:has(#welcome:not([hidden])){
+  height:100svh;min-height:0;overflow:hidden;
+ }
+ body:not([data-preview]) #welcome{
+  height:100svh;min-height:0;max-height:100svh;overflow:hidden;
+ }
+ body:not([data-preview]) .desktop-welcome{
+  box-sizing:border-box;display:grid;grid-template-rows:minmax(0,1fr) 34px;
+  height:100svh;min-height:0;max-height:100svh;overflow:hidden;
+  padding-top:clamp(8px,1svh,14px);
+ }
+ body:not([data-preview]) .desktop-hero{
+  height:100%;min-height:0;max-height:100%;
+  align-items:center;overflow:hidden;
+ }
+ body:not([data-preview]) .desktop-copy{
+  min-height:0;max-height:100%;overflow:hidden;
+  padding-block:clamp(4px,1.2svh,18px);
+ }
+ body:not([data-preview]) .desktop-hero-mark{margin-bottom:clamp(7px,1.4svh,19px);min-height:0;}
+ body:not([data-preview]) .desktop-hero-mark img{
+  height:clamp(48px,8.6svh,82px);max-width:190px;
+ }
+ body:not([data-preview]) .desktop-greeting{margin-top:clamp(12px,2svh,25px);}
+ body:not([data-preview]) .desktop-copy h1{
+  font-size:clamp(43px,min(5.5vw,9svh),107px);
+  line-height:1.12;margin:clamp(3px,.9svh,10px) 0 clamp(10px,2svh,22px);
+ }
+ body:not([data-preview]) .desktop-description{
+  line-height:1.65;font-size:clamp(13px,1.18vw,18px);
+  margin-bottom:clamp(13px,2.8svh,33px);
+ }
+ body:not([data-preview]) .desktop-welcome-actions{gap:0;}
+ body:not([data-preview]) .desktop-main-cta{padding:clamp(10px,1.4svh,18px) 22px;}
+ body:not([data-preview]) .desktop-secondary-cta{display:none!important;}
+ body:not([data-preview]) .desktop-divider{
+  margin-top:clamp(10px,3svh,33px);margin-bottom:clamp(10px,1.9svh,20px);
+ }
+ body:not([data-preview]) .desktop-visual{min-height:0;max-height:100%;height:100%;overflow:hidden;}
+ body:not([data-preview]) #desktop-welcome-hero{
+  width:min(98%,780px);min-height:0;max-height:76svh;
+  height:min(76svh,730px);object-fit:contain;
+ }
+ body:not([data-preview]) #desktop-welcome-hero.is-menu-meal{
+  width:min(72%,570px);height:auto;max-height:68svh;
+ }
+ body:not([data-preview]) .desktop-visual-circle{
+  width:min(70%,min(55vw,66svh));
+ }
+ body:not([data-preview]) .desktop-visual-ring{
+  width:min(85%,min(65vw,78svh));
+ }
+ body:not([data-preview]) .desktop-sticker{bottom:11%;}
+ body:not([data-preview]) .desktop-welcome-footer{height:34px;min-height:0;}
+ body:not([data-preview]) .desktop-welcome-dock{display:none!important;}
+}
+@media(min-width:981px) and (max-height:660px){
+ body:not([data-preview]) .desktop-welcome{grid-template-rows:minmax(0,1fr) 25px;}
+ body:not([data-preview]) .desktop-eyebrow{font-size:11px;}
+ body:not([data-preview]) .desktop-greeting{font-size:17px;margin-top:9px;}
+ body:not([data-preview]) .desktop-copy h1{font-size:clamp(35px,7.5svh,65px);line-height:1.1;}
+ body:not([data-preview]) .desktop-description{font-size:13px;line-height:1.4;margin-bottom:12px;}
+ body:not([data-preview]) .desktop-main-cta{font-size:17px;min-width:190px;padding:9px 16px;}
+ body:not([data-preview]) .desktop-divider{margin-block:12px 9px;}
+ body:not([data-preview]) .desktop-signature{font-size:10px;}
+ body:not([data-preview]) .desktop-welcome-footer{height:25px;font-size:10px;}
+ body:not([data-preview]) #desktop-welcome-hero{max-height:68svh;height:68svh;}
+ body:not([data-preview]) #desktop-welcome-hero.is-menu-meal{max-height:61svh;}
+}
