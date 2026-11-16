@@ -106,7 +106,7 @@ function syncWelcomeSettings(){
 let mobileWelcomeIndex=0;
 let welcomeCarouselTimer=null,welcomeCarouselCleanupTimer=null;
 let welcomeCarouselActive=false,welcomeCarouselAnimating=false,welcomeCarouselSession=0;
-const welcomeAutoplayMs=3000,welcomeTransitionMs=600;
+const welcomeAutoplayMs=3000,welcomeTransitionMs=640;
 const prefersReducedWelcomeMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&matchMedia('(max-width:980px)').matches;
 const onMobileWelcome=()=>matchMedia('(max-width:980px)').matches;
@@ -799,95 +799,100 @@ async function revealPage(){
  if(!root.classList.contains('loading'))return;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  if(!reduced){
-  const drawing=$('page-loader').getAnimations({subtree:true});
-  for(const animation of drawing)animation.playbackRate=2;
-  await Promise.allSettled(drawing.map(animation=>animation.finished));
+  const drawings=$('page-loader').getAnimations({subtree:true});
+  for(const drawing of drawings)drawing.playbackRate=2;
+  await Promise.allSettled(drawings.map(drawing=>drawing.finished));
  }
  if(welcome&&!reduced){
   const mobile=matchMedia('(max-width:980px)').matches;
   const header=document.querySelector(mobile?'.welcome-top':'.desktop-welcome-top');
-  const target=$(mobile?'welcome-logo':'desktop-welcome-logo');
+  const destination=$(mobile?'welcome-logo':'desktop-welcome-logo');
   const loader=$('page-loader');
-  const tracedLogo=loader.querySelector('svg');
+  const drawnLogo=loader.querySelector('svg');
   const finalWave=mobile?header?.querySelector('.welcome-top-wave'):
     header?.querySelector('svg:not(.desktop-curve-shadow)');
-  if(header&&target&&tracedLogo&&finalWave){
-   const start=tracedLogo.getBoundingClientRect();
-   const end=target.getBoundingClientRect();
-   const headerHeight=header.getBoundingClientRect().height;
+  if(header&&destination&&drawnLogo&&finalWave){
+   const start=drawnLogo.getBoundingClientRect();
+   const finish=destination.getBoundingClientRect();
+   const styling=getComputedStyle(destination);
+   const measure=name=>parseFloat(styling.getPropertyValue(name))||0;
+   const bx=measure('border-left-width'),by=measure('border-top-width');
+   const padL=measure('padding-left'),padR=measure('padding-right');
+   const padT=measure('padding-top'),padB=measure('padding-bottom');
+   const contentWidth=Math.max(1,finish.width-padL-padR-bx-measure('border-right-width'));
+   const contentHeight=Math.max(1,finish.height-padT-padB-by-measure('border-bottom-width'));
+   const naturalRatio=destination.naturalWidth&&destination.naturalHeight
+     ?destination.naturalWidth/destination.naturalHeight:start.width/start.height;
+   // Match the artwork visible inside the object-fit:contain logo box, rather
+   // than the image element's outer padding/border box.
+   const imageWidth=Math.min(contentWidth,contentHeight*naturalRatio);
+   const imageHeight=imageWidth/naturalRatio;
+   const endCenterX=finish.left+bx+padL+contentWidth/2;
+   const endCenterY=finish.top+by+padT+contentHeight/2;
+   const startCenterX=start.left+start.width/2;
+   const startCenterY=start.top+start.height/2;
+   const scale=Math.min(imageWidth/start.width,imageHeight/start.height);
+   const deltaX=endCenterX-startCenterX,deltaY=endCenterY-startCenterY;
    const duration=2100,easing='cubic-bezier(.19,.84,.16,1)';
-   const traveling=target.cloneNode(false);
-   traveling.removeAttribute('id');
-   traveling.alt='';traveling.setAttribute('aria-hidden','true');
-   traveling.className='traveling-welcome-logo';
-   Object.assign(traveling.style,{
-    position:'fixed',left:end.left+'px',top:end.top+'px',
-    width:end.width+'px',height:end.height+'px',maxWidth:'none',
-    objectFit:'contain',objectPosition:'center',margin:'0',padding:'0',
-    border:'0',background:'transparent',filter:'brightness(0)',
-    zIndex:'1002',pointerEvents:'none',transformOrigin:'center center'
+   const endHeaderHeight=header.getBoundingClientRect().height;
+   // Keep the SAME already-drawn SVG logo visible throughout the travel.
+   // Switching to an <img> at the start caused the previous sudden scale jump.
+   Object.assign(drawnLogo.style,{
+    position:'fixed',left:start.left+'px',top:start.top+'px',
+    width:start.width+'px',height:start.height+'px',maxWidth:'none',
+    margin:'0',padding:'0',transform:'none',
+    transformOrigin:'center center',transition:'none',
+    zIndex:'3',pointerEvents:'none',willChange:'transform'
    });
-   document.body.append(traveling);
-   const fromCenterX=start.left+start.width/2;
-   const fromCenterY=start.top+start.height/2;
-   const toCenterX=end.left+end.width/2;
-   const toCenterY=end.top+end.height/2;
-   const startScale=Math.max(1,start.width/end.width);
-   const fromTransform='translate('+(fromCenterX-toCenterX)+'px,'+(fromCenterY-toCenterY)+'px) scale('+startScale+')';
-   const toTransform='translate(0px,0px) scale(1)';
-   traveling.style.transform=fromTransform;
-   const yellowWave=finalWave.cloneNode(true);
-   yellowWave.classList.add('loader-curve');
-   yellowWave.removeAttribute('aria-hidden');
-   Object.assign(yellowWave.style,{
+   const movingCurve=finalWave.cloneNode(true);
+   movingCurve.classList.add('loader-curve');
+   Object.assign(movingCurve.style,{
     position:'absolute',inset:'0',width:'100%',height:'100%',
-    display:'block',zIndex:'0',pointerEvents:'none',filter:'none'
+    maxWidth:'none',display:'block',zIndex:'0',pointerEvents:'none',
+    transform:'none',transition:'none',filter:'none'
    });
-   const shape=yellowWave.querySelector('path');
+   const shape=movingCurve.querySelector('path');
    const width=mobile?390:1200,fullHeight=mobile?112:135;
    const endEdge=mobile?87:112,endControl=mobile?122:159;
    const finalPath=shape.getAttribute('d');
    shape.setAttribute('d',`M0 0H${width}V${fullHeight}Q${width/2} ${fullHeight} 0 ${fullHeight}Z`);
-   loader.append(yellowWave);
-   target.style.visibility='hidden';
-   tracedLogo.style.visibility='hidden';
+   loader.append(movingCurve);
+   destination.style.visibility='hidden';
    loader.style.background='transparent';
    loader.style.transition='none';
    loader.style.borderRadius='0';
    loader.style.height=window.innerHeight+'px';
+   // Welcome's real curved shadow is fixed at its FINAL position below the
+   // moving yellow field, and is revealed as that field rises past it.
    root.classList.add('loader-morphing');
    root.classList.remove('loading');
-   const fly=traveling.animate([
-     {transform:fromTransform},
-     {transform:toTransform}
+   const fly=drawnLogo.animate([
+    {transform:'translate3d(0px,0px,0) scale(1)'},
+    {transform:`translate3d(${deltaX}px,${deltaY}px,0) scale(${scale})`}
    ],{duration,easing,fill:'forwards'});
    const fold=loader.animate([
-     {height:window.innerHeight+'px'},
-     {height:headerHeight+'px'}
+    {height:window.innerHeight+'px'},
+    {height:endHeaderHeight+'px'}
    ],{duration,easing,fill:'forwards'});
    let pathFrame=0;
    const launched=performance.now();
    const adjustPath=now=>{
-     const t=Math.min(1,(now-launched)/duration);
-     // Ease the arch in, from a rectangular loading canvas to the precise
-     // SVG curve already used by the welcome header.
-     const eased=1-Math.pow(1-t,3);
-     const edge=fullHeight+(endEdge-fullHeight)*eased;
-     const control=fullHeight+(endControl-fullHeight)*eased;
-     shape.setAttribute('d',`M0 0H${width}V${edge}Q${width/2} ${control} 0 ${edge}Z`);
-     if(t<1)pathFrame=requestAnimationFrame(adjustPath);
+    const t=Math.min(1,(now-launched)/duration);
+    const eased=1-Math.pow(1-t,3);
+    const edge=fullHeight+(endEdge-fullHeight)*eased;
+    const control=fullHeight+(endControl-fullHeight)*eased;
+    shape.setAttribute('d',`M0 0H${width}V${edge}Q${width/2} ${control} 0 ${edge}Z`);
+    if(t<1)pathFrame=requestAnimationFrame(adjustPath);
    };
    pathFrame=requestAnimationFrame(adjustPath);
    await Promise.allSettled([fly.finished,fold.finished]);
    cancelAnimationFrame(pathFrame);
    shape.setAttribute('d',finalPath);
-   // The moving image is already identical in size and position to the
-   // welcome image. Cut layers in one frame: no loader opacity fade.
+   // Same position and scale at the cut; only the EN/AR button may fade in.
    root.classList.remove('loader-morphing');
    root.classList.add('loader-complete');
-   target.style.removeProperty('visibility');
+   destination.style.removeProperty('visibility');
    loader.style.display='none';
-   traveling.remove();
    fly.cancel();fold.cancel();
    root.style.removeProperty('--loader-header-height');
    return;
