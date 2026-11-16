@@ -873,3 +873,82 @@ body.rich-menu-active #inside>header.tucked{transform:none!important;pointer-eve
  body.rich-menu-active #inside>header{position:sticky!important;}
 }
 body[data-preview] #experience-switch,body[data-preview] #rich-menu{display:none!important;}
+
+
+/* Immersive / high-internet mode occupies the browser viewport edge to edge.
+   Standard mode and popup/dashboard previews remain completely unchanged. */
+body.rich-menu-active:not([data-preview]),
+body.rich-menu-active:not([data-preview]) #shell,
+body.rich-menu-active:not([data-preview]) #inside{
+ width:100%!important;max-width:none!important;
+ min-height:0!important;height:100dvh!important;
+ overflow:hidden!important;
+}
+body.rich-menu-active:not([data-preview]) #inside{
+ padding:0!important;
+}
+body.rich-menu-active:not([data-preview]) #inside>header{
+ box-sizing:border-box!important;flex:none!important;
+}
+body.rich-menu-active:not([data-preview]) #menu{
+ box-sizing:border-box!important;
+ display:flex!important;flex-direction:column!important;
+ gap:0!important;
+ width:100%!important;max-width:none!important;
+ padding:0!important;margin:0!important;
+ min-height:0!important;overflow:hidden!important;
+}
+body.rich-menu-active:not([data-preview]) #experience-switch{
+ box-sizing:border-box!important;
+ position:relative;z-index:9;flex:none;
+ width:100%!important;max-width:none!important;
+ margin:0!important;border-radius:0!important;
+ border-left:0!important;border-right:0!important;
+ box-shadow:none!important;
+ padding:8px clamp(12px,3vw,38px)!important;
+ min-height:55px!important;
+}
+body.rich-menu-active:not([data-preview]) #rich-menu{
+ box-sizing:border-box!important;
+ display:flex!important;flex:1 1 0!important;min-height:0!important;
+ width:100%!important;max-width:none!important;
+ overflow:hidden!important;
+}
+body.rich-menu-active:not([data-preview]) #credit,
+body.rich-menu-active:not([data-preview]) #social-links{
+ display:none!important;
+}
+@media(max-width:980px){
+ body.rich-menu-active:not([data-preview]) #shell{
+  background:#242329!important;
+ }
+ body.rich-menu-active:not([data-preview]) #inside>header{
+  height:72px!important;min-height:72px!important;
+ }
+ body.rich-menu-active:not([data-preview]) #menu{
+  height:calc(100dvh - 72px)!important;
+ }
+ body.rich-menu-active:not([data-preview]) #experience-switch{
+  min-height:54px!important;
+  padding:5px 12px!important;
+ }
+}
+@media(min-width:981px){
+ body.rich-menu-active:not([data-preview]) #inside>header{
+  height:94px!important;min-height:94px!important;
+ }
+ body.rich-menu-active:not([data-preview]) #menu{
+  height:calc(100dvh - 94px)!important;
+ }
+}
+@supports not (height:100dvh){
+ body.rich-menu-active:not([data-preview]),
+ body.rich-menu-active:not([data-preview]) #shell,
+ body.rich-menu-active:not([data-preview]) #inside{height:100vh!important;}
+ @media(max-width:980px){
+  body.rich-menu-active:not([data-preview]) #menu{height:calc(100vh - 72px)!important;}
+ }
+ @media(min-width:981px){
+  body.rich-menu-active:not([data-preview]) #menu{height:calc(100vh - 94px)!important;}
+ }
+}
