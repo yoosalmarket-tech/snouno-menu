@@ -424,7 +424,7 @@ function highlightCategory(id){
 function updateVisibleCategory(){
  categoryFrame=0;
  if(isPreview||!menuSections.length||$('inside').hidden||$('menu').hidden)return;
- const boundary=$('chips').getBoundingClientRect().bottom+3;
+ const boundary=matchMedia('(min-width:981px)').matches?Math.min(window.innerHeight*.36,250):$('chips').getBoundingClientRect().bottom+3;
  let current=menuSections[0];
  for(const section of menuSections){
    if(section.getBoundingClientRect().top>boundary)break;
