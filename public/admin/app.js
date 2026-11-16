@@ -74,7 +74,28 @@ async function openSection(key){
    if(key==='menu_links'&&row.channel){const icon=node('img');icon.src='/assets/'+row.channel+'.svg';icon.className='channel-icon';icon.alt='';card.append(icon);}
    card.append(node('strong',key==='rankings'?(row.meal_name||'طبق محذوف قبل تسجيل اسمه'):(row.name||row.email||row.kind)));
    if(feedback){card.style.flexWrap='wrap';card.append(node('span',[row.kind,row.phone,row.stars?row.stars+' ★':'',row.message].filter(Boolean).join(' · ')));}
-   if(key==='dishes') {const item=node('bdi',row.price+' ₪'+(row.available?'':' · غير متوفر'));item.dir='ltr';item.className='price';card.append(item);}
+   if(key==='dishes') {
+     const item=node('bdi',row.price+' ₪');item.dir='ltr';item.className='price';card.append(item);
+     const control=node('label');control.className='availability-control';
+     const input=node('input');input.type='checkbox';input.className='availability-toggle';input.checked=row.available!==false;
+     input.setAttribute('aria-label','توفر '+row.name);
+     const rail=node('span');rail.className='availability-track';rail.setAttribute('aria-hidden','true');
+     const status=node('span',input.checked?'متوفر':'غير متوفر');status.className='availability-status';
+     control.append(input,rail,status);control.dataset.available=String(input.checked);
+     input.onchange=async()=>{
+       const next=input.checked;input.disabled=true;
+       try {
+         await api('/rest/v1/dishes?'+filter(row),{method:'PATCH',body:{available:next}});
+         row.available=next;control.dataset.available=String(next);
+         status.textContent=next?'متوفر':'غير متوفر';
+         notice(next?'الطبق متوفر الآن':'تم تعيين الطبق غير متوفر');
+       }catch(err){
+         input.checked=!next;
+         notice('تعذّر تغيير التوفر: '+err.message);
+       }finally{input.disabled=false;}
+     };
+     card.append(control);
+   }
    if(key==='menu_staff')card.append(node('span',row.role==='owner'?'مالك':'محرر'));
    else if(!feedback) card.append(action('تعديل',()=>edit(key,row)));
    if(!['menu_settings','menu_links'].includes(key)&&row.role!=='owner')card.append(action(key==='menu_staff'?'إلغاء الصلاحية':'حذف',async()=>{
@@ -103,7 +124,7 @@ async function edit(key,row){
      for(const dish of dishes){const option=node('option',dish.name);option.value=dish.id;input.append(option);}
    }
    if(type==='locked'){input.readOnly=true;input.title='للقراءة فقط';}
-   if(type==='checkbox')input.checked=row[field]??true;
+   if(type==='checkbox'){input.checked=row[field]??true;label.classList.add('availability-field');}
    else input.value=row[field]??(type==='select'?cats[0].id:field==='position'?0:'');
    if(type==='number'){input.step='0.01';input.min='0';}
    if(type==='optionalPrice'||type==='optionalRating'){input.step=type==='optionalPrice'?'0.01':'0.1';input.min=0;if(type==='optionalRating')input.max=5;}
