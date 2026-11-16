@@ -129,6 +129,17 @@ function setWelcomeImage(img,index){
 }
 function updateWelcomeLabels(index){
  const label=tr(settings?.welcome_label||'من سنونو');
+ const badge=document.querySelector('#welcome .welcome-food-badge');
+ if(badge){
+   const i=index+1;
+   const clamp=v=>Math.min(95,Math.max(5,Number(v)||0));
+   const x=clamp(settings?.['welcome_label_x_'+i]??82);
+   const y=clamp(settings?.['welcome_label_y_'+i]??28);
+   badge.style.setProperty('left',x+'%','important');
+   badge.style.setProperty('right','auto','important');
+   badge.style.setProperty('top',y+'%','important');
+   badge.style.setProperty('transform','translate(-50%,-50%) rotate(5deg)','important');
+ }
  $('mobile-meal-prefix').textContent=label;
  $('mobile-meal-name').textContent=welcomeMealName(index);
  $('cover-photo').alt=welcomeMealName(index);
@@ -794,7 +805,7 @@ function installPreview(){
    settings={...original.settings};links=original.links.map(v=>({...v}));
    if(key==='menu_settings'){
      settings={...settings,...data};
-     if(['name','welcome','hero','welcome_button','hotline','logo','welcome_caption','welcome_subtitle','welcome_question','welcome_label','welcome_desktop_accent','welcome_description','welcome_meal_1','welcome_meal_2','welcome_meal_3','welcome_image_1','welcome_image_2','welcome_image_3'].includes(field))dest='welcome';
+     if(['name','welcome','hero','welcome_button','hotline','logo','welcome_caption','welcome_subtitle','welcome_question','welcome_label','welcome_desktop_accent','welcome_description','welcome_meal_1','welcome_meal_2','welcome_meal_3','welcome_image_1','welcome_image_2' ,'welcome_image_3','welcome_label_x_1','welcome_label_y_1','welcome_label_x_2','welcome_label_y_2','welcome_label_x_3','welcome_label_y_3'].includes(field))dest='welcome';
      if(['address','hours','contact'].includes(field))dest='contact';
    }else if(key==='menu_links'){
      dest='contact';links=links.map(link=>link.id===data.id?{...link,url:data.url}:link);
