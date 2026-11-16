@@ -35,21 +35,20 @@ html.loader-finishing #page-loader{
 }
 html.loader-morphing #page-loader{
  opacity:1;
- transition:height 1050ms cubic-bezier(.17,.86,.20,1),
-   border-radius 1050ms cubic-bezier(.17,.86,.20,1);
+ transition:height 1900ms cubic-bezier(.19,.82,.16,1),
+   border-radius 1900ms cubic-bezier(.19,.82,.16,1);
 }
 html.loader-finishing #page-loader{
  opacity:0;
- transition:opacity 310ms ease-out;
+ transition:opacity 280ms ease-out;
 }
 html.loader-morphing #shell,html.loader-finishing #shell{visibility:visible}
+/* JS places the same SVG at the welcome logo's measured on-screen box.
+   Never let a second CSS transform move it during the morph. */
 html.loader-morphing #page-loader svg,html.loader-finishing #page-loader svg{
- width:min(65vw,218px);transform:scale(1);
+ transition:none!important;
 }
-@media(min-width:981px){
- html.loader-morphing #page-loader svg,
- html.loader-finishing #page-loader svg{width:min(21vw,210px);}
-}
+
 @media(prefers-reduced-motion:reduce){
  #page-loader,#page-loader svg{transition:none!important}
  #page-loader .ink-lines path,#page-loader .ink-fill{animation:none}
