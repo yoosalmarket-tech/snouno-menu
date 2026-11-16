@@ -409,7 +409,12 @@ function highlightCategory(id){
  const button=categoryButtons.get(id);
  if(!button)return;
  button.setAttribute('aria-current','location');
- const strip=$('chips'),bounds=strip.getBoundingClientRect(),tab=button.getBoundingClientRect();
+ const counter=$('category-position');
+ if(counter){
+   const index=[...categoryButtons.keys()].indexOf(id);
+   counter.textContent=(index+1)+' / '+categoryButtons.size;
+ }
+ const strip=$('category-rail'),bounds=strip.getBoundingClientRect(),tab=button.getBoundingClientRect();
  if(matchMedia('(min-width:981px)').matches){
    strip.scrollBy({top:tab.top+tab.height/2-bounds.top-bounds.height/2,behavior:scrollBehavior()});
  }else{
@@ -445,20 +450,42 @@ function scrollToSection(section){
 }
 function renderChips(groups){
  const strip=$('chips');strip.replaceChildren();categoryButtons.clear();activeCategory=null;
+ const head=make('div');head.className='category-nav-head';
+ const titles=make('span');titles.className='category-nav-title';
+ const english=make('strong','CATEGORIES');english.lang='en';english.dir='ltr';
+ const arabic=make('span','التصنيفات');arabic.lang='ar';arabic.dir='rtl';
+ titles.append(english,arabic);
+ const controls=make('div');controls.className='category-nav-controls';
+ const previous=make('button','←');previous.type='button';previous.className='category-nav-arrow';
+ previous.setAttribute('aria-label',isEnglish()?'Previous category':'الصنف السابق');
+ const position=make('span');position.id='category-position';position.dir='ltr';
+ position.textContent='1 / '+groups.length;
+ const next=make('button','→');next.type='button';next.className='category-nav-arrow';
+ next.setAttribute('aria-label',isEnglish()?'Next category':'الصنف التالي');
+ controls.append(previous,position,next);
+ head.append(titles,controls);
+ const rail=make('div');rail.id='category-rail';rail.className='category-rail';
+ rail.setAttribute('aria-label',isEnglish()?'Meal categories':'أصناف المنيو');
  for(const {category,section} of groups){
    const button=make('button');button.type='button';button.className='chip';
-   // Bilingual stacked category chips, following the provided Hungry Buten HTML.
-   const english=make('span',(categoryEnglish[category.name]||category.name).toLocaleUpperCase('en'));
-   english.className='chip-en';english.lang='en';english.dir='ltr';
-   const arabic=make('span',category.name);
-   arabic.className='chip-ar';arabic.lang='ar';arabic.dir='rtl';
-   button.append(english,arabic);
+   const en=make('span',(categoryEnglish[category.name]||category.name).toLocaleUpperCase('en'));
+   en.className='chip-en';en.lang='en';en.dir='ltr';
+   const ar=make('span',category.name);
+   ar.className='chip-ar';ar.lang='ar';ar.dir='rtl';
+   button.append(en,ar);
    button.setAttribute('aria-label',tr(category.name));
    button.setAttribute('aria-controls',section.id);
    button.onclick=()=>scrollToSection(section);
-   strip.append(button);categoryButtons.set(category.id,button);
+   rail.append(button);categoryButtons.set(category.id,button);
  }
- scheduleCategoryUpdate();
+ const go=delta=>{
+   if(!groups.length)return;
+   const current=groups.findIndex(group=>group.category.id===activeCategory);
+   const index=Math.min(groups.length-1,Math.max(0,(current<0?0:current)+delta));
+   scrollToSection(groups[index].section);
+ };
+ previous.onclick=()=>go(-1);next.onclick=()=>go(1);
+ strip.append(head,rail);scheduleCategoryUpdate();
 }
 function price(d){
  const p=make('div');p.className='price';
