@@ -83,6 +83,17 @@ export const ingredientEnglish={
  'ألبان':'Dairy','بروتين':'Protein','صلصات':'Sauces','خضار':'Vegetables','إضافات':'Extras'
 };
 export const englishUI={
+ 'أهلاً بكـ في':'Welcome to',
+ 'سنونو':'Snouno',
+ 'من سنونو!':'From Snouno!',
+ 'البحث عن طبق':'Search for a meal',
+ 'للشراكات، الاستفسارات المؤسسية، أو حجز المناسبات والفعاليات الخاصة — راسلنا وسيتواصل معك فريق سنونو فوراً.':'For partnerships, business inquiries, and private events, send us a message and the Snouno team will get back to you.',
+ 'الرمال - شارع الشهداء - بجانب حلويات ساق الله':'Al-Rimal, Al-Shuhada Street, beside Saq Allah Sweets',
+ 'السبت — الخميس: 10 صباحاً — 11 مساءً':'Saturday–Thursday: 10 AM–11 PM',
+ 'بوكس المشاركة':'Sharing Box',
+ 'نوك أوت':'Knock Out',
+ 'ناشفيل':'Nashville',
+
  'شو آكل؟':'What should I eat?','أهلاً بك في':'Welcome to','أهلاً وسهلاً':'Welcome',
  'مطعم سنونو':'Snouno Restaurant','تصفح المنيو':'Browse the menu',
  'جاهز تختار وجبتك المفضّلة؟':'Ready to pick your favorite meal?',
