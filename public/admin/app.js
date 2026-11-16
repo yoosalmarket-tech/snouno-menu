@@ -369,7 +369,7 @@ async function edit(key,row,inline=false){
      for(const [field,,type] of sections[key][1]){
        if(type==='locked')continue;
        const input=form.elements.namedItem(field);
-       data[field]=type==='product'?(input.value||null):['optionalRating','optionalPrice'].includes(type)?(input.value===''?null:Number(input.value)):type==='checkbox'?input.checked:['number','integer'].includes(type)?Number(input.value):type==='password'?input.value:input.value.trim();
+       data[field]=type==='product'?(input.value||null):['optionalRating','optionalPrice'].includes(type)?(input.value===''?null:Number(input.value)):type==='checkbox'?input.checked:['number','integer','position'].includes(type)?Number(input.value):type==='password'?input.value:input.value.trim();
        const file=uploads[field]?.files[0];
        if(file){
          if(file.size>5242880)throw new Error('الحد الأقصى للصورة 5 ميغابايت');
