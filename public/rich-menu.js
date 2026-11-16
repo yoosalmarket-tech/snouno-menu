@@ -191,22 +191,22 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    el.setAttribute('aria-selected',String(i===front));
   }
   u.railCount.textContent=(front+1)+' / '+len;
+  // The sidebar stays physically fixed. Swap up to three visible meals
+  // in stationary rows instead of translating the whole thumbnail track.
   const visibleStart=clamp(Math.round(position)-1,0,Math.max(0,len-3));
   thumbEls.forEach((el,i)=>{
-   const distance=Math.abs(i-position);
-   el.style.visibility=i>=visibleStart&&i<visibleStart+3?'visible':'hidden';
-   el.style.opacity=Math.max(.4,1-distance*.2).toFixed(2);
-   el.style.transform='scale('+Math.max(.8,1-distance*.07).toFixed(3)+')';
+   el.style.display=i>=visibleStart&&i<visibleStart+3?'grid':'none';
+   el.style.visibility='visible';
+   el.style.opacity='';
+   el.style.transform='none';
    el.setAttribute('aria-current',String(i===front));
   });
-  // Match each label's vertical position to its thumbnail while scrolling.
-  const unit=34,h=u.thumbWindow.clientHeight,th=len*unit-4;
-  const y=th<=h?(h-th)/2:clamp(h/2-position*unit-15,Math.min(0,h-th),0);
-  u.thumbTrack.style.transform='translateY('+y.toFixed(1)+'px)';
+  u.thumbTrack.style.transform='none';
+  const unit=34;
   for(const label of u.labels.children){
-   const i=Number(label.dataset.index),top=y+i*unit;
-   label.style.top=top.toFixed(1)+'px';
-   label.style.display=i>=visibleStart&&i<visibleStart+3&&top<h&&top+30>0?'grid':'none';
+   const i=Number(label.dataset.index);
+   label.style.top=((i-visibleStart)*unit)+'px';
+   label.style.display=i>=visibleStart&&i<visibleStart+3?'grid':'none';
    label.setAttribute('aria-current',String(i===front));
   }
   const fade=Math.min(1,Math.abs(k-Math.round(k))*2.6+(k<-.4?1:0));
