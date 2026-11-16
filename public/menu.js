@@ -1,3 +1,4 @@
+import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
@@ -258,7 +259,7 @@ const systemTheme=matchMedia('(prefers-color-scheme:dark)');
 theme(systemTheme.matches);
 systemTheme.addEventListener('change',event=>theme(event.matches));
 $('theme').onclick=()=>{const dark=!document.body.classList.contains('dark');theme(dark);};
-let favoritesOnly=false,activeCategory=null,categoryFrame=0;
+let activeCategory=null,categoryFrame=0;
 const favoritesCategory={id:'favorites',name:'المفضلة',icon:'★'};
 let menuSections=[];
 const categoryButtons=new Map();
@@ -297,24 +298,16 @@ $('chips').addEventListener('transitionend',scheduleCategoryUpdate);
 window.addEventListener('pagechange',scheduleCategoryUpdate);
 function scrollToSection(section){
  const y=section.getBoundingClientRect().top;
- const stripHeight=$('chips').offsetHeight;
- const headerSpace=y<stripHeight+pageHeader.offsetHeight?pageHeader.offsetHeight:0;
+ const desktop=matchMedia('(min-width:981px)').matches;
+ const stripHeight=desktop?0:$('chips').offsetHeight;
+ const headerSpace=desktop?110:(y<stripHeight+pageHeader.offsetHeight?pageHeader.offsetHeight:0);
  window.scrollTo({top:Math.max(0,window.scrollY+y-stripHeight-headerSpace),behavior:scrollBehavior()});
 }
 function renderChips(groups){
  const strip=$('chips');strip.replaceChildren();categoryButtons.clear();activeCategory=null;
- const favorite=make('button');favorite.type='button';favorite.className='chip';
- favorite.append(make('span','★'),'المفضلة');favorite.setAttribute('aria-pressed',String(favoritesOnly));
- favorite.onclick=()=>{favoritesOnly=!favoritesOnly;renderCards();if(menuSections.length)scrollToSection(menuSections[0]);};
- strip.append(favorite);
  for(const {category,section} of groups){
-   if(category===favoritesCategory){
-     favorite.setAttribute('aria-controls',section.id);
-     categoryButtons.set(category.id,favorite);
-     continue;
-   }
    const button=make('button');button.type='button';button.className='chip';
-   button.append(make('span',category.icon),category.name);
+   button.append(make('span',category.icon||''),tr(category.name));
    button.setAttribute('aria-controls',section.id);
    button.onclick=()=>scrollToSection(section);
    strip.append(button);categoryButtons.set(category.id,button);
@@ -329,26 +322,29 @@ function price(d){
  return p;
 }
 function renderCards(){
- const q=$('search').value.trim().toLocaleLowerCase('ar');const grid=$('cards');grid.replaceChildren();
+ const q=$('search').value.trim().toLocaleLowerCase();const grid=$('cards');grid.replaceChildren();
  const groups=[];
- const visible=dishes.filter(d=>(d.name+' '+d.description).toLocaleLowerCase('ar').includes(q));
+ const visible=dishes.filter(d=>(d.name+' '+d.description+' '+displayName(d)+' '+displayDescription(d)).toLocaleLowerCase().includes(q));
  const byCategory=new Map();
  for(const dish of visible){
-   const key=favorites.has(dish.id)?favoritesCategory.id:dish.category_id;
-   if(!byCategory.has(key))byCategory.set(key,[]);
-   byCategory.get(key).push(dish);
+   if(!byCategory.has(dish.category_id))byCategory.set(dish.category_id,[]);
+   byCategory.get(dish.category_id).push(dish);
  }
- const ordered=favoritesOnly?[favoritesCategory]:[favoritesCategory,...categories];
- for(const category of ordered){
-   const matches=byCategory.get(category.id)||[];
-   if(!matches.length)continue;
-   const section=make('section'),heading=make('h2',category.name),cards=make('div');
+ // Favorites is a genuine scrollable category, not a filter.
+ // Favorite dishes remain visible in their original categories too.
+ const saved=visible.filter(d=>favorites.has(d.id));
+ for(const category of [favoritesCategory,...categories]){
+   const matches=category===favoritesCategory?saved:(byCategory.get(category.id)||[]);
+   if(!matches.length&&category!==favoritesCategory)continue;
+   const section=make('section'),heading=make('h2',tr(category.name)),cards=make('div');
    section.id='category-'+category.id;section.dataset.category=category.id;
    heading.id=section.id+'-title';section.setAttribute('aria-labelledby',heading.id);
-   cards.className='meal-grid';cards.append(...matches.map(mealCard));
+   cards.className='meal-grid';
+   if(matches.length)cards.append(...matches.map(mealCard));
+   else{const p=make('p',tr('اضغط على القلب لحفظ أطباقك المفضلة.'));p.className='empty favorites-empty';cards.append(p);}
    section.append(heading,cards);grid.append(section);groups.push({category,section});
  }
- if(!groups.length){const p=make('p',favoritesOnly&&!q?'اضغط على القلب لحفظ أطباقك المفضلة.':'لا توجد أطباق مطابقة.');p.className='empty';grid.append(p);}
+ if(!visible.length&&q){const p=make('p',tr('لا توجد أطباق مطابقة.'));p.className='empty';grid.append(p);}
  menuSections=groups.map(group=>group.section);renderChips(groups);
 }
 function startingScore(value){
@@ -360,12 +356,12 @@ function startingScore(value){
 function mealCard(d){
    const article=make('article');article.className='card';
    const open=make('button');open.className='card-open';open.onclick=()=>detail(d);
-   if(d.image)open.append(image(d.image,d.name));
+   if(d.image)open.append(image(d.image,displayName(d)));
    if(d.rating!=null)open.append(startingScore(d.rating));
-   open.append(make('strong',d.name),make('p',d.description),price(d));if(!d.available)open.append(make('small','غير متوفر'));
+   open.append(make('strong',displayName(d)),make('p',displayDescription(d)),price(d));if(!d.available)open.append(make('small',tr('غير متوفر')));
    article.append(open);
-   if(d.badge){const badge=make('span',d.badge);badge.className='badge';article.append(badge);}
-   const heart=make('button');heart.className='heart';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label','المفضلة · '+d.name);heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
+   if(d.badge){const badge=make('span',d.badge);badge.className='badge';if(isEnglish())badge.textContent=tr(d.badge);article.append(badge);}
+   const heart=make('button');heart.className='heart';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label',tr('المفضلة')+' · '+displayName(d));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
    heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));renderCards();};article.append(heart);return article;
 }
 function bindFeedback(form,extra){
