@@ -723,11 +723,11 @@ function renderChips(groups){
  const arabic=make('span','التصنيفات');arabic.lang='ar';arabic.dir='rtl';
  titles.append(english,arabic);
  const controls=make('div');controls.className='category-nav-controls';
- const previous=make('button',isEnglish()?'←':'→');previous.type='button';previous.className='category-nav-arrow';
+ const previous=make('button',isEnglish()?'←':'→');previous.type='button';previous.className='category-nav-arrow';previous.id='category-previous';
  previous.setAttribute('aria-label',isEnglish()?'Previous category':'الصنف السابق');
  const position=make('span');position.id='category-position';position.dir='ltr';
  position.textContent='1 / '+groups.length;
- const next=make('button',isEnglish()?'→':'←');next.type='button';next.className='category-nav-arrow';
+ const next=make('button',isEnglish()?'→':'←');next.type='button';next.className='category-nav-arrow';next.id='category-next';
  next.setAttribute('aria-label',isEnglish()?'Next category':'الصنف التالي');
  controls.append(previous,position,next);
  head.append(titles,controls);
@@ -740,9 +740,13 @@ function renderChips(groups){
    const ar=make('span',category.name);
    ar.className='chip-ar';ar.lang='ar';ar.dir='rtl';
    button.append(en,ar);
+   button.id='category-button-'+category.id;
+   button.dataset.categoryId=category.id;
+   button.dataset.trackAction='category_select';
+   button.dataset.permalink=menuLink('category',category.id,'standard');
    button.setAttribute('aria-label',tr(category.name));
    button.setAttribute('aria-controls',section.id);
-   button.onclick=()=>scrollToSection(section);
+   button.onclick=()=>{scrollToSection(section);noteSelection('category',category.id);};
    rail.append(button);categoryButtons.set(category.id,button);
  }
  const go=delta=>{
@@ -750,6 +754,7 @@ function renderChips(groups){
    const current=groups.findIndex(group=>group.category.id===activeCategory);
    const index=Math.min(groups.length-1,Math.max(0,(current<0?0:current)+delta));
    scrollToSection(groups[index].section);
+   noteSelection('category',groups[index].category.id);
  };
  previous.onclick=()=>go(-1);next.onclick=()=>go(1);
  strip.append(head,rail);scheduleCategoryUpdate();
@@ -784,10 +789,10 @@ function renderCards(){
    const matches=category===favoritesCategory?saved:(byCategory.get(category.id)||[]);
    if(!matches.length&&category!==favoritesCategory)continue;
    const section=make('section'),heading=make('h2',tr(category.name)),cards=make('div');
-   section.id='category-'+category.id;section.dataset.category=category.id;
+   section.id='category-'+category.id;section.dataset.category=category.id;section.dataset.categoryId=category.id;
    heading.id=section.id+'-title';section.setAttribute('aria-labelledby',heading.id);
    cards.className='meal-grid';
-   if(matches.length)cards.append(...matches.map(mealCard));
+   if(matches.length)cards.append(...matches.map(meal=>mealCard(meal,category.id==='favorites'?'favorite':'regular')));
    else{const p=make('p',tr('اضغط على القلب لحفظ أطباقك المفضلة.'));p.className='empty favorites-empty';cards.append(p);}
    section.append(heading,cards);grid.append(section);groups.push({category,section});
  }
@@ -801,15 +806,19 @@ function startingScore(value){
  score.append(amount);
  return score;
 }
-function mealCard(d){
+function mealCard(d,context='regular'){
    const article=make('article');article.className='card';
-   const open=make('button');open.className='card-open';open.onclick=()=>detail(d);
+   article.id=(context==='favorite'?'favorite-meal-':'meal-')+d.id;
+   article.dataset.mealId=d.id;article.dataset.categoryId=d.category_id;
+   const open=make('button');open.className='card-open';open.id=(context==='favorite'?'favorite-open-':'open-meal-')+d.id;
+   open.dataset.mealId=d.id;open.dataset.trackAction='meal_open';
+   open.onclick=()=>detail(d);
    if(d.image)open.append(image(d.image,displayName(d)));
    if(d.rating!=null)open.append(startingScore(d.rating));
    open.append(make('strong',displayName(d)),make('p',displayDescription(d)),price(d));if(!d.available)open.append(make('small',tr('غير متوفر')));
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';if(isEnglish())badge.textContent=tr(d.badge);article.append(badge);}
-   const heart=make('button');heart.className='heart';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label',tr('المفضلة')+' · '+displayName(d));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
+   const heart=make('button');heart.className='heart';heart.id=(context==='favorite'?'favorite-heart-':'heart-meal-')+d.id;heart.dataset.mealId=d.id;heart.dataset.trackAction='favorite_toggle';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label',tr('المفضلة')+' · '+displayName(d));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
    heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));renderCards();};article.append(heart);return article;
 }
 function bindFeedback(form,extra){
@@ -827,7 +836,8 @@ function bindFeedback(form,extra){
  if(extra.dish_id){
    localStorage.setItem('snouno-rated-'+extra.dish_id,'1');form.replaceChildren(make('p',tr(duplicate?'سبق أن قيّمت هذا الطبق.':'شكراً لك، تم حفظ تقييمك.')));
  }else{form.reset();output.textContent=tr('شكراً لك، وصلتنا رسالتك.');}
- }catch{output.textContent=tr('تعذّر الإرسال. حاول مرة أخرى.');}finally{button.disabled=false;}};
+ reporting.report('form_submit_success',button,{meal_id:extra.dish_id||null});
+ }catch{output.textContent=tr('تعذّر الإرسال. حاول مرة أخرى.');reporting.report('form_submit_error',button,{meal_id:extra.dish_id||null});}finally{button.disabled=false;}};
 }
 function ingredientGroups(text=''){
  const groups=new Map();
@@ -844,6 +854,8 @@ function ingredientGroups(text=''){
 }
 function detail(d){
  const box=$('details');box.replaceChildren();
+ $('dish').dataset.mealId=d.id||'';
+ if(d.id&&!isPreview)noteSelection('meal',d.id);
  const categoryLabel=tr(categories.find(c=>c.id===d.category_id)?.name||'');
  if(d.image){
    const frame=make('figure');frame.className='dish-photo';
@@ -866,17 +878,28 @@ function detail(d){
    content.append(make('h3',tr('المكونات')),make('p',tr('لم ينشر المطعم تفاصيل المكونات بعد.')));
  }
  const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering,d);else buttons.append(tr('غير متوفر'));content.append(buttons);
+ if(d.id&&!isPreview){
+  const share=make('button',isEnglish()?'↗ Copy meal link':'↗ نسخ رابط الوجبة');
+  share.type='button';share.className='share-meal-link';share.id='share-meal-'+d.id;
+  share.dataset.mealId=d.id;share.dataset.trackAction='share_meal_click';
+  share.onclick=async()=>{
+   const result=await copyMenuLink('meal',d.id,richDesired?'interactive':'standard');
+   share.textContent=result.copied?(isEnglish()?'Link copied ✓':'تم نسخ الرابط ✓'):(isEnglish()?'Copy the displayed link':'انسخ الرابط الظاهر');
+  };
+  content.append(share);
+ }
  const show=()=>{box.append(content);if(!$('dish').open){if(isPreview)$('dish').show();else $('dish').showModal();}$('dish').scrollTop=0;};
  if(!d.id){show();return;}
  if(localStorage.getItem('snouno-rated-'+d.id)){content.append(make('p',tr('سبق أن قيّمت هذا الطبق.')));show();return;}
- const form=make('form');form.innerHTML='<h3>'+tr('قيّم الطبق')+'</h3><fieldset class="stars"><legend>'+tr('التقييم')+'</legend></fieldset><label>'+tr('اكتب رأيك عن الطبق')+'<textarea name="message" maxlength="2000"></textarea></label><button class="yellow send-rating" aria-label="'+tr('إرسال التقييم')+'">➤</button><output></output>';
+ const form=make('form');form.id='review-form-'+d.id;form.dataset.mealId=d.id;form.innerHTML='<h3>'+tr('قيّم الطبق')+'</h3><fieldset class="stars"><legend>'+tr('التقييم')+'</legend></fieldset><label>'+tr('اكتب رأيك عن الطبق')+'<textarea name="message" maxlength="2000"></textarea></label><button class="yellow send-rating" aria-label="'+tr('إرسال التقييم')+'">➤</button><output></output>';
  const stars=form.querySelector('.stars');
  for(let i=1;i<=5;i++){
    const label=make('label');const radio=make('input');
-   radio.type='radio';radio.name='stars';radio.value=i;radio.required=true;
+   radio.type='radio';radio.name='stars';radio.value=i;radio.required=true;radio.id='review-star-'+d.id+'-'+i;
    radio.setAttribute('aria-label',isEnglish()?i+' of 5':i+' من 5');const star=make('span','★');star.setAttribute('aria-hidden','true');
    label.append(radio,star);stars.append(label);
  }
+ const submit=form.querySelector('.send-rating');submit.id='review-submit-'+d.id;submit.dataset.mealId=d.id;
  bindFeedback(form,{kind:'تقييم',dish_id:d.id});content.append(form);show();
 }
 function installDishDismissal(dialog) {
