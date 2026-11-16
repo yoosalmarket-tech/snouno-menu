@@ -256,8 +256,8 @@ let stopCarousel=()=>{};
 function renderAds() {
  stopCarousel();
  const ads=advertisements.filter(ad=>asset(ad.image));
- const track=$('ad-track'), dots=$('ad-dots');
- track.replaceChildren(); dots.replaceChildren(); $('ads').hidden=!ads.length;
+ const track=$('ad-track'), dots=$('ad-dots'),thumbs=$('ad-thumbnails');
+ track.replaceChildren(); dots.replaceChildren();thumbs.replaceChildren(); $('ads').hidden=!ads.length;
  const duration=5000;
  const motion=matchMedia('(prefers-reduced-motion: reduce)');
  let timer,progress,frame,active=0,dragging=false;
@@ -289,6 +289,13 @@ function renderAds() {
    if(index<0)return;
    active=index;
    Array.from(dots.children).forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===index)));
+   Array.from(thumbs.children).forEach((thumb,i)=>{
+     thumb.setAttribute('aria-current',String(i===index));
+     const number=thumb.querySelector('.ad-thumb-index');
+     if(number)number.textContent=String(i+1).padStart(2,'0');
+   });
+   const count=$('ad-total');
+   if(count)count.textContent=String(index+1).padStart(2,'0')+' / '+String(ads.length).padStart(2,'0');
  }
  for (const [index,{image:url,name:label,dish_id:dishId}] of ads.entries()) {
    const title=label||('إعلان '+(index+1));
@@ -298,8 +305,24 @@ function renderAds() {
    const dot=make('button');dot.type='button';dot.setAttribute('aria-label',title);
    const fill=make('span');fill.className='ad-progress';dot.append(fill);
    dot.onclick=()=>{select(index);restart();};dots.append(dot);
+   const thumb=make('button');thumb.type='button';thumb.className='ad-thumb';
+   const thumbImage=image(url,title);thumbImage.loading='lazy';
+   const thumbDetails=make('span');thumbDetails.className='ad-thumb-text';
+   const number=make('small',String(index+1).padStart(2,'0'));
+   number.className='ad-thumb-index';
+   const text=make('strong',title);
+   thumbDetails.append(number,text);
+   thumb.append(thumbImage,thumbDetails);
+   thumb.setAttribute('aria-label',title);
+   thumb.onclick=()=>{select(index);restart();};
+   thumbs.append(thumb);
  }
- dots.hidden=ads.length<2;highlight(0);
+ dots.hidden=ads.length<2;
+ $('ad-previous').disabled=ads.length<2;
+ $('ad-next').disabled=ads.length<2;
+ $('ad-previous').onclick=()=>{select((active-1+ads.length)%ads.length);restart();};
+ $('ad-next').onclick=()=>{select((active+1)%ads.length);restart();};
+ highlight(0);
  function paintSlides(){
    frame=0;
    const width=track.clientWidth;
