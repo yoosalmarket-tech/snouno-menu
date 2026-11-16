@@ -105,7 +105,13 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
 </div>
 </section>
 <div id="inside" hidden><header><a class="brand-home" href="/welcome" data-page="welcome" aria-label="العودة إلى واجهة سنونو"><img id="logo" src="/assets/logo.webp" alt="سنونو"></a><div class="header-actions"><button id="language" class="language-switch" type="button" aria-label="Switch to English" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="language-label" lang="en">EN</span></button><button id="theme" aria-label="تغيير مظهر المنيو">☾</button></div></header>
-<section id="menu"><section id="ads" aria-label="إعلانات المطعم" hidden>
+<section id="menu">
+<div class="experience-switch" id="experience-switch">
+  <div class="experience-switch-copy"><span class="experience-switch-kicker" lang="en">SNOUNO · EXPERIENCE</span><strong id="experience-switch-title">الوضع التفاعلي</strong><small id="experience-switch-hint">حركة ثلاثية الأبعاد وصور أكثر · يُفضّل اتصال سريع</small></div>
+  <label class="experience-switch-control" for="rich-mode-toggle"><input id="rich-mode-toggle" type="checkbox" role="switch" aria-label="تفعيل الوضع التفاعلي للإنترنت السريع"><span class="experience-switch-track" aria-hidden="true"></span><span class="experience-switch-status" id="experience-switch-status">عادي</span></label>
+</div>
+<div id="rich-menu" hidden aria-label="تجربة سنونو التفاعلية"></div>
+<section id="ads" aria-label="إعلانات المطعم" hidden>
  <div class="ad-desktop-heading"><div><span class="ad-overline">SNOUNO / FEATURED</span><h2>عروض تستاهل التجربة</h2><p>اختيارات مميزة من مطعم سنونو</p></div></div>
  <div class="ad-showcase">
   <div class="ad-main"><div id="ad-track" tabindex="0" aria-label="اسحب لتصفح الإعلانات"></div><div id="ad-dots" aria-label="اختيار الإعلان"></div></div>
