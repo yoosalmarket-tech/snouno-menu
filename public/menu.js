@@ -34,7 +34,7 @@ function applyLanguage(){
  document.documentElement.lang=isEnglish()?'en':'ar';
  document.body.classList.toggle('lang-en',isEnglish());
  const toggle=$('language');
- toggle.textContent=isEnglish()?'عربي':'EN';
+ toggle.querySelector('.language-label').textContent=isEnglish()?'AR':'EN';
  toggle.setAttribute('aria-pressed',String(isEnglish()));
  toggle.setAttribute('aria-label',isEnglish()?'العودة إلى العربية':'Switch to English');
  $('search').placeholder=tr('ابحث عن طبقك أو مشروبك المفضل...');
@@ -193,6 +193,12 @@ function startDesktopMealWheel(){
   for(const meal of desktopWheelMeals.slice(0,4)){
     const preload=new Image();preload.src=asset(meal.image);
   }
+  const first=desktopWheelMeals[0];
+  hero.src=asset(first.image);
+  hero.alt=displayName(first);
+  hero.classList.add('is-menu-meal','wheel-has-rotated');
+  label.textContent=displayName(first);
+  desktopWheelCursor=1;
   const generation=desktopWheelGeneration;
   const rotate=()=>{
     if(!canPlayDesktopWheel()||generation!==desktopWheelGeneration)return;
@@ -315,8 +321,10 @@ function renderSettings(){
  $('browse').querySelector('span').textContent=buttonText;
  $('desktop-welcome-browse').querySelector('span').textContent=buttonText;
  setText('desktop-welcome-brand',tr(s.name));setText('desktop-welcome-greeting',tr(s.welcome));
- const hero=asset(s.hero)||'/assets/plate.webp',logo=asset(s.logo)||'/assets/logo.webp';
- $('desktop-welcome-hero').src=hero;
+ const logo=asset(s.logo)||'/assets/logo.webp';
+ const sharing=dishes.find(d=>d.name==='بوكس المشاركة'&&d.image);
+ const desktopHero=asset(sharing?.image)||'/assets/meals/2468.webp';
+ if(!desktopWheelTimer){$('desktop-welcome-hero').src=desktopHero;$('desktop-welcome-hero').classList.add('is-menu-meal','wheel-has-rotated');setText('desktop-meal-name',sharing?displayName(sharing):tr('بوكس المشاركة'));}
  $('logo').src=logo;$('welcome-logo').src=logo;$('desktop-welcome-logo').src=logo;
  renderAds();
  setText('location-name',tr(s.name)+' — '+(isEnglish()?'Gaza':'غزة'));setText('address',tr(s.address));setText('hours',tr(s.hours));setText('hotline',s.hotline);setText('intro',tr(s.contact));const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
