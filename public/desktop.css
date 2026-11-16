@@ -551,3 +551,17 @@
   background:#3d382d;border-color:#655a48;color:#f5ead5;
  }
 }
+
+
+/* Override the older desktop rule that gave every chip span a 19px icon font. */
+@media(min-width:981px){
+ body:not([data-preview]) #chips .chip span.chip-en{
+  font:900 12px/1.25 system-ui,sans-serif;letter-spacing:.035em;
+ }
+ body:not([data-preview]) #chips .chip span.chip-ar{
+  font:500 12px/1.3 Snouno,Tahoma,sans-serif;color:#beb5a6;
+ }
+ body:not([data-preview]) #chips .chip[aria-current=location] span.chip-ar{
+  color:#4b370e;
+ }
+}
