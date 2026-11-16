@@ -470,7 +470,7 @@ async function revealPage(){
  const shell=document.documentElement;
  const onWelcome=!$('welcome').hidden;
  if(onWelcome){
-  const sources=[$('cover-photo').getAttribute('href'),'/assets/mask.webp','/assets/restaurant-front.webp','/assets/charcoal.webp'];
+  const sources=[$('cover-photo').getAttribute('href'),'/assets/mask.webp'];
   await Promise.allSettled(sources.map(src=>{const img=new Image();img.src=src;return img.decode();}));
  }
  await document.fonts.ready;
