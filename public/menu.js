@@ -104,11 +104,11 @@ function syncWelcomeSettings(){
  });
 }
 let mobileWelcomeIndex=0;
-let desktopWheelTimer=null,welcomeCarouselTimer=null,welcomeCarouselCleanupTimer=null;
+let welcomeCarouselTimer=null,welcomeCarouselCleanupTimer=null;
 let welcomeCarouselActive=false,welcomeCarouselAnimating=false,welcomeCarouselSession=0;
 const welcomeAutoplayMs=3000,welcomeTransitionMs=600;
 const prefersReducedWelcomeMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
-const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome';
+const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&matchMedia('(max-width:980px)').matches;
 const onMobileWelcome=()=>matchMedia('(max-width:980px)').matches;
 function welcomeMealName(index){
  const choice=welcomeMobileMeals[index];
@@ -130,11 +130,8 @@ function setWelcomeImage(img,index){
 function updateWelcomeLabels(index){
  const label=tr(settings?.welcome_label||'من سنونو');
  $('mobile-meal-prefix').textContent=label;
- $('desktop-meal-prefix').textContent=label;
  $('mobile-meal-name').textContent=welcomeMealName(index);
- $('desktop-meal-name').textContent=welcomeMealName(index);
  $('cover-photo').alt=welcomeMealName(index);
- $('desktop-welcome-hero').alt=welcomeMealName(index);
  [...document.querySelectorAll('.welcome-stage-rail button')].forEach((d,i)=>{
   d.setAttribute('aria-current',String(i===index));
   d.setAttribute('aria-label',welcomeMealName(i));
@@ -142,35 +139,32 @@ function updateWelcomeLabels(index){
 }
 function resetWelcomeImages(){
  const current=mobileWelcomeIndex;
- const image=$('cover-photo'),next=$('cover-next'),desktop=$('desktop-welcome-hero');
+ const image=$('cover-photo'),next=$('cover-next');
  image.classList.remove('mobile-food-out','mobile-food-in');
  next.classList.remove('is-visible','mobile-food-in');
- desktop.classList.remove('wheel-exit','wheel-enter');
- setWelcomeImage(image,current);setWelcomeImage(desktop,current);
+ setWelcomeImage(image,current);
  updateWelcomeLabels(current);
 }
 function stopWelcomeCarousel(){
  ++welcomeCarouselSession;
  clearTimeout(welcomeCarouselTimer);clearTimeout(welcomeCarouselCleanupTimer);
  welcomeCarouselTimer=welcomeCarouselCleanupTimer=null;
- desktopWheelTimer=null;welcomeCarouselAnimating=false;welcomeCarouselActive=false;
+ welcomeCarouselAnimating=false;welcomeCarouselActive=false;
  $('cover-photo').classList.remove('mobile-food-out');
  $('cover-next').classList.remove('is-visible','mobile-food-in');
- $('desktop-welcome-hero').classList.remove('wheel-exit','wheel-enter');
 }
 function scheduleWelcomeCarousel(){
  clearTimeout(welcomeCarouselTimer);
  if(!welcomeVisible()||!welcomeCarouselActive)return;
  welcomeCarouselTimer=setTimeout(()=>goToWelcomeMeal((mobileWelcomeIndex+1)%3),welcomeAutoplayMs);
- desktopWheelTimer=welcomeCarouselTimer;
 }
 function goToWelcomeMeal(index){
  index=(index+3)%3;
  if(welcomeCarouselAnimating||!welcomeVisible()||index===mobileWelcomeIndex)return;
  clearTimeout(welcomeCarouselTimer);
  const old=mobileWelcomeIndex,session=welcomeCarouselSession;
- const current=$('cover-photo'),next=$('cover-next'),desktop=$('desktop-welcome-hero');
- const mobile=onMobileWelcome();
+ const current=$('cover-photo'),next=$('cover-next');
+
  welcomeCarouselAnimating=true;
  const nextAsset=new Image();
  let transitionStarted=false;
@@ -180,31 +174,24 @@ function goToWelcomeMeal(index){
   if(prefersReducedWelcomeMotion()){
    mobileWelcomeIndex=index;resetWelcomeImages();welcomeCarouselAnimating=false;scheduleWelcomeCarousel();return;
   }
-  if(mobile){
-   setWelcomeImage(next,index);next.alt='';
-   next.classList.remove('mobile-food-in');
-   next.classList.add('is-visible');
-   void next.offsetWidth;
-   current.classList.add('mobile-food-out');next.classList.add('mobile-food-in');
-  }else{
-   desktop.classList.remove('wheel-enter');desktop.classList.add('wheel-exit');
-  }
+  setWelcomeImage(next,index);next.alt='';
+  next.classList.remove('mobile-food-in');
+  next.classList.add('is-visible');
+  void next.offsetWidth;
+  current.classList.add('mobile-food-out');next.classList.add('mobile-food-in');
   welcomeCarouselCleanupTimer=setTimeout(()=>{
    if(session!==welcomeCarouselSession)return;
    mobileWelcomeIndex=index;
    setWelcomeImage(current,index);
-   setWelcomeImage(desktop,index);
    updateWelcomeLabels(index);
    current.classList.remove('mobile-food-out');
    next.classList.remove('mobile-food-in','is-visible');
-   if(!mobile){desktop.classList.remove('wheel-exit');void desktop.offsetWidth;desktop.classList.add('wheel-enter');}
    welcomeCarouselCleanupTimer=setTimeout(()=>{
     if(session!==welcomeCarouselSession)return;
-    desktop.classList.remove('wheel-enter');
     welcomeCarouselAnimating=false;
     scheduleWelcomeCarousel();
-   },mobile?100:250);
-  },mobile?welcomeTransitionMs:320);
+   },100);
+  },welcomeTransitionMs);
  };
  nextAsset.onerror=()=>{welcomeCarouselAnimating=false;scheduleWelcomeCarousel();};
  nextAsset.src=welcomeMobileMeals[index].src;
@@ -231,17 +218,34 @@ stage.addEventListener('wheel',event=>{
  event.preventDefault();
  goToWelcomeMeal((mobileWelcomeIndex+(event.deltaX+event.deltaY>0?1:2))%3);
 },{passive:false});
-let welcomeSwipeX=null,welcomeSwipeY=null;
+let welcomeSwipeX=null,welcomeSwipeY=null,lastWelcomeSwipe=0;
+function handleWelcomeSwipe(dx,dy){
+ if(!welcomeVisible()||welcomeCarouselAnimating||Date.now()-lastWelcomeSwipe<450)return;
+ if(Math.abs(dx)<38||Math.abs(dx)<=Math.abs(dy)*1.15)return;
+ lastWelcomeSwipe=Date.now();
+ goToWelcomeMeal((mobileWelcomeIndex+(dx<0?1:2))%3);
+}
 stage.addEventListener('pointerdown',event=>{
- if(!welcomeVisible()||!event.target.closest('.welcome-stage,.desktop-visual'))return;
+ if(!welcomeVisible()||!event.target.closest('.welcome-stage'))return;
  welcomeSwipeX=event.clientX;welcomeSwipeY=event.clientY;
 });
 stage.addEventListener('pointerup',event=>{
- if(welcomeSwipeX===null||welcomeCarouselAnimating)return;
+ if(welcomeSwipeX===null)return;
  const dx=event.clientX-welcomeSwipeX,dy=event.clientY-welcomeSwipeY;
- welcomeSwipeX=welcomeSwipeY=null;
- if(Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy)*1.1)goToWelcomeMeal((mobileWelcomeIndex+(dx<0?1:2))%3);
+ welcomeSwipeX=welcomeSwipeY=null;handleWelcomeSwipe(dx,dy);
 });
+stage.addEventListener('pointercancel',()=>{welcomeSwipeX=welcomeSwipeY=null;});
+let touchSwipeStart=null;
+stage.addEventListener('touchstart',event=>{
+ if(!welcomeVisible()||!event.target.closest('.welcome-stage'))return;
+ const touch=event.touches[0];if(touch)touchSwipeStart={x:touch.clientX,y:touch.clientY};
+},{passive:true});
+stage.addEventListener('touchend',event=>{
+ if(!touchSwipeStart)return;
+ const touch=event.changedTouches[0];
+ if(touch)handleWelcomeSwipe(touch.clientX-touchSwipeStart.x,touch.clientY-touchSwipeStart.y);
+ touchSwipeStart=null;
+},{passive:true});
 window.addEventListener('pagechange',startWelcomeCarousel);
 window.addEventListener('resize',()=>{
  if(welcomeCarouselAnimating)stopWelcomeCarousel();
@@ -353,7 +357,6 @@ function renderSettings(){
  setText('mobile-welcome-caption',tr(s.welcome_caption||'أهلاً وسهلاً'));
  setText('desktop-welcome-caption',tr(s.welcome_caption||'أهلاً وسهلاً'));
  setText('welcome-subtitle',tr(s.welcome_subtitle||'جاهز تختار وجبتك المفضّلة؟'));
- setText('desktop-meal-question',tr(s.welcome_question||'شو آكل؟'));
  setText('desktop-welcome-accent',tr(s.welcome_desktop_accent||'على مزاجك.'));
  setText('desktop-welcome-description',tr(s.welcome_description||'اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.'));
  setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
@@ -362,10 +365,8 @@ function renderSettings(){
  const buttonText=tr(s.welcome_button||'تصفح المنيو');
  $('browse').querySelector('span').textContent=buttonText;
  $('desktop-welcome-browse').querySelector('span').textContent=buttonText;
- setText('desktop-welcome-brand',tr(s.name));setText('desktop-welcome-greeting',tr(s.welcome));
+ setText('desktop-welcome-brand',tr(s.name));
  const logo=asset(s.logo)||'/assets/logo.webp';
- setWelcomeImage($('desktop-welcome-hero'),mobileWelcomeIndex);
- $('desktop-welcome-hero').classList.add('is-menu-meal');
  updateWelcomeLabels(mobileWelcomeIndex);
  $('logo').src=logo;$('welcome-logo').src=logo;$('desktop-welcome-logo').src=logo;
  renderAds();
