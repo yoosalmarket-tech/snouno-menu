@@ -1,7 +1,7 @@
-// Human-edited English labels for Snouno's existing Sonbol catalog.
+// Human-edited English labels for Snounu's existing Sonbol catalog.
 // Prices, ordering URLs, availability and original Arabic data are unchanged.
 export const categoryEnglish={
- 'سنونو ساندويش':'Snouno Sandwiches','برجر اللحم':'Beef Burgers',
+ 'سنونو ساندويش':'Snounu Sandwiches','برجر اللحم':'Beef Burgers',
  'برجر الدجاج المقلي':'Chicken Burgers','فرايز':'Fries',
  'شاورما':'Shawarma','السلطات / المقبلات':'Salads & Sides',
  'صوصات':'Sauces','مشروبات':'Drinks',
@@ -9,8 +9,8 @@ export const categoryEnglish={
  'المقبلات':'Appetizers','المشروبات':'Drinks'
 };
 export const mealEnglish={
- 2463:['Bazzaz','Fried chicken with Snouno special seasoning, signature bun, sauce, lettuce, tomato and cheese. No fries.'],
- 2482:['Big Snouno','Fried chicken with Snouno special seasoning, Big Snouno bun, sauce, lettuce, tomato and cheese. No fries.'],
+ 2463:['Bazzaz','Fried chicken with Snounu special seasoning, signature bun, sauce, lettuce, tomato and cheese. No fries.'],
+ 2482:['Big Snounu','Fried chicken with Snounu special seasoning, Big Snounu bun, sauce, lettuce, tomato and cheese. No fries.'],
  2465:['Knock Out','Burger bun with two chicken strips, a beef patty, Knock Out spicy sauce, mozzarella sticks, lettuce and tomato. No fries.'],
  2469:['Fried Chicken Roll','Fried chicken fillet with lettuce, tomato, sauce and pickles.'],
  2934:['Grilled Chicken Roll','Grilled chicken fillet with sauce, vegetables and fries.'],
@@ -65,8 +65,8 @@ const byArabic=Object.fromEntries([
 ]);
 export const mealTranslation=(d)=>mealEnglish[d?.sonbol_listing_id]||mealEnglish[byArabic[d?.name]]||null;
 export const ingredientEnglish={
- 'قطع دجاج مقلي':'Fried chicken','خلطة سنونو':'Snouno seasoning','خبزة الباظظ':'Bazzaz bun',
- 'صوص':'Sauce','خس':'Lettuce','بندورة':'Tomato','جبنة':'Cheese','خبزة البيج':'Big Snouno bun',
+ 'قطع دجاج مقلي':'Fried chicken','خلطة سنونو':'Snounu seasoning','خبزة الباظظ':'Bazzaz bun',
+ 'صوص':'Sauce','خس':'Lettuce','بندورة':'Tomato','جبنة':'Cheese','خبزة البيج':'Big Snounu bun',
  'خبزة برجر':'Burger bun','ستربس دجاج':'Chicken strips','بيف':'Beef',
  'صوص النوك أوت':'Knock Out sauce','أصابع موزريلا':'Mozzarella sticks',
  'فيليه دجاج مقلي':'Fried chicken fillet','مخلل':'Pickles',
@@ -84,10 +84,10 @@ export const ingredientEnglish={
 };
 export const englishUI={
  'أهلاً بكـ في':'Welcome to',
- 'سنونو':'Snouno',
- 'من سنونو!':'From Snouno!',
+ 'سنونو':'Snounu',
+ 'من سنونو!':'From Snounu!',
  'البحث عن طبق':'Search for a meal',
- 'للشراكات، الاستفسارات المؤسسية، أو حجز المناسبات والفعاليات الخاصة — راسلنا وسيتواصل معك فريق سنونو فوراً.':'For partnerships, business inquiries, and private events, send us a message and the Snouno team will get back to you.',
+ 'للشراكات، الاستفسارات المؤسسية، أو حجز المناسبات والفعاليات الخاصة — راسلنا وسيتواصل معك فريق سنونو فوراً.':'For partnerships, business inquiries, and private events, send us a message and the Snounu team will get back to you.',
  'الرمال - شارع الشهداء - بجانب حلويات ساق الله':'Al-Rimal, Al-Shuhada Street, beside Saq Allah Sweets',
  'السبت — الخميس: 10 صباحاً — 11 مساءً':'Saturday–Thursday: 10 AM–11 PM',
  'بوكس المشاركة':'Sharing Box',
@@ -95,15 +95,15 @@ export const englishUI={
  'ناشفيل':'Nashville',
 
  'شو آكل؟':'What should I eat?','أهلاً بك في':'Welcome to','أهلاً وسهلاً':'Welcome',
- 'مطعم سنونو':'Snouno Restaurant','تصفح المنيو':'Browse the menu',
+ 'مطعم سنونو':'Snounu Restaurant','تصفح المنيو':'Browse the menu',
  'جاهز تختار وجبتك المفضّلة؟':'Ready to pick your favorite meal?',
- 'وجبات سنونو':'Snouno Meals','الشاورما':'Shawarma','البرجر':'Burgers',
- 'المقبلات':'Sides','من سنونو':'From Snouno',
- 'نَكهة سنونو في كل لقمة':'Snouno flavor in every bite',
- 'نكهة سنونو في كل لقمة':'Snouno flavor in every bite',
+ 'وجبات سنونو':'Snounu Meals','الشاورما':'Shawarma','البرجر':'Burgers',
+ 'المقبلات':'Sides','من سنونو':'From Snounu',
+ 'نَكهة سنونو في كل لقمة':'Snounu flavor in every bite',
+ 'نكهة سنونو في كل لقمة':'Snounu flavor in every bite',
  'على مزاجك.':'Just the way you like it.',
  'اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.':'Explore our meals, choose your favorites, and order through your favorite delivery app.',
- 'مطعم سنونو • اختيارات كثيرة، لمّة واحدة':'Snouno Restaurant • More to share',
+ 'مطعم سنونو • اختيارات كثيرة، لمّة واحدة':'Snounu Restaurant • More to share',
  'اختيارات كثيرة، لمّة واحدة':'More to share, one table',
  'استكشف القائمة من أي جهاز':'Browse the menu on any device',
  'القائمة':'Menu','تواصل معنا':'Contact us','المفضلة':'Favorites',
@@ -117,7 +117,7 @@ export const englishUI={
  'لا توجد أطباق مطابقة.':'No matching meals found.',
  'اضغط على القلب لحفظ أطباقك المفضلة.':'Tap a heart to save your favorite meals.',
  'ابحث عن طبقك أو مشروبك المفضل...':'Search your favorite meal or drink...',
- 'تواصل':'Contact','معنا':'Us','تواصل مع سنونو':'Get in touch with Snouno',
+ 'تواصل':'Contact','معنا':'Us','تواصل مع سنونو':'Get in touch with Snounu',
  'معلومات المطعم':'Restaurant information','ساعات العمل':'Opening hours',
  'رقم التواصل السريع':'Quick contact number','روابط الطلب والتواصل':'Order and contact links',
  'اختار الطريقة الأنسب لك':'Choose your preferred option',

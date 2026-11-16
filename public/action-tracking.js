@@ -66,8 +66,8 @@ export function installActionReporting({route=()=> 'menu',mode=()=> 'standard',p
   const categoryId=String(extra.category_id||target?.dataset.categoryId||cat?.dataset.categoryId||cat?.dataset.category||'')||null;
   const payload={p_action:action,p_element_id:elementId,p_route:route(),p_mode:mode(),p_meal_id:mealId,p_category_id:categoryId};
   window.dataLayer=window.dataLayer||[];
-  window.dataLayer.push({event:'snouno_action',action,element_id:elementId,route:payload.p_route,mode:payload.p_mode,meal_id:mealId,category_id:categoryId});
-  document.dispatchEvent(new CustomEvent('snouno:action',{detail:{action,element_id:elementId,route:payload.p_route,mode:payload.p_mode,meal_id:mealId,category_id:categoryId}}));
+  window.dataLayer.push({event:'snounu_action',action,element_id:elementId,route:payload.p_route,mode:payload.p_mode,meal_id:mealId,category_id:categoryId});
+  document.dispatchEvent(new CustomEvent('snounu:action',{detail:{action,element_id:elementId,route:payload.p_route,mode:payload.p_mode,meal_id:mealId,category_id:categoryId}}));
   // Server-side append-only log, with no cookies or personal identifiers.
   const auth=token();
   fetch(BASE+'/rest/v1/rpc/record_menu_action',{

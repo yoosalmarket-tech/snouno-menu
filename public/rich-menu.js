@@ -1,17 +1,17 @@
-/* Opt-in immersive Snouno menu, based on motion behavior in the supplied
+/* Opt-in immersive Snounu menu, based on motion behavior in the supplied
    Hungry Buten HTML: spring inertia, vertical 3D dish feed, swipe-driven
    category transitions, and a perspective thumbnail rail. No original art. */
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 const validImage=value=>{if(!value)return '';try{const u=new URL(value,location.origin);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
-const categoryWords=name=>{const a=String(name||'SNOUNO').trim().split(/\s+/);return [a.slice(0,Math.ceil(a.length/2)).join(' '),a.slice(Math.ceil(a.length/2)).join(' ')]};
+const categoryWords=name=>{const a=String(name||'SNOUNU').trim().split(/\s+/);return [a.slice(0,Math.ceil(a.length/2)).join(' '),a.slice(Math.ceil(a.length/2)).join(' ')]};
 export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelection,onShare}){
  const root=mk('div','rm-app');root.dir='ltr';root.id='rich-interactive-stage';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
  '<button type="button" class="rm-exit" aria-label="العودة إلى المنيو العادي" title="العودة إلى المنيو العادي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>',
- '<span class="rm-top-caption" lang="en">SNOUNO / INTERACTIVE</span><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></div>',
+ '<span class="rm-top-caption" lang="en">SNOUNU / INTERACTIVE</span><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></div>',
  '<nav class="rm-categories" aria-label="تصنيفات الأطباق"><div class="rm-categories-header">',
  '<div class="rm-categories-label"><strong lang="en">CATEGORIES</strong><span dir="rtl">التصنيفات</span></div>',
  '<div class="rm-categories-controls"><button class="rm-category-previous" type="button" aria-label="الصنف السابق">←</button>',
@@ -32,7 +32,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
  '<small class="rm-instruction" dir="rtl">اسحب للأعلى والأسفل للوجبات · يمين ويسار للتصنيفات</small></section>',
  '<dialog class="rm-sheet" aria-labelledby="rm-sheet-title" dir="rtl"><div class="rm-sheet-grab" aria-hidden="true"></div>',
- '<header class="rm-sheet-head"><div class="rm-sheet-heading"><span class="rm-sheet-overline" lang="en">SNOUNO / RESTAURANT</span>',
+ '<header class="rm-sheet-head"><div class="rm-sheet-heading"><span class="rm-sheet-overline" lang="en">SNOUNU / RESTAURANT</span>',
  '<h2 id="rm-sheet-title" class="rm-sheet-title"></h2><p class="rm-sheet-subtitle"></p></div>',
  '<button type="button" class="rm-sheet-close" aria-label="إغلاق">×</button></header>',
  '<div class="rm-sheet-body"></div></dialog>'
@@ -163,7 +163,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   u.rating.hidden=!hasRating;
   u.rating.textContent=hasRating?'★ '+ratingValue.toFixed(1):'';
   if(hasRating)u.rating.setAttribute('aria-label',(isEnglish()?'Rating ':'التقييم ')+ratingValue.toFixed(1)+' / 5');
-  u.desc.textContent=getDescription(m)||m.ingredients||(isEnglish()?'Discover Snouno favourites':'اختار وجبتك المفضلة من سنونو');
+  u.desc.textContent=getDescription(m)||m.ingredients||(isEnglish()?'Discover Snounu favourites':'اختار وجبتك المفضلة من سنونو');
   const price=m.price==null||m.price===''?NaN:Number(m.price);
   const oldPrice=m.old_price==null||m.old_price===''?NaN:Number(m.old_price);
   const formatPrice=value=>value.toLocaleString('en-US',{maximumFractionDigits:2})+' ₪';

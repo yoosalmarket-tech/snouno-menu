@@ -65,7 +65,7 @@
 #links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(5px,2vw,15px);margin:16px auto;max-width:390px}
 .links a{display:inline-flex;align-items:center;justify-content:center;gap:7px;color:#18150c;background:#FDBE2D;text-align:center;line-height:1.3}
 .links img,#social-links img{width:22px;height:22px;object-fit:contain}
-#links a{flex-direction:column;min-height:74px;padding:8px 2px!important;font:bold clamp(11px,3vw,15px)/1.4 Snouno,sans-serif}
+#links a{flex-direction:column;min-height:74px;padding:8px 2px!important;font:bold clamp(11px,3vw,15px)/1.4 Snounu,sans-serif}
 #social-links{display:flex;justify-content:center;gap:10px;margin:24px auto 0}
 #social-links a{width:42px;height:38px;border-radius:12px;background:#FDBE2D;display:grid;place-items:center;box-shadow:0 2px 6px #0002}
 #social-links span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
@@ -136,7 +136,7 @@ body[data-preview] *{animation:none!important;transition:none!important}
 }
 
 
-/* Snouno welcome — Hungry Buten-inspired mobile food showcase */
+/* Snounu welcome — Hungry Buten-inspired mobile food showcase */
 #welcome{--welcome-yellow:#FDBE2D;position:relative;display:flex;flex-direction:column;min-height:100svh;height:100svh;max-height:1050px;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse 110% 62% at 50% 54%,#332818 0%,#191714 53%,#100f0d 100%);color:#fff;text-align:center;}
 #welcome .welcome-top{position:relative;flex:none;height:clamp(118px,19svh,165px);z-index:4;}
 #welcome .welcome-top-wave{position:absolute;inset:0;width:100%;height:100%;display:block;filter:drop-shadow(0 7px 0 #b78213);}
@@ -151,7 +151,7 @@ body[data-preview] *{animation:none!important;transition:none!important}
 #welcome .welcome-category-chip.selected{background:var(--welcome-yellow);border-color:var(--welcome-yellow);color:#15130d;box-shadow:0 3px 0 #9d7117;}
 #welcome .welcome-stage{position:relative;flex:1 1 auto;min-height:155px;max-height:480px;width:100%;overflow:visible;}
 #welcome .welcome-stage-word{position:absolute;z-index:0;left:0;right:0;top:2%;text-align:center;font:1000 clamp(52px,17.2vw,94px)/1 system-ui,sans-serif;letter-spacing:-.085em;color:#423724;white-space:nowrap;pointer-events:none;}
-#welcome .welcome-food{position:absolute;z-index:2;left:50%;top:46%;width:min(88%,415px);height:94%;max-height:395px;object-fit:contain;transform:translate(-50%,-50%);filter:drop-shadow(0 18px 20px #000b);animation:snouno-food-rise 1s cubic-bezier(.17,.79,.2,1) both;}
+#welcome .welcome-food{position:absolute;z-index:2;left:50%;top:46%;width:min(88%,415px);height:94%;max-height:395px;object-fit:contain;transform:translate(-50%,-50%);filter:drop-shadow(0 18px 20px #000b);animation:snounu-food-rise 1s cubic-bezier(.17,.79,.2,1) both;}
 #welcome .welcome-food-badge{position:absolute;z-index:3;right:5%;top:10%;transform:rotate(7deg);display:flex;flex-direction:column;gap:2px;align-items:center;padding:8px 15px;background:#151410;color:var(--welcome-yellow);border:1px solid #635232;border-radius:10px;box-shadow:0 5px 0 #090806bd;font-size:11px;line-height:1.25;}
 #welcome .welcome-food-badge strong{font-size:14px;}
 #welcome .welcome-stage-rail{position:absolute;z-index:3;top:39%;left:15px;display:grid;gap:8px;padding:10px 8px;border:1px solid #72604275;border-radius:20px;background:#221f19d9;}
@@ -167,7 +167,7 @@ body[data-preview] *{animation:none!important;transition:none!important}
 #welcome .browse:active{transform:translateY(3px);border-bottom-width:1px;}
 #welcome .welcome-browse-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);font:900 25px/1 system-ui;}
 #welcome #quick{color:#d6c9ad;font:600 12px/1.4 system-ui,Tahoma,sans-serif;min-height:12px;}
-@keyframes snouno-food-rise{from{opacity:0;transform:translate(-50%,-39%) scale(.82);filter:drop-shadow(0 6px 10px #0006)}to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:drop-shadow(0 18px 20px #000b)}}
+@keyframes snounu-food-rise{from{opacity:0;transform:translate(-50%,-39%) scale(.82);filter:drop-shadow(0 6px 10px #0006)}to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:drop-shadow(0 18px 20px #000b)}}
 @media(max-height:710px){#welcome .welcome-top{height:112px}#welcome .welcome-section-caption{padding:4px 10px 5px}#welcome .welcome-category-strip{padding-bottom:5px}#welcome .welcome-category-chip{min-height:28px}#welcome .welcome-food-badge{top:5%}#welcome .welcome-bottom{padding-top:0;padding-bottom:max(11px,env(safe-area-inset-bottom))}#welcome .welcome-subtitle{margin-bottom:4px}#welcome .browse{min-height:48px}}
 @media(max-width:360px){#welcome .welcome-category-strip{justify-content:flex-start}#welcome .welcome-food-badge{right:2%;padding:5px 9px}#welcome .welcome-top-caption{font-size:10px}}
 @media(prefers-reduced-motion:reduce){#welcome .welcome-food{animation:none}}
@@ -228,14 +228,14 @@ body.lang-en #contact #feedback label{direction:ltr;text-align:left;}
   max-height:360px;aspect-ratio:1;object-fit:cover;
   border:3px solid #bd8c205c;border-radius:50%;
   background:#FDBE2D;box-shadow:0 22px 42px #0007;
-  animation:snouno-mobile-first 720ms ease-out both;
+  animation:snounu-mobile-first 720ms ease-out both;
   filter:none;
  }
  #welcome .welcome-food.mobile-food-out{
-  animation:snouno-mobile-out 250ms ease-in both!important;
+  animation:snounu-mobile-out 250ms ease-in both!important;
  }
  #welcome .welcome-food.mobile-food-in{
-  animation:snouno-mobile-in 420ms cubic-bezier(.12,.74,.19,1) both!important;
+  animation:snounu-mobile-in 420ms cubic-bezier(.12,.74,.19,1) both!important;
  }
  #welcome .welcome-stage-rail{top:40%;padding:10px 8px;}
  #welcome .welcome-stage-rail button{
@@ -251,15 +251,15 @@ body.lang-en #contact #feedback label{direction:ltr;text-align:left;}
  }
  #welcome .welcome-food-badge{top:14%;right:5%;max-width:31vw;}
  #welcome .welcome-food-badge span{max-width:28vw;overflow-wrap:anywhere;}
- @keyframes snouno-mobile-first{
+ @keyframes snounu-mobile-first{
   from{opacity:0;transform:translate(-50%,-44%) scale(.91);}
   to{opacity:1;transform:translate(-50%,-50%) scale(1);}
  }
- @keyframes snouno-mobile-out{
+ @keyframes snounu-mobile-out{
   from{opacity:1;transform:translate(-50%,-50%) rotate(0deg) scale(1);}
   to{opacity:0;transform:translate(-57%,-50%) rotate(-9deg) scale(.88);}
  }
- @keyframes snouno-mobile-in{
+ @keyframes snounu-mobile-in{
   from{opacity:0;transform:translate(-44%,-50%) rotate(10deg) scale(.9);}
   to{opacity:1;transform:translate(-50%,-50%) rotate(0deg) scale(1);}
  }
@@ -308,7 +308,7 @@ body.lang-en #contact #feedback label{direction:ltr;text-align:left;}
  transition:background .22s ease,color .22s ease,box-shadow .22s ease,transform .15s ease;}
 #chips .chip:active{transform:scale(.96);}
 #chips .chip-en{font:900 12px/1.15 system-ui,sans-serif;letter-spacing:.045em;white-space:nowrap;}
-#chips .chip-ar{font:500 11px/1.2 Snouno,Tahoma,sans-serif;white-space:nowrap;color:#c6bfb4;}
+#chips .chip-ar{font:500 11px/1.2 Snounu,Tahoma,sans-serif;white-space:nowrap;color:#c6bfb4;}
 #chips .chip[aria-current=location]{background:#FDBE2D;color:#1a160d;border-color:#e8ae25;box-shadow:0 4px 0 #9d7117,0 8px 15px #0003;}
 #chips .chip[aria-current=location] .chip-ar{color:#3d300e;}
 #chips .chip:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px;}
@@ -408,10 +408,10 @@ html.loader-morphing #welcome .desktop-welcome-top img{visibility:hidden;}
 }
 #welcome .welcome-language:focus-visible{outline:3px solid #1c170c;outline-offset:3px;}
 #welcome .welcome-language .language-label{font:900 12px/1 system-ui,sans-serif;letter-spacing:.055em;}
-/* The Arabic line of every category chip uses Snouno's Qatar bold asset. */
+/* The Arabic line of every category chip uses Snounu's Qatar bold asset. */
 #chips .chip .chip-ar,
 #chips .category-nav-title>span{
- font-family:Snouno,Tahoma,sans-serif;
+ font-family:Snounu,Tahoma,sans-serif;
  font-weight:700;
 }
 #theme{display:grid;place-items:center;padding:0;}
@@ -465,13 +465,13 @@ html.loader-morphing #welcome .desktop-welcome-top img{visibility:hidden;}
  position:absolute;top:0;width:26px;height:64px;border-radius:50%;
  background:radial-gradient(closest-side,#fff3dde6,#fff3dd00);
  opacity:0;
- animation:snouno-steam 2.8s ease-out infinite;
+ animation:snounu-steam 2.8s ease-out infinite;
 }
 #welcome .welcome-smoke span:nth-child(1){left:-34px;animation-duration:2.8s;animation-delay:0s;}
 #welcome .welcome-smoke span:nth-child(2){left:-8px;animation-duration:3.15s;animation-delay:.7s;}
 #welcome .welcome-smoke span:nth-child(3){left:18px;animation-duration:3.5s;animation-delay:1.4s;}
 #welcome .welcome-smoke span:nth-child(4){left:-20px;animation-duration:3.85s;animation-delay:2.1s;}
-@keyframes snouno-steam{
+@keyframes snounu-steam{
  0%{transform:translateY(10px) scale(.5,.6);opacity:0}
  25%{opacity:.5}
  60%{transform:translate(8px,-46px) scaleY(1.1);opacity:.28}
@@ -497,9 +497,9 @@ html.loader-morphing #welcome .desktop-curve-shadow{
 }
 html.loader-shadow-intro #welcome .welcome-curve-shadow,
 html.loader-shadow-intro #welcome .desktop-curve-shadow{
- animation:snouno-header-shadow-rise 760ms cubic-bezier(.21,.82,.23,1) both;
+ animation:snounu-header-shadow-rise 760ms cubic-bezier(.21,.82,.23,1) both;
 }
-@keyframes snouno-header-shadow-rise{
+@keyframes snounu-header-shadow-rise{
  from{transform:translateY(27px);clip-path:inset(96% 0 0 0)}
  to{transform:translateY(9px);clip-path:inset(0 0 0 0)}
 }
@@ -554,16 +554,16 @@ html.loader-finishing #welcome .desktop-welcome-top img{
    touch-action:pan-y;overscroll-behavior-x:contain;
  }
  #welcome #cover-photo.mobile-food-out{
-   animation:snouno-food-exit-left 600ms cubic-bezier(.45,0,.65,.25) both!important;
+   animation:snounu-food-exit-left 600ms cubic-bezier(.45,0,.65,.25) both!important;
  }
  #welcome #cover-next.mobile-food-in{
-   animation:snouno-food-enter-right 600ms cubic-bezier(.24,.70,.17,1) both!important;
+   animation:snounu-food-enter-right 600ms cubic-bezier(.24,.70,.17,1) both!important;
  }
- @keyframes snouno-food-exit-left{
+ @keyframes snounu-food-exit-left{
    from{transform:translate(-50%,-50%);opacity:1;}
    to{transform:translate(-170%,-50%);opacity:0.35;}
  }
- @keyframes snouno-food-enter-right{
+ @keyframes snounu-food-enter-right{
    from{transform:translate(70%,-50%);opacity:0.35;}
    to{transform:translate(-50%,-50%);opacity:1;}
  }
@@ -574,9 +574,9 @@ html.loader-morphing #welcome .welcome-language{
 }
 html.loader-complete #welcome .welcome-language{
  visibility:visible;pointer-events:auto;
- animation:snouno-language-appear 450ms ease-out 80ms both;
+ animation:snounu-language-appear 450ms ease-out 80ms both;
 }
-@keyframes snouno-language-appear{
+@keyframes snounu-language-appear{
  from{opacity:0;transform:translateY(-5px);}
  to{opacity:1;transform:translateY(0);}
 }
@@ -660,35 +660,35 @@ html.loader-morphing #welcome .desktop-curve-shadow{
  /* Swipe left: the foreground meal recedes to the LEFT as its alpha fades,
     and the previous meal eases in from the RIGHT with a slight spring settle. */
  #welcome[data-meal-direction="left"] #cover-photo.mobile-food-out{
-  animation:snouno-meal-exit-left 640ms cubic-bezier(.2,.6,.2,1) both!important;
+  animation:snounu-meal-exit-left 640ms cubic-bezier(.2,.6,.2,1) both!important;
  }
  #welcome[data-meal-direction="left"] #cover-next.mobile-food-in{
-  animation:snouno-meal-enter-right 640ms cubic-bezier(.16,1,.3,1) both!important;
+  animation:snounu-meal-enter-right 640ms cubic-bezier(.16,1,.3,1) both!important;
  }
  /* Swipe right / normal autoplay: mirrored, preserving the same easing. */
  #welcome[data-meal-direction="right"] #cover-photo.mobile-food-out{
-  animation:snouno-meal-exit-right 640ms cubic-bezier(.2,.6,.2,1) both!important;
+  animation:snounu-meal-exit-right 640ms cubic-bezier(.2,.6,.2,1) both!important;
  }
  #welcome[data-meal-direction="right"] #cover-next.mobile-food-in{
-  animation:snouno-meal-enter-left 640ms cubic-bezier(.16,1,.3,1) both!important;
+  animation:snounu-meal-enter-left 640ms cubic-bezier(.16,1,.3,1) both!important;
  }
- @keyframes snouno-meal-exit-left{
+ @keyframes snounu-meal-exit-left{
   0%{transform:translate(-50%,-50%) scale(1) rotateY(0);opacity:1;}
   45%{transform:translate(-93%,-50%) scale(.93) rotateY(5deg);opacity:.67;}
   100%{transform:translate(-158%,-50%) scale(.84) rotateY(10deg);opacity:0;}
  }
- @keyframes snouno-meal-exit-right{
+ @keyframes snounu-meal-exit-right{
   0%{transform:translate(-50%,-50%) scale(1) rotateY(0);opacity:1;}
   45%{transform:translate(-7%,-50%) scale(.93) rotateY(-5deg);opacity:.67;}
   100%{transform:translate(58%,-50%) scale(.84) rotateY(-10deg);opacity:0;}
  }
- @keyframes snouno-meal-enter-right{
+ @keyframes snounu-meal-enter-right{
   0%{transform:translate(56%,-50%) scale(.84) rotateY(-9deg);opacity:0;}
   48%{transform:translate(-37%,-50%) scale(.97) rotateY(-2deg);opacity:.87;}
   79%{transform:translate(-53%,-50%) scale(1.028) rotateY(1deg);opacity:1;}
   100%{transform:translate(-50%,-50%) scale(1) rotateY(0);opacity:1;}
  }
- @keyframes snouno-meal-enter-left{
+ @keyframes snounu-meal-enter-left{
   0%{transform:translate(-156%,-50%) scale(.84) rotateY(9deg);opacity:0;}
   48%{transform:translate(-63%,-50%) scale(.97) rotateY(2deg);opacity:.87;}
   79%{transform:translate(-47%,-50%) scale(1.028) rotateY(-1deg);opacity:1;}
@@ -743,30 +743,30 @@ html.loader-morphing #welcome .desktop-curve-shadow{
   filter:none!important; /* no simulated key/matte halo over true-alpha assets */
  }
  #welcome[data-meal-direction="left"] #cover-photo.mobile-food-out{
-  animation:snouno-smooth-food-out-left 560ms cubic-bezier(.22,.72,.24,1) both!important;
+  animation:snounu-smooth-food-out-left 560ms cubic-bezier(.22,.72,.24,1) both!important;
  }
  #welcome[data-meal-direction="left"] #cover-next.mobile-food-in{
-  animation:snouno-smooth-food-in-right 560ms cubic-bezier(.22,.72,.24,1) both!important;
+  animation:snounu-smooth-food-in-right 560ms cubic-bezier(.22,.72,.24,1) both!important;
  }
  #welcome[data-meal-direction="right"] #cover-photo.mobile-food-out{
-  animation:snouno-smooth-food-out-right 560ms cubic-bezier(.22,.72,.24,1) both!important;
+  animation:snounu-smooth-food-out-right 560ms cubic-bezier(.22,.72,.24,1) both!important;
  }
  #welcome[data-meal-direction="right"] #cover-next.mobile-food-in{
-  animation:snouno-smooth-food-in-left 560ms cubic-bezier(.22,.72,.24,1) both!important;
+  animation:snounu-smooth-food-in-left 560ms cubic-bezier(.22,.72,.24,1) both!important;
  }
- @keyframes snouno-smooth-food-out-left{
+ @keyframes snounu-smooth-food-out-left{
   from{transform:translate3d(-50%,-50%,0) scale(1);opacity:1;}
   to{transform:translate3d(-105%,-50%,0) scale(.94);opacity:0;}
  }
- @keyframes snouno-smooth-food-out-right{
+ @keyframes snounu-smooth-food-out-right{
   from{transform:translate3d(-50%,-50%,0) scale(1);opacity:1;}
   to{transform:translate3d(5%,-50%,0) scale(.94);opacity:0;}
  }
- @keyframes snouno-smooth-food-in-right{
+ @keyframes snounu-smooth-food-in-right{
   from{transform:translate3d(5%,-50%,0) scale(.94);opacity:0;}
   to{transform:translate3d(-50%,-50%,0) scale(1);opacity:1;}
  }
- @keyframes snouno-smooth-food-in-left{
+ @keyframes snounu-smooth-food-in-left{
   from{transform:translate3d(-105%,-50%,0) scale(.94);opacity:0;}
   to{transform:translate3d(-50%,-50%,0) scale(1);opacity:1;}
  }
@@ -822,10 +822,10 @@ html.loader-morphing #welcome .desktop-curve-shadow{
   mix-blend-mode:normal!important;
  }
  #welcome #cover-photo{
-  animation:snouno-food-clean-arrival 680ms cubic-bezier(.2,.74,.2,1) both!important;
+  animation:snounu-food-clean-arrival 680ms cubic-bezier(.2,.74,.2,1) both!important;
  }
  #welcome #cover-next{animation:none!important;}
- @keyframes snouno-food-clean-arrival{
+ @keyframes snounu-food-clean-arrival{
   from{opacity:0;transform:translate(-50%,-45%) scale(.96)}
   to{opacity:1;transform:translate(-50%,-50%) scale(1)}
  }
@@ -1001,9 +1001,9 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
  pointer-events:none!important;
 }
 #inside.menu-browsing-in{
- animation:snouno-menu-browse-appear 220ms ease-out both!important;
+ animation:snounu-menu-browse-appear 220ms ease-out both!important;
 }
-@keyframes snouno-menu-browse-appear{
+@keyframes snounu-menu-browse-appear{
  from{opacity:0;}
  to{opacity:1;}
 }
@@ -1018,7 +1018,7 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
  margin:14px 0 8px;padding:11px 16px;
  border:1px solid #c99d3b;border-radius:12px;
  color:var(--ink);background:var(--gold);
- font:700 14px/1.45 Snouno,Tahoma,sans-serif;
+ font:700 14px/1.45 Snounu,Tahoma,sans-serif;
  cursor:pointer;
 }
 #dish .share-meal-link:focus-visible{outline:3px solid #86600a;outline-offset:3px;}

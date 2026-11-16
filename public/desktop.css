@@ -1,4 +1,4 @@
-/* Snouno desktop experience, isolated from the mobile layout.
+/* Snounu desktop experience, isolated from the mobile layout.
    Design cues: snounu 11.fig — charcoal photography, large food hero, yellow accents.
    The entire file is only loaded at 981px and wider. */
 @media(min-width:981px){
@@ -75,7 +75,7 @@
  /* Independent desktop contact composition: warm hero, structured info, simple form. */
  body:not([data-preview]) #contact{display:block;max-width:1390px;min-height:calc(100svh - 160px);margin:0 auto;padding:44px clamp(30px,5vw,84px) 75px;background:#f5f3ed;color:#222017;}
  body:not([data-preview]) #contact .contact-hero{position:relative;isolation:isolate;overflow:hidden;min-height:235px;padding:38px clamp(30px,4.5vw,68px);border-radius:30px;background:radial-gradient(ellipse at 95% 40%,#3d3120,#211d16 55%,#171511);color:white;box-shadow:0 15px 30px #1d180d1c;}
- body:not([data-preview]) #contact .contact-hero::after{content:'SNOUNO';position:absolute;left:-16px;top:12px;font:1000 clamp(85px,12vw,155px)/1 system-ui,sans-serif;letter-spacing:-.09em;color:#ffffff08;pointer-events:none;z-index:-1;}
+ body:not([data-preview]) #contact .contact-hero::after{content:'SNOUNU';position:absolute;left:-16px;top:12px;font:1000 clamp(85px,12vw,155px)/1 system-ui,sans-serif;letter-spacing:-.09em;color:#ffffff08;pointer-events:none;z-index:-1;}
  body:not([data-preview]) #contact .contact-kicker{display:inline-flex;align-items:center;gap:10px;font-size:13px;letter-spacing:.04em;color:#f7d179;font-weight:750;}
  body:not([data-preview]) #contact .contact-kicker-dot{width:8px;height:8px;border-radius:50%;background:#FDBE2D;box-shadow:0 0 0 5px #FDBE2D2b;}
  body:not([data-preview]) #contact h1{margin:14px 0 10px;text-align:right;color:#fff;font-size:clamp(40px,4.4vw,65px);line-height:1.25;font-weight:900;}
@@ -215,18 +215,18 @@
   }
   body:not([data-preview]) #desktop-welcome-hero.wheel-has-rotated{animation:none;}
   body:not([data-preview]) #desktop-welcome-hero.wheel-exit{
-    animation:snouno-wheel-exit .36s cubic-bezier(.32,.0,.7,.37) both;
+    animation:snounu-wheel-exit .36s cubic-bezier(.32,.0,.7,.37) both;
   }
   body:not([data-preview]) #desktop-welcome-hero.wheel-enter{
-    animation:snouno-wheel-enter .55s cubic-bezier(.16,.82,.19,1) both;
+    animation:snounu-wheel-enter .55s cubic-bezier(.16,.82,.19,1) both;
   }
   body:not([data-preview]) .desktop-sticker{max-width:195px;}
   body:not([data-preview]) #desktop-meal-name{max-width:160px;white-space:normal;overflow-wrap:anywhere;}
-  @keyframes snouno-wheel-exit{
+  @keyframes snounu-wheel-exit{
     from{transform:translate(0,0) rotate(0deg) scale(1);opacity:1;}
     to{transform:translate(-45px,35px) rotate(-36deg) scale(.66);opacity:0;}
   }
-  @keyframes snouno-wheel-enter{
+  @keyframes snounu-wheel-enter{
     from{transform:translate(46px,-32px) rotate(36deg) scale(.7);opacity:0;}
     to{transform:translate(0,0) rotate(0deg) scale(1);opacity:1;}
   }
@@ -467,7 +467,7 @@
   font:900 12px/1.25 system-ui,sans-serif;letter-spacing:.035em;
  }
  body:not([data-preview]) #chips .chip-ar{
-  font:500 12px/1.3 Snouno,Tahoma,sans-serif;color:#beb5a6;
+  font:500 12px/1.3 Snounu,Tahoma,sans-serif;color:#beb5a6;
  }
  body:not([data-preview]) #chips .chip[aria-current=location]{
   background:#FDBE2D;border-color:#d4a026;color:#1a160b;
@@ -559,7 +559,7 @@
   font:900 12px/1.25 system-ui,sans-serif;letter-spacing:.035em;
  }
  body:not([data-preview]) #chips .chip span.chip-ar{
-  font:500 12px/1.3 Snouno,Tahoma,sans-serif;color:#beb5a6;
+  font:500 12px/1.3 Snounu,Tahoma,sans-serif;color:#beb5a6;
  }
  body:not([data-preview]) #chips .chip[aria-current=location] span.chip-ar{
   color:#4b370e;
@@ -733,7 +733,7 @@
  }
  /* Qatar is the Arabic language line, including the desktop category sidebar. */
  body:not([data-preview]) #chips .chip .chip-ar{
-  font:700 12px/1.35 Snouno,Tahoma,sans-serif;
+  font:700 12px/1.35 Snounu,Tahoma,sans-serif;
  }
 }
 
@@ -906,16 +906,16 @@
  }
  /* Gentle vertical replacement instead of a rotating gear. */
  body:not([data-preview]) #desktop-welcome-hero.wheel-exit{
-  animation:snouno-desktop-meal-out .32s ease-in both!important;
+  animation:snounu-desktop-meal-out .32s ease-in both!important;
  }
  body:not([data-preview]) #desktop-welcome-hero.wheel-enter{
-  animation:snouno-desktop-meal-in .52s cubic-bezier(.16,.78,.18,1) both!important;
+  animation:snounu-desktop-meal-in .52s cubic-bezier(.16,.78,.18,1) both!important;
  }
- @keyframes snouno-desktop-meal-out{
+ @keyframes snounu-desktop-meal-out{
   from{transform:translateY(0) scale(1);opacity:1}
   to{transform:translateY(-38px) scale(.96);opacity:0}
  }
- @keyframes snouno-desktop-meal-in{
+ @keyframes snounu-desktop-meal-in{
   from{transform:translateY(38px) scale(.96);opacity:0}
   to{transform:translateY(0) scale(1);opacity:1}
  }
@@ -1261,7 +1261,7 @@
  }
 
  /* Welcome has its own charcoal theme in dark mode; in light mode it gets
-    warm cream, readable black headings, and the same Snouno yellow accents. */
+    warm cream, readable black headings, and the same Snounu yellow accents. */
  body:not(.dark):not([data-preview]) #welcome{
   background:#f6f4ef;color:#252019;
  }

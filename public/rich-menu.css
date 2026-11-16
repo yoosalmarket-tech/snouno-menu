@@ -1,4 +1,4 @@
-/* Snouno interactive stage, based on the behavior/spacing of the supplied
+/* Snounu interactive stage, based on the behavior/spacing of the supplied
    Hungry Buten offline HTML. Scoped to #rich-menu, no copied assets. */
 #rich-menu{--rm-yellow:#FDBE2D;--rm-ink:#242329;--rm-cream:#eae1d0;--rm-muted:#afa99f;--rm-line:#4e493f;--rm-panel:#29282e;isolation:isolate;color:#f8f3ec;font-family:"Qatar2022 Arabic",Tahoma,sans-serif}
 #rich-menu *{box-sizing:border-box}
@@ -134,7 +134,7 @@
  min-height:0!important;height:auto!important;max-height:none!important;
  overflow:hidden!important;
 }
-/* Snouno's registered bold Snouno face IS the Qatar typeface. The earlier
+/* Snounu's registered bold Snounu face IS the Qatar typeface. The earlier
    "Qatar2022 Arabic" family name was never registered on this website. */
 #rich-menu,
 #rich-menu .rm-app,
@@ -147,7 +147,7 @@
 #rich-menu .rm-categories-label span,
 #rich-menu .rm-customize span,
 #rich-menu .rm-instruction{
- font-family:Snouno,Tahoma,sans-serif!important;
+ font-family:Snounu,Tahoma,sans-serif!important;
 }
 #rich-menu .rm-stage-word,
 #rich-menu .rm-info-name,
@@ -251,7 +251,7 @@
 
 /* Interactive-mode-only overlays. The reference Hungry Buten HTML used
    a dark, bottom-anchored sheet with rounded top corners, grab handle,
-   inset controls and yellow action chips. Snouno logo/typography retained. */
+   inset controls and yellow action chips. Snounu logo/typography retained. */
 #rich-menu .rm-dish-badge{
   top:55%!important;left:50%!important;
   z-index:9!important;
@@ -280,7 +280,7 @@
   border-radius:26px 26px 0 0!important;
   box-shadow:0 -12px 46px #0009!important;
   text-align:right!important;
-  font-family:Snouno,Tahoma,sans-serif!important;
+  font-family:Snounu,Tahoma,sans-serif!important;
   /* Entrance animation is toggled explicitly per opening. */
   z-index:500!important;
 }
@@ -320,11 +320,11 @@
 }
 #rich-menu .rm-sheet-title{
   margin:2px 0 0;
-  color:#fdf4e5;font:700 clamp(23px,5vw,30px)/1.3 Snouno,Tahoma,sans-serif;
+  color:#fdf4e5;font:700 clamp(23px,5vw,30px)/1.3 Snounu,Tahoma,sans-serif;
 }
 #rich-menu .rm-sheet-subtitle{
   margin:2px 0 0;color:#c8bda9;
-  font:700 13px/1.5 Snouno,Tahoma,sans-serif;
+  font:700 13px/1.5 Snounu,Tahoma,sans-serif;
 }
 #rich-menu .rm-sheet-close{
   flex:none;
@@ -366,12 +366,12 @@
 }
 #rich-menu .rm-sheet-detail p{
   margin:4px 0 0;
-  color:#f3eee3;font:600 13px/1.7 Snouno,Tahoma,sans-serif;
+  color:#f3eee3;font:600 13px/1.7 Snounu,Tahoma,sans-serif;
   overflow-wrap:anywhere;
 }
 #rich-menu .rm-sheet-links-heading{
   margin:0 0 12px;
-  color:#e8dbbd;font:700 15px/1.5 Snouno,Tahoma,sans-serif;
+  color:#e8dbbd;font:700 15px/1.5 Snounu,Tahoma,sans-serif;
 }
 #rich-menu .rm-sheet-links{display:grid;gap:10px}
 #rich-menu .rm-sheet-link{
@@ -402,10 +402,10 @@
   flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;
 }
 #rich-menu .rm-sheet-link-copy strong{
-  color:#fff4df;font:700 17px/1.25 Snouno,Tahoma,sans-serif;
+  color:#fff4df;font:700 17px/1.25 Snounu,Tahoma,sans-serif;
 }
 #rich-menu .rm-sheet-link-copy small{
-  color:#c5bba7;font:600 11px/1.5 Snouno,Tahoma,sans-serif;
+  color:#c5bba7;font:600 11px/1.5 Snounu,Tahoma,sans-serif;
 }
 #rich-menu .rm-sheet-link-arrow{
   flex:none;display:grid;place-items:center;
@@ -548,7 +548,7 @@ body.rich-menu-active:not([data-preview]) #shell{
   background:transparent;
   color:#f1eadb;
   opacity:.94;
-  font-family:Snouno,Tahoma,sans-serif!important;
+  font-family:Snounu,Tahoma,sans-serif!important;
   font-size:clamp(9px,2.25vw,12px)!important;
   font-weight:700!important;
   line-height:1.1!important;

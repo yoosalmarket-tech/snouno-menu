@@ -110,7 +110,7 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
 .dish-sort-card.is-dragging{cursor:grabbing;}
 
 
-/* Direct editing of Snouno restaurant settings (no popup). */
+/* Direct editing of Snounu restaurant settings (no popup). */
 #body .inline-settings-form{
  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
  gap:15px 18px;padding:22px;
@@ -309,7 +309,7 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
  box-shadow:0 4px 8px #0006;
  border-radius:13px;
  padding:8px 12px;
- text-align:center;font:700 12px/1.35 Snouno,Tahoma,sans-serif;
+ text-align:center;font:700 12px/1.35 Snounu,Tahoma,sans-serif;
  cursor:grab;touch-action:none;
  user-select:none;-webkit-user-select:none;
  overflow-wrap:anywhere;

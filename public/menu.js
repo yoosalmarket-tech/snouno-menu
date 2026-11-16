@@ -5,7 +5,16 @@ const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
 const make=(tag,text)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;return el;};
 let dishes=[],categories=[],links=[],advertisements=[],settings={};
-let favorites=new Set(JSON.parse(localStorage.getItem('snouno-favorites')||'[]'));
+// Preserve returning visitors' favorites, theme, ratings and menu preferences after the rebrand.
+try {
+ for (const oldKey of Object.keys(localStorage)) {
+  if (!oldKey.startsWith('snouno-')) continue;
+  const newKey='snounu-'+oldKey.slice('snouno-'.length);
+  if (localStorage.getItem(newKey)===null) localStorage.setItem(newKey,localStorage.getItem(oldKey));
+  localStorage.removeItem(oldKey);
+ }
+} catch (error) { console.warn('Legacy menu preferences could not be migrated',error); }
+let favorites=new Set(JSON.parse(localStorage.getItem('snounu-favorites')||'[]'));
 const money=value=>Number(value)+' ₪';
 const isPreview=window.parent!==window&&new URLSearchParams(location.search).get('preview')==='1';
 const explicitMode=new URLSearchParams(location.search).get('mode');
@@ -63,10 +72,10 @@ function noteSelection(kind,id){
 
 /* Rich menu is an explicit, bandwidth-sensitive opt-in. Nothing from the
    immersive stage is fetched until its switch is on. */
-let richDesired=!isPreview&&(explicitMode==='interactive'||(explicitMode!=='standard'&&localStorage.getItem('snouno-rich-mode')==='1'));
+let richDesired=!isPreview&&(explicitMode==='interactive'||(explicitMode!=='standard'&&localStorage.getItem('snounu-rich-mode')==='1'));
 // Test the first visit during the yellow loading screen. Returning visitors
 // keep their saved preference instead of repeating the network check.
-const firstVisitModeCheck=!isPreview&&!['interactive','standard'].includes(explicitMode)&&localStorage.getItem('snouno-rich-mode')===null;
+const firstVisitModeCheck=!isPreview&&!['interactive','standard'].includes(explicitMode)&&localStorage.getItem('snounu-rich-mode')===null;
 const firstVisitStartedAt=performance.now();
 let firstVisitDecisionComplete=!firstVisitModeCheck;
 let richController=null,richImport=null,richBusy=false,richRevision=0;
@@ -140,21 +149,21 @@ async function syncRichMode(){
    onExit:()=>{
     richDesired=false;
     richToggle.checked=false;
-    localStorage.setItem('snouno-rich-mode','0');
+    localStorage.setItem('snounu-rich-mode','0');
     reflectExplicitMode();
     void syncRichMode();
    },
    onFavorite:meal=>{
     if(favorites.has(meal.id))favorites.delete(meal.id);else favorites.add(meal.id);
-    localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));
+    localStorage.setItem('snounu-favorites',JSON.stringify([...favorites]));
     renderCards();
    }
   });
   richController.setActive(true);
   applyDeepLink();
  }catch(error){
-  console.error('Snouno rich menu:',error);
-  richDesired=false;localStorage.removeItem('snouno-rich-mode');
+  console.error('Snounu rich menu:',error);
+  richDesired=false;localStorage.removeItem('snounu-rich-mode');
   document.body.classList.remove('rich-menu-active');
   target.hidden=true;
   $('network').hidden=false;
@@ -163,7 +172,7 @@ async function syncRichMode(){
 }
 richToggle?.addEventListener('change',()=>{
  richDesired=richToggle.checked;
- localStorage.setItem('snouno-rich-mode',richDesired?'1':'0');
+ localStorage.setItem('snounu-rich-mode',richDesired?'1':'0');
  reflectExplicitMode();
  void syncRichMode();
 });
@@ -248,7 +257,7 @@ function contactLinks(container,channels,meal) {
 
 
 /* Welcome hero carousel. The food assets are pre-rendered transparent WebP
-   cutouts based on the original Snouno product photography; never run a
+   cutouts based on the original Snounu product photography; never run a
    browser-side color-removal algorithm against food pixels. */
 const transparentWelcomeFood=async src=>src;
 function installWelcomeFoodCutouts(){}
@@ -693,14 +702,14 @@ function theme(dark){
  document.documentElement.style.colorScheme=dark?'dark':'light';
 }
 const systemTheme=matchMedia('(prefers-color-scheme:dark)');
-const storedTheme=localStorage.getItem('snouno-theme');
+const storedTheme=localStorage.getItem('snounu-theme');
 theme(storedTheme==='dark'||(storedTheme!=='light'&&systemTheme.matches));
 systemTheme.addEventListener('change',event=>{
- if(localStorage.getItem('snouno-theme')===null)theme(event.matches);
+ if(localStorage.getItem('snounu-theme')===null)theme(event.matches);
 });
 $('theme').onclick=()=>{
  const dark=!document.body.classList.contains('dark');
- localStorage.setItem('snouno-theme',dark?'dark':'light');
+ localStorage.setItem('snounu-theme',dark?'dark':'light');
  theme(dark);
 };
 let activeCategory=null,categoryFrame=0;
@@ -860,22 +869,22 @@ function mealCard(d,context='regular'){
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';if(isEnglish())badge.textContent=tr(d.badge);article.append(badge);}
    const heart=make('button');heart.className='heart';heart.id=(context==='favorite'?'favorite-heart-':'heart-meal-')+d.id;heart.dataset.mealId=d.id;heart.dataset.trackAction='favorite_toggle';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label',tr('المفضلة')+' · '+displayName(d));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
-   heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snouno-favorites',JSON.stringify([...favorites]));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));renderCards();};article.append(heart);return article;
+   heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snounu-favorites',JSON.stringify([...favorites]));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));renderCards();};article.append(heart);return article;
 }
 function bindFeedback(form,extra){
  form.onsubmit=async e=>{e.preventDefault();const output=form.querySelector('output');const button=form.querySelector('button[type=submit],button:not([type])');
  button.disabled=true;try{
  const values=Object.fromEntries(new FormData(form));
  if(extra.dish_id){
-   let visitor=localStorage.getItem('snouno-visitor');
-   if(!visitor){visitor=crypto.randomUUID();localStorage.setItem('snouno-visitor',visitor);}
+   let visitor=localStorage.getItem('snounu-visitor');
+   if(!visitor){visitor=crypto.randomUUID();localStorage.setItem('snounu-visitor',visitor);}
    values.visitor_id=visitor;
  }
  const reply=await fetch(base+'menu_feedback',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({...values,...extra})});
  const duplicate=extra.dish_id&&reply.status===409&&(await reply.json()).code==='23505';
  if(!reply.ok&&!duplicate)throw new Error();
  if(extra.dish_id){
-   localStorage.setItem('snouno-rated-'+extra.dish_id,'1');form.replaceChildren(make('p',tr(duplicate?'سبق أن قيّمت هذا الطبق.':'شكراً لك، تم حفظ تقييمك.')));
+   localStorage.setItem('snounu-rated-'+extra.dish_id,'1');form.replaceChildren(make('p',tr(duplicate?'سبق أن قيّمت هذا الطبق.':'شكراً لك، تم حفظ تقييمك.')));
  }else{form.reset();output.textContent=tr('شكراً لك، وصلتنا رسالتك.');}
  reporting.report('form_submit_success',button,{meal_id:extra.dish_id||null});
  }catch{output.textContent=tr('تعذّر الإرسال. حاول مرة أخرى.');reporting.report('form_submit_error',button,{meal_id:extra.dish_id||null});}finally{button.disabled=false;}};
@@ -931,7 +940,7 @@ function detail(d){
  }
  const show=()=>{box.append(content);if(!$('dish').open){if(isPreview)$('dish').show();else $('dish').showModal();}$('dish').scrollTop=0;};
  if(!d.id){show();return;}
- if(localStorage.getItem('snouno-rated-'+d.id)){content.append(make('p',tr('سبق أن قيّمت هذا الطبق.')));show();return;}
+ if(localStorage.getItem('snounu-rated-'+d.id)){content.append(make('p',tr('سبق أن قيّمت هذا الطبق.')));show();return;}
  const form=make('form');form.id='review-form-'+d.id;form.dataset.mealId=d.id;form.innerHTML='<h3>'+tr('قيّم الطبق')+'</h3><fieldset class="stars"><legend>'+tr('التقييم')+'</legend></fieldset><label>'+tr('اكتب رأيك عن الطبق')+'<textarea name="message" maxlength="2000"></textarea></label><button class="yellow send-rating" aria-label="'+tr('إرسال التقييم')+'">➤</button><output></output>';
  const stars=form.querySelector('.stars');
  for(let i=1;i<=5;i++){
@@ -1028,7 +1037,7 @@ function installPreview(){
  document.addEventListener('submit',event=>{event.preventDefault();event.stopImmediatePropagation();},true);
  document.addEventListener('click',event=>{if(event.target.closest('a,button')){event.preventDefault();event.stopImmediatePropagation();}},true);
  window.addEventListener('message',event=>{
-   if(event.origin!==location.origin||event.source!==window.parent||event.data?.type!=='snouno-draft')return;
+   if(event.origin!==location.origin||event.source!==window.parent||event.data?.type!=='snounu-draft')return;
    const {key,data,field}=event.data;
    let dest='menu';
    settings={...original.settings};links=original.links.map(v=>({...v}));
@@ -1046,7 +1055,7 @@ function installPreview(){
      document.body.dataset.preview=mode;
      if(mode==='card')$('cards').replaceChildren(mealCard(draft));else detail(draft);
      const target=mode==='card'?$('cards'):$('dish');
-     const report=()=>window.parent.postMessage({type:'snouno-preview-height',height:Math.ceil(target.getBoundingClientRect().height)},location.origin);
+     const report=()=>window.parent.postMessage({type:'snounu-preview-height',height:Math.ceil(target.getBoundingClientRect().height)},location.origin);
      previewObserver?.disconnect();previewObserver=new ResizeObserver(report);previewObserver.observe(target);report();
    }
    if(key==='categories'){
@@ -1056,7 +1065,7 @@ function installPreview(){
    }
 
  });
- window.parent.postMessage('snouno-preview-ready',location.origin);
+ window.parent.postMessage('snounu-preview-ready',location.origin);
 }
 async function load(){
  try{
@@ -1107,7 +1116,7 @@ async function revealPage(){
      ?destination.naturalWidth/destination.naturalHeight:start.width/start.height;
    const imageWidth=Math.min(contentWidth,contentHeight*naturalRatio);
    const imageHeight=imageWidth/naturalRatio;
-   // The image contains transparent padding: the painted Snouno logo occupies
+   // The image contains transparent padding: the painted Snounu logo occupies
    // only ~77% of the WebP width and ~64% of its height. Comparing outer
    // element boxes made the handoff appear to SHRINK at the final frame.
    let alpha={left:0,top:0,right:1,bottom:1};
@@ -1246,7 +1255,7 @@ async function chooseFirstVisitMode(initialMenu){
   const fast=await Promise.race([probe,deadline]);
   richDesired=Boolean(fast);
   firstVisitDecisionComplete=true;
-  localStorage.setItem('snouno-rich-mode',fast?'1':'0');
+  localStorage.setItem('snounu-rich-mode',fast?'1':'0');
   updateRichToggle();
   if(currentPage()==='menu'){void syncRichMode();applyDeepLink();}
   if(!fast&&!dishes.length){

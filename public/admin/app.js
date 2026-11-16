@@ -40,7 +40,13 @@ const sections = {
   menu_staff: ['المستخدمون', [['email','بريد المحرر','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]],
   account: ['حساب المالك', []]
 };
-const sessionKey='snouno-session';
+// Keep an existing dashboard session when updating the brand-prefixed storage key.
+try {
+ if (localStorage.getItem('snounu-session')===null && localStorage.getItem('snouno-session')!==null)
+  localStorage.setItem('snounu-session',localStorage.getItem('snouno-session'));
+ localStorage.removeItem('snouno-session');
+} catch (error) { console.warn('Dashboard session migration unavailable',error); }
+const sessionKey='snounu-session';
 let rememberMe=!!localStorage.getItem(sessionKey);
 let session=JSON.parse(localStorage.getItem(sessionKey)||sessionStorage.getItem(sessionKey)||'null');
 let role, section = 'dishes', generation = 0;
@@ -352,7 +358,7 @@ async function renderOwnerAccount(){
    transferSubmit.disabled=true;
    try{
      await verifyOwnerPassword(transferPassword.value);
-     await api('/rest/v1/rpc/transfer_snouno_ownership',{method:'POST',body:{p_target_email:chosen}});
+     await api('/rest/v1/rpc/transfer_snounu_ownership',{method:'POST',body:{p_target_email:chosen}});
      transferBox.result.textContent='تم نقل الملكية بنجاح';
      role='editor';
      await enter();
@@ -819,13 +825,13 @@ function setupPreview(key,row,uploads){
      }
      if(file)data[field]=resources.get(field).url;
    }
-   for(const frame of frames)frame.contentWindow?.postMessage({type:'snouno-draft',key,data,field:latestField},location.origin);
+   for(const frame of frames)frame.contentWindow?.postMessage({type:'snounu-draft',key,data,field:latestField},location.origin);
  };
  const ready=e=>{
    if(e.origin!==location.origin)return;
    const frame=frames.find(f=>f.contentWindow===e.source);if(!frame)return;
-   if(e.data==='snouno-preview-ready')send();
-   if(key==='dishes'&&e.data?.type==='snouno-preview-height'&&Number.isFinite(e.data.height)&&e.data.height>0)frame.style.height=(e.data.height+2)+'px';
+   if(e.data==='snounu-preview-ready')send();
+   if(key==='dishes'&&e.data?.type==='snounu-preview-height'&&Number.isFinite(e.data.height)&&e.data.height>0)frame.style.height=(e.data.height+2)+'px';
  };
  const changed=e=>{latestField=e.target.name||Object.keys(uploads).find(k=>uploads[k]===e.target)||latestField;send();};
  window.addEventListener('message',ready);
