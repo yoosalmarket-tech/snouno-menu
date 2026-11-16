@@ -106,7 +106,7 @@ function syncWelcomeSettings(){
 let mobileWelcomeIndex=0;
 let welcomeCarouselTimer=null,welcomeCarouselCleanupTimer=null;
 let welcomeCarouselActive=false,welcomeCarouselAnimating=false,welcomeCarouselSession=0;
-const welcomeAutoplayMs=3000,welcomeTransitionMs=640;
+const welcomeAutoplayMs=3000,welcomeTransitionMs=600;
 const prefersReducedWelcomeMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&matchMedia('(max-width:980px)').matches&&document.documentElement.classList.contains('loader-complete');
 const onMobileWelcome=()=>matchMedia('(max-width:980px)').matches;
@@ -156,10 +156,12 @@ function stopWelcomeCarousel(){
  $('cover-photo').classList.remove('mobile-food-out');
  $('cover-next').classList.remove('is-visible','mobile-food-in');
 }
-function scheduleWelcomeCarousel(){
+function scheduleWelcomeCarousel(afterTransition=false){
  clearTimeout(welcomeCarouselTimer);
  if(!welcomeVisible()||!welcomeCarouselActive)return;
- welcomeCarouselTimer=setTimeout(()=>goToWelcomeMeal((mobileWelcomeIndex+1)%3,'right'),welcomeAutoplayMs);
+ // 3 seconds from one transition start to the next, not 3 seconds plus motion.
+ const delay=afterTransition?Math.max(0,welcomeAutoplayMs-welcomeTransitionMs):welcomeAutoplayMs;
+ welcomeCarouselTimer=setTimeout(()=>goToWelcomeMeal((mobileWelcomeIndex+1)%3,'right'),delay);
 }
 /* GPU-only horizontal carousel: preload/decode the next meal before animating.
    Keep the incoming layer visible until the current layer has the new image,
@@ -232,7 +234,7 @@ async function goToWelcomeMeal(index,direction='right'){
    current.style.removeProperty('transform');
    current.style.removeProperty('opacity');
    welcomeCarouselAnimating=false;
-   scheduleWelcomeCarousel();
+   scheduleWelcomeCarousel(true);
   }
  }
 }
