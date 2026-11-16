@@ -217,7 +217,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    label.style.display=i>=visibleStart&&i<visibleStart+3?'grid':'none';
    label.setAttribute('aria-current',String(i===front));
   }
-  const fade=Math.min(1,Math.abs(k-Math.round(k))*2.6+(k<-.4?1:0));
+  // Keep the name, rating and price steady while food bounces at an edge.
+  const infoPosition=clamp(k,0,len-1);
+  const fade=Math.min(1,Math.abs(infoPosition-Math.round(infoPosition))*2.6);
   for(const el of [u.rating,u.title,u.desc,u.price]){
    el.style.opacity=(1-fade).toFixed(3);
    el.style.transform='translateY('+(fade*12).toFixed(1)+'px)';
@@ -232,10 +234,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    velocity+=(target-k)*.07*dt;
    velocity*=Math.pow(.8,dt);
    k+=velocity*dt;
-   // Hard stops prevent rubber-band movement on fast flings at either edge.
+   // Permit a small elastic overshoot; the existing spring settles back
+   // to the valid target. Sidebar and controls never use this offset.
    const maxIndex=Math.max(0,(group()?.items.length||1)-1);
-   if(k<=0){k=0;if(velocity<0)velocity=0;}
-   if(k>=maxIndex){k=maxIndex;if(velocity>0)velocity=0;}
+   const overshootLimit=.42;
+   if(k< -overshootLimit){k=-overshootLimit;velocity=Math.max(0,velocity);}
+   if(k>maxIndex+overshootLimit){k=maxIndex+overshootLimit;velocity=Math.min(0,velocity);}
   }
   const g=group();
   if(g){
@@ -250,7 +254,19 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   target=clamp(index,0,g.items.length-1);
   if(reduced.matches){k=target;velocity=0;updateFront(target);draw();}
  }
- const step=delta=>goTo(Math.round(target)+delta);
+ const step=delta=>{
+  const maxIndex=(group()?.items.length||1)-1;
+  const next=Math.round(target)+delta;
+  if(next<0||next>maxIndex){
+   // At either end, a wheel gesture or arrow press gives a small bounce.
+   if(!reduced.matches&&active&&!swapping&&!pointer){
+    target=next<0?0:maxIndex;
+    velocity=next<0?-.12:.12;
+   }
+   return;
+  }
+  goTo(next);
+ };
  async function changeGroup(index){
   if(swapping||destroyed||index<0||index>=groups.length||index===groupIndex)return;
   swapping=true;const serial=++swapToken,direction=index>groupIndex?1:-1;
@@ -280,14 +296,14 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    p.axis=Math.abs(dy)>Math.abs(dx)?'y':'x';
   }
   if(p.axis==='y'){
-   const len=group()?.items.length||1;
-   // No elastic overshoot: a rapid edge swipe stays on the end meal.
-   const value=clamp(p.startK+dy/160,0,len-1);
+   const len=group()?.items.length||1,maxIndex=len-1;
+   const raw=p.startK+dy/160;
+   // Resist motion beyond either edge, but allow a bounded elastic stretch.
+   const elastic=raw<0?raw*.32:raw>maxIndex?maxIndex+(raw-maxIndex)*.32:raw;
+   const value=clamp(elastic,-.42,maxIndex+.42);
    const now=performance.now(),dt=Math.max((now-p.lastT)/16.67,.5);
    velocity=velocity*.5+(value-k)/dt*.5;
-   k=value;
-   if((k===0&&velocity<0)||(k===len-1&&velocity>0))velocity=0;
-   p.lastT=now;
+   k=value;p.lastT=now;
   }
  }
  function pointerUp(event){
