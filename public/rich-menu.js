@@ -19,12 +19,14 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  '<div class="rm-categories-track" role="tablist"></div></nav>',
  '<div class="rm-stage-wrap"><div class="rm-stage-word" aria-hidden="true"><span></span><span></span></div>',
  '<div class="rm-shadow" aria-hidden="true"></div><div class="rm-stage" role="listbox" tabindex="0"></div>',
- '<button type="button" class="rm-customize" aria-label="اطلب الآن"><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><span><strong lang="en">ORDER NOW</strong><span dir="rtl">اطلب الآن</span></span></button></div>',
+ '</div>',
+ // The order action is independent of the changing food scene.
+ '<button type="button" class="rm-customize" aria-label="اطلب الآن"><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><span><strong lang="en">ORDER NOW</strong><span dir="rtl">اطلب الآن</span></span></button>',
  // The entire sidebar is a sibling of the 3D scene, not its descendant.
  '<aside class="rm-thumbs" aria-label="اختيار وجبة"><button type="button" class="rm-rail-button rm-rail-up" aria-label="السابق">⌃</button>',
  '<div class="rm-rail-row"><div class="rm-rail-labels" aria-hidden="true"></div><div class="rm-rail-window"><div class="rm-rail-track"></div></div></div><button type="button" class="rm-rail-button rm-rail-down" aria-label="التالي">⌄</button>',
  '<span class="rm-rail-count" dir="ltr">1 / 1</span></aside>',
- '<section class="rm-info" aria-live="polite"><h2 class="rm-info-name"></h2><p class="rm-info-desc"></p>',
+ '<section class="rm-info" aria-live="polite"><span class="rm-info-rating" dir="ltr" hidden></span><h2 class="rm-info-name"></h2><p class="rm-info-desc"></p>',
  '<span class="rm-info-price" dir="ltr"></span><div class="rm-info-actions">',
  '<button type="button" class="rm-info-details">＋ عرض تفاصيل الوجبة</button>',
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
@@ -45,7 +47,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   thumbWindow:at(root,'.rm-rail-window'),thumbTrack:at(root,'.rm-rail-track'),
   labels:at(root,'.rm-rail-labels'),railCount:at(root,'.rm-rail-count'),
   railUp:at(root,'.rm-rail-up'),railDown:at(root,'.rm-rail-down'),
-  info:at(root,'.rm-info'),title:at(root,'.rm-info-name'),
+  info:at(root,'.rm-info'),rating:at(root,'.rm-info-rating'),title:at(root,'.rm-info-name'),
   desc:at(root,'.rm-info-desc'),price:at(root,'.rm-info-price'),
   details:at(root,'.rm-info-details'),fav:at(root,'.rm-info-fav'),
   customize:at(root,'.rm-customize'),sheet:at(root,'.rm-sheet'),
@@ -141,6 +143,11 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  function info(){
   const m=dish();if(!m)return;
   u.title.textContent=getName(m);
+  const ratingValue=m.rating==null||m.rating===''?NaN:Number(m.rating);
+  const hasRating=Number.isFinite(ratingValue)&&ratingValue>=0&&ratingValue<=5;
+  u.rating.hidden=!hasRating;
+  u.rating.textContent=hasRating?'★ '+ratingValue.toFixed(1):'';
+  if(hasRating)u.rating.setAttribute('aria-label',(isEnglish()?'Rating ':'التقييم ')+ratingValue.toFixed(1)+' / 5');
   u.desc.textContent=getDescription(m)||m.ingredients||(isEnglish()?'Discover Snouno favourites':'اختار وجبتك المفضلة من سنونو');
   const price=Number(m.price);
   u.price.textContent=Number.isFinite(price)?price.toLocaleString('en-US',{maximumFractionDigits:2})+' ₪':'';
@@ -160,7 +167,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   front=next;info();
   // Only the changing meal copy animates. Keep the contact and favorite
   // buttons completely steady as users swipe between dishes.
-  for(const el of [u.title,u.desc,u.price]){
+  for(const el of [u.rating,u.title,u.desc,u.price]){
    el.animate?.([{opacity:.75,transform:'translateY(10px)'},{opacity:1,transform:'none'}],{duration:230,easing:'cubic-bezier(.28,.8,.2,1)'});
   }
  }
@@ -211,7 +218,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    label.setAttribute('aria-current',String(i===front));
   }
   const fade=Math.min(1,Math.abs(k-Math.round(k))*2.6+(k<-.4?1:0));
-  for(const el of [u.title,u.desc,u.price]){
+  for(const el of [u.rating,u.title,u.desc,u.price]){
    el.style.opacity=(1-fade).toFixed(3);
    el.style.transform='translateY('+(fade*12).toFixed(1)+'px)';
   }
