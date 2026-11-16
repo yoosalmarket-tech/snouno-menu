@@ -246,7 +246,7 @@
    a dark, bottom-anchored sheet with rounded top corners, grab handle,
    inset controls and yellow action chips. Snouno logo/typography retained. */
 #rich-menu .rm-dish-badge{
-  top:34%!important;left:50%!important;
+  top:55%!important;left:50%!important;
   z-index:9!important;
   transform:translateX(-50%) rotate(-3deg)!important;
   pointer-events:none!important;
