@@ -182,7 +182,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   u.railCount.textContent=(front+1)+' / '+len;
   thumbEls.forEach((el,i)=>{
    const distance=Math.abs(i-position);
-   el.style.opacity=Math.max(.4,1-distance*.2).toFixed(2);
+   el.style.opacity=Math.max(.82,1-distance*.06).toFixed(2);
    el.style.transform='scale('+Math.max(.8,1-distance*.07).toFixed(3)+')';
    el.setAttribute('aria-current',String(i===front));
   });
