@@ -780,92 +780,74 @@ async function load(){
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
 async function revealPage(){
- const shell=document.documentElement;
- if(!shell.classList.contains('loading'))return;
- const onWelcome=!$('welcome').hidden;
- if(onWelcome){
-  const sources=[$('cover-photo').getAttribute('src'),$('desktop-welcome-hero').getAttribute('src')].filter(Boolean);
-  // Prepare hero cutouts under the loading screen so colored source tiles never flash.
-  await Promise.allSettled(sources.map(transparentWelcomeFood));
+ const root=document.documentElement;
+ if(!root.classList.contains('loading'))return;
+ const welcome=currentPage()==='welcome';
+ if(welcome){
   await Promise.allSettled([
-   $('welcome-logo').decode(),
-   $('desktop-welcome-logo').decode()
+    $('cover-photo').decode(),$('desktop-welcome-hero').decode(),
+    $('welcome-logo').decode(),$('desktop-welcome-logo').decode()
   ]);
  }
  await document.fonts.ready;
- if(!shell.classList.contains('loading'))return;
- const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(!root.classList.contains('loading'))return;
+ const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
  if(!reduced){
-  const strokes=$('page-loader').getAnimations({subtree:true});
-  for(const stroke of strokes)stroke.playbackRate=2;
-  await Promise.allSettled(strokes.map(stroke=>stroke.finished));
+  const drawings=$('page-loader').getAnimations({subtree:true});
+  for(const draw of drawings)draw.playbackRate=2;
+  await Promise.allSettled(drawings.map(draw=>draw.finished));
  }
- if(onWelcome&&!reduced){
-  const header=matchMedia('(min-width:981px)').matches
-    ?document.querySelector('.desktop-welcome-top')
-    :document.querySelector('.welcome-top');
-  const target=matchMedia('(min-width:981px)').matches
-    ?$('desktop-welcome-logo'):$('welcome-logo');
-  const logoSvg=$('page-loader').querySelector('svg');
-  if(header&&target&&logoSvg){
-   const logoStart=logoSvg.getBoundingClientRect();
-   const logoBox=target.getBoundingClientRect();
-   const imageAspect=(target.naturalWidth&&target.naturalHeight)
-     ?target.naturalWidth/target.naturalHeight
-     :logoStart.width/logoStart.height;
-   // object-fit:contain means the actual visible wordmark is centered inside its img box.
-   const boxWidth=Math.min(logoBox.width,logoBox.height*imageAspect);
-   const boxHeight=boxWidth/imageAspect;
-   const centerX=logoBox.left+logoBox.width/2;
-   const centerY=logoBox.top+logoBox.height/2;
-   const scale=Math.min(boxWidth/logoStart.width,boxHeight/logoStart.height);
-   const endWidth=logoStart.width*scale;
-   const endHeight=logoStart.height*scale;
-   const endX=centerX-endWidth/2,endY=centerY-endHeight/2;
-   const duration=1900;
-   shell.style.setProperty('--loader-header-height',Math.round(header.getBoundingClientRect().height)+'px');
-   // Pin the loader's real SVG to viewport coordinates; resizing the yellow parent
-   // cannot shift the logo while it travels to the exact final welcome-logo center.
-   Object.assign(logoSvg.style,{
-     position:'fixed',left:'0px',top:'0px',
-     width:logoStart.width+'px',height:logoStart.height+'px',
-     maxWidth:'none',margin:'0',transformOrigin:'top left',
-     transition:'none',
-     transform:'translate('+logoStart.left+'px,'+logoStart.top+'px)'
+ if(welcome&&!reduced){
+  const mobile=matchMedia('(max-width:980px)').matches;
+  const header=document.querySelector(mobile?'.welcome-top':'.desktop-welcome-top');
+  const target=$(mobile?'welcome-logo':'desktop-welcome-logo');
+  const loader=$('page-loader');
+  const original=loader.querySelector('svg');
+  if(header&&target&&original){
+   const start=original.getBoundingClientRect(),finish=target.getBoundingClientRect();
+   const duration=2100,easing='cubic-bezier(.19,.84,.16,1)';
+   const traveling=target.cloneNode(false);
+   traveling.removeAttribute('id');
+   traveling.alt='';traveling.setAttribute('aria-hidden','true');
+   traveling.className='traveling-welcome-logo';
+   Object.assign(traveling.style,{
+    position:'fixed',left:start.left+'px',top:start.top+'px',
+    width:start.width+'px',height:start.height+'px',
+    objectFit:'contain',maxWidth:'none',
+    padding:'0',margin:'0',border:'0',background:'transparent',
+    filter:'brightness(0)',zIndex:'1002',pointerEvents:'none'
    });
-   const loader=$('page-loader');
-   const originalHeight=loader.getBoundingClientRect().height;
-   shell.classList.add('loader-morphing');
-   shell.classList.remove('loading');
-   // Explicit animation makes the yellow canvas and its curve animate even if
-   // the page switches from loading to morphing in the same animation frame.
-   const shapeMovement=loader.animate([
-     {height:originalHeight+'px',borderRadius:'0px'},
-     {height:header.getBoundingClientRect().height+'px',borderRadius:'0 0 50% 50% / 0 0 19% 19%'}
-   ],{duration,easing:'cubic-bezier(.19,.82,.16,1)',fill:'forwards'});
-   const movement=logoSvg.animate([
-     {transform:'translate('+logoStart.left+'px,'+logoStart.top+'px) scale(1)'},
-     {transform:'translate('+endX+'px,'+endY+'px) scale('+scale+')'}
-   ],{duration,easing:'cubic-bezier(.19,.82,.16,1)',fill:'forwards'});
-   const shadowTimer=setTimeout(()=>shell.classList.add('loader-shadow-intro'),duration-620);
-   await Promise.allSettled([
-     movement.finished,
-     shapeMovement.finished,
-     new Promise(resolve=>setTimeout(resolve,duration+20))
-   ]);
+   document.body.append(traveling);
+   original.style.visibility='hidden';
+   root.style.setProperty('--loader-header-height',Math.ceil(header.getBoundingClientRect().height)+'px');
+   root.classList.add('loader-morphing');
+   root.classList.remove('loading');
+   const curve=loader.animate([
+    {height:window.innerHeight+'px',borderRadius:'0'},
+    {height:header.getBoundingClientRect().height+'px',
+      borderRadius:'0 0 50% 50% / 0 0 19% 19%'}
+   ],{duration,easing,fill:'forwards'});
+   const travel=traveling.animate([
+    {left:start.left+'px',top:start.top+'px',width:start.width+'px',height:start.height+'px'},
+    {left:finish.left+'px',top:finish.top+'px',width:finish.width+'px',height:finish.height+'px'}
+   ],{duration,easing,fill:'forwards'});
+   const shadowTimer=setTimeout(()=>root.classList.add('loader-shadow-intro'),duration-620);
+   await Promise.allSettled([curve.finished,travel.finished]);
    clearTimeout(shadowTimer);
-   // Both logos now occupy the same visual box. The yellow shape clears
-   // while the shadow finishes rising from behind the curved edge.
-   shell.classList.add('loader-finishing');
-   shell.classList.remove('loader-morphing');
-   await new Promise(resolve=>setTimeout(resolve,310));
-   shell.classList.remove('loader-finishing','loader-shadow-intro');
-   shell.style.removeProperty('--loader-header-height');
-   movement.cancel();
-   shapeMovement.cancel();
+   // Exact same image, box and position: exchange copies without a second scale.
+   root.classList.remove('loader-morphing');
+   root.classList.add('loader-finishing');
+   target.style.visibility='visible';
+   traveling.remove();
+   await new Promise(resolve=>setTimeout(resolve,330));
+   root.classList.remove('loader-finishing','loader-shadow-intro');
+   root.style.removeProperty('--loader-header-height');
+   original.style.removeProperty('visibility');
+   target.style.removeProperty('visibility');
+   curve.cancel();travel.cancel();
    return;
   }
  }
- shell.classList.remove('loading');
+ root.classList.remove('loading');
 }
 load().finally(revealPage);
