@@ -38,3 +38,40 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
 .availability-field input[type=checkbox]:checked::after{inset-inline-start:27px}
 .availability-field input[type=checkbox]:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px}
 @media(max-width:680px){article .availability-control{margin-inline-start:auto}article{flex-wrap:wrap}}
+
+
+/* Direct meal sorting: draggable handles and clearly separated categories. */
+.dish-sort-hint{
+ margin:15px 0 20px;color:#615847;background:#fff8df;
+ padding:12px 15px;border:1px solid #e9d6a0;border-radius:13px;
+ font-weight:700;font-size:13px;line-height:1.7;
+}
+.dish-sort-section{margin:23px 0 27px;}
+.dish-sort-section>h2{
+ font-size:18px;line-height:1.5;margin:0 0 11px;
+ padding:0 12px 8px;border-bottom:2px solid #e4b73b;
+}
+.dish-sort-list{display:grid;gap:8px;min-height:8px;}
+.dish-sort-list .dish-sort-card{
+ margin:0;position:relative;min-height:68px;
+ border:1px solid #ddd9cf;transition:box-shadow .16s,border-color .16s;
+}
+.dish-sort-card.is-dragging{
+ opacity:.73;border:2px dashed #c89112!important;
+ background:#fff6d8;box-shadow:0 9px 20px #0002;
+}
+.dish-drag-handle{
+ flex:none;display:grid;place-items:center;
+ background:#fff3c3;color:#4b3513!important;
+ border:1px solid #d8b658!important;
+ border-radius:10px;width:39px;height:44px;
+ padding:0;font:bold 26px/1 system-ui,sans-serif;
+ cursor:grab;touch-action:none;user-select:none;
+}
+.dish-drag-handle:active{cursor:grabbing;background:#FDBE2D;}
+.dish-drag-handle:focus-visible{outline:3px solid #FDBE2D;outline-offset:2px;}
+#body.is-saving-order .dish-drag-handle{pointer-events:none;opacity:.5;}
+@media(max-width:680px){
+ .dish-sort-card{gap:8px;}
+ .dish-sort-card>.dish-drag-handle{width:45px;height:47px;}
+}
