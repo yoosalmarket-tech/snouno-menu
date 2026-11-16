@@ -248,6 +248,113 @@ function setupFlatSorting(key,rows){
  };
  wireSortableList(container,'article[data-sort-id]',save,()=>!saving);
 }
+// Verify the current password against Auth before sensitive account changes.
+async function verifyOwnerPassword(password){
+ if(role!=='owner'||!session?.user?.email)throw new Error('هذه العملية متاحة للمالك فقط');
+ const credentials={email:session.user.email.toLowerCase(),password};
+ const verified=await request('/auth/v1/token?grant_type=password',{method:'POST',body:credentials});
+ if(!verified.access_token)throw new Error('تعذّر تأكيد كلمة المرور');
+ persist(verified);
+ return verified;
+}
+function accountField(form,caption,name,type,required=true){
+ const label=node('label',caption);
+ const input=node('input');input.type=type;input.name=name;input.required=required;
+ if(type==='password')input.autocomplete='off';
+ if(type==='email')input.dir='ltr';
+ label.append(input);form.append(label);
+ return input;
+}
+function accountCard(parent,title,description){
+ const card=node('section');card.className='account-card';
+ card.append(node('h2',title),node('p',description));
+ const form=node('form');card.append(form);
+ const result=node('p');result.className='account-message';
+ card.append(result);parent.append(card);
+ return {form,result};
+}
+async function renderOwnerAccount(){
+ if(role!=='owner')throw new Error('للمالك فقط');
+ const area=$('body'),box=node('div');
+ box.className='account-settings';area.append(box);
+ const user=await api('/auth/v1/user');
+ if(section!=='account')return;
+ session.user=user;persist(session);
+ const emailBox=accountCard(box,'تغيير البريد الإلكتروني','سترسل Supabase رسالة تأكيد إلى البريد الجديد، وقد يلزم تأكيد التغيير من البريد القديم أيضاً.');
+ const newEmail=accountField(emailBox.form,'البريد الإلكتروني الجديد','email','email');
+ newEmail.value=user.email||'';
+ const verifyEmail=accountField(emailBox.form,'كلمة المرور الحالية','current_password','password');
+ const emailSubmit=node('button','إرسال طلب تغيير البريد');
+ emailBox.form.append(emailSubmit);
+ emailBox.form.onsubmit=async event=>{
+   event.preventDefault();emailSubmit.disabled=true;emailBox.result.textContent='';
+   try{
+     const address=newEmail.value.trim().toLowerCase();
+     if(address===(session.user?.email||'').toLowerCase())throw new Error('أدخل بريداً مختلفاً عن الحالي');
+     await verifyOwnerPassword(verifyEmail.value);
+     await api('/auth/v1/user',{method:'PUT',body:{email:address}});
+     verifyEmail.value='';
+     emailBox.result.textContent='أُرسل طلب تغيير البريد. أكمل التأكيد من رسالة البريد الإلكتروني قبل استخدام العنوان الجديد.';
+   }catch(error){emailBox.result.textContent=error.message;}
+   finally{verifyEmail.value='';emailSubmit.disabled=false;}
+ };
+ const passwordBox=accountCard(box,'تغيير كلمة المرور','استخدم كلمة مرور قوية من 12 حرفاً على الأقل. سنطلب كلمة المرور الحالية للتحقق.');
+ const currentPassword=accountField(passwordBox.form,'كلمة المرور الحالية','current_password','password');
+ const newPassword=accountField(passwordBox.form,'كلمة المرور الجديدة','new_password','password');
+ newPassword.minLength=12;
+ const confirmPassword=accountField(passwordBox.form,'تأكيد كلمة المرور الجديدة','confirm_password','password');
+ confirmPassword.minLength=12;
+ const passwordSubmit=node('button','تغيير كلمة المرور');
+ passwordBox.form.append(passwordSubmit);
+ passwordBox.form.onsubmit=async event=>{
+   event.preventDefault();passwordSubmit.disabled=true;passwordBox.result.textContent='';
+   try{
+     if(newPassword.value!==confirmPassword.value)throw new Error('كلمتا المرور غير متطابقتين');
+     if(newPassword.value.length<12)throw new Error('استخدم 12 حرفاً على الأقل');
+     await verifyOwnerPassword(currentPassword.value);
+     await api('/auth/v1/user',{method:'PUT',body:{password:newPassword.value}});
+     passwordBox.result.textContent='تم تحديث كلمة المرور بنجاح.';
+   }catch(error){passwordBox.result.textContent=error.message;}
+   finally{
+     currentPassword.value='';newPassword.value='';confirmPassword.value='';
+     passwordSubmit.disabled=false;
+   }
+ };
+ const transferBox=accountCard(box,'نقل الملكية إلى محرر آخر','اختر حساب محرر مؤكد، ثم أكد العملية بكلمة المرور الحالية. ستصبح أنت محرراً ويصبح الحساب المختار المالك الجديد.');
+ const warning=node('p','تنبيه: سيحصل المالك الجديد على صلاحيات إدارة المستخدمين والملكية. لا يمكن التراجع إلا بواسطة المالك الجديد.');
+ warning.className='account-warning';transferBox.form.append(warning);
+ const recipientLabel=node('label','المالك الجديد');
+ const recipient=node('select');recipient.name='recipient';recipient.required=true;
+ const empty=node('option','اختر أحد المحررين');empty.value='';recipient.append(empty);
+ recipientLabel.append(recipient);transferBox.form.append(recipientLabel);
+ const editors=await api('/rest/v1/menu_staff?select=email,role&role=eq.editor&order=email');
+ for(const editor of editors){
+   const opt=node('option',editor.email);opt.value=editor.email;recipient.append(opt);
+ }
+ const transferPassword=accountField(transferBox.form,'كلمة المرور الحالية','current_password','password');
+ const typed=accountField(transferBox.form,'اكتب بريد المالك الجديد للتأكيد','confirmation','email');
+ typed.placeholder='اكتب البريد كما يظهر في القائمة';
+ const transferSubmit=node('button','نقل ملكية لوحة التحكم');
+ transferBox.form.append(transferSubmit);
+ transferBox.form.onsubmit=async event=>{
+   event.preventDefault();transferBox.result.textContent='';
+   const chosen=recipient.value.toLowerCase();
+   if(!chosen||typed.value.trim().toLowerCase()!==chosen){
+     transferBox.result.textContent='اكتب البريد المختار حرفياً لتأكيد نقل الملكية';return;
+   }
+   if(!confirm('هل أنت متأكد من نقل ملكية لوحة التحكم إلى '+chosen+'؟'))return;
+   transferSubmit.disabled=true;
+   try{
+     await verifyOwnerPassword(transferPassword.value);
+     await api('/rest/v1/rpc/transfer_snouno_ownership',{method:'POST',body:{p_target_email:chosen}});
+     transferBox.result.textContent='تم نقل الملكية بنجاح';
+     role='editor';
+     await enter();
+     notice('تم نقل الملكية. حسابك الآن محرر.');
+   }catch(error){transferBox.result.textContent=error.message;}
+   finally{transferPassword.value='';transferSubmit.disabled=false;}
+ };
+}
 async function openSection(key){
  if(['menu_staff','account'].includes(key)&&role!=='owner'){
   notice('هذه الصفحة متاحة للمالك فقط');return;
