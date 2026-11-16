@@ -549,3 +549,56 @@ html.loader-finishing #welcome .desktop-welcome-top img{
 @media(prefers-reduced-motion:reduce){
  .traveling-welcome-logo{animation:none!important;}
 }
+
+
+/* Final welcome transitions: meals move SIDEWAYS, and swipe gestures work
+   on touchscreens without competing with vertical page scrolling. */
+@media(max-width:980px){
+ #welcome .welcome-stage{
+   overflow:hidden;
+   touch-action:pan-y;overscroll-behavior-x:contain;
+ }
+ #welcome #cover-photo.mobile-food-out{
+   animation:snouno-food-exit-left 600ms cubic-bezier(.45,0,.65,.25) both!important;
+ }
+ #welcome #cover-next.mobile-food-in{
+   animation:snouno-food-enter-right 600ms cubic-bezier(.24,.70,.17,1) both!important;
+ }
+ @keyframes snouno-food-exit-left{
+   from{transform:translate(-50%,-50%);opacity:1;}
+   to{transform:translate(-170%,-50%);opacity:0.35;}
+ }
+ @keyframes snouno-food-enter-right{
+   from{transform:translate(70%,-50%);opacity:0.35;}
+   to{transform:translate(-50%,-50%);opacity:1;}
+ }
+}
+html.loading #welcome .welcome-language,
+html.loader-morphing #welcome .welcome-language{
+ visibility:hidden!important;opacity:0!important;pointer-events:none!important;
+}
+html.loader-complete #welcome .welcome-language{
+ visibility:visible;pointer-events:auto;
+ animation:snouno-language-appear 450ms ease-out 80ms both;
+}
+@keyframes snouno-language-appear{
+ from{opacity:0;transform:translateY(-5px);}
+ to{opacity:1;transform:translateY(0);}
+}
+/* The yellow curve and its shadow finish as a single solid object.
+   The shadow is static and only becomes visible at the final hard cut. */
+#welcome .welcome-curve-shadow,
+#welcome .desktop-curve-shadow{
+ opacity:1!important;animation:none!important;
+ transform:translateY(9px)!important;clip-path:none!important;
+ transition:none!important;
+}
+html.loading #welcome .welcome-curve-shadow,
+html.loading #welcome .desktop-curve-shadow,
+html.loader-morphing #welcome .welcome-curve-shadow,
+html.loader-morphing #welcome .desktop-curve-shadow{
+ visibility:hidden!important;
+}
+@media(prefers-reduced-motion:reduce){
+ html.loader-complete #welcome .welcome-language{animation:none!important;}
+}
