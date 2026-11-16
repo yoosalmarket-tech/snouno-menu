@@ -547,7 +547,7 @@ body.rich-menu-active:not([data-preview]) #shell{
   color:#f1eadb;
   opacity:.94;
   font-family:Snouno,Tahoma,sans-serif!important;
-  font-size:clamp(11px,2.8vw,14px)!important;
+  font-size:clamp(9px,2.25vw,12px)!important;
   font-weight:700!important;
   line-height:1.1!important;
   letter-spacing:0!important;
