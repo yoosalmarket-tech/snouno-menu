@@ -472,11 +472,22 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  u.stage.addEventListener('pointercancel',()=>{if(pointer?.axis==='y')goTo(Math.round(k));pointer=null;});
  u.stage.addEventListener('wheel',wheel,{passive:false});
  u.stage.addEventListener('keydown',key);
+ at(root,'.rm-exit').id='rich-exit';
+ u.catPrev.id='rich-category-previous';u.catNext.id='rich-category-next';
+ u.railUp.id='rich-meal-previous';u.railDown.id='rich-meal-next';
+ u.customize.id='rich-order-now';u.customize.dataset.trackAction='order_now_click';
+ u.sheet.id='rich-order-dialog';at(u.sheet,'.rm-sheet-close').id='rich-popup-close';
  u.catPrev.onclick=()=>changeGroup(groupIndex-1);
  u.catNext.onclick=()=>changeGroup(groupIndex+1);
  u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
  u.details.onclick=()=>openRichSheet('contact');
  u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
+ u.share.onclick=async()=>{
+  if(!dish()?.id)return;
+  if(typeof onShare==='function')await onShare(dish());
+  u.share.textContent='✓';
+  setTimeout(()=>{if(!destroyed)u.share.textContent='↗';},1400);
+ };
  u.fav.onclick=()=>{
   if(!dish())return;
   onFavorite(dish());
@@ -500,6 +511,21 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const photo=validImage(snapshot.settings?.logo);if(photo)u.logo.src=photo;
   drawCategoryTabs();paintStage();info();draw();
  }
+ function focusLink({mealId,categoryId}={}){
+  if(!groups.length)return false;
+  const selected=snapshot.dishes?.find(m=>String(m.id)===String(mealId));
+  let groupAt=selected?groups.findIndex(g=>String(g.id)===String(selected.category_id)):-1;
+  if(groupAt<0&&selected)groupAt=groups.findIndex(g=>g.items.some(m=>String(m.id)===String(mealId)));
+  if(!selected)groupAt=groups.findIndex(g=>String(g.id)===String(categoryId));
+  if(groupAt<0)return false;
+  groupIndex=groupAt;
+  const index=selected?group().items.findIndex(m=>String(m.id)===String(selected.id)):0;
+  front=Math.max(0,index);k=front;target=front;velocity=0;
+  root.classList.remove('rm-category-out','rm-category-in');
+  swapping=false;++swapToken;
+  drawCategoryTabs();paintStage();info();draw();
+  return true;
+ }
  function setActive(on){
   active=!!on&&!destroyed;
   if(active){lastTime=0;if(!frame)frame=requestAnimationFrame(tick);}
@@ -510,5 +536,5 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  }
  function destroy(){destroyed=true;setActive(false);closeSheet();++swapToken;root.remove();}
  refresh();
- return {refresh,setActive,destroy,get selected(){return dish();}};
+ return {refresh,setActive,destroy,focusLink,get selected(){return dish();}};
 }
