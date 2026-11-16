@@ -698,3 +698,47 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
 @media(max-height:660px){
   #rich-menu .rm-app{--rm-preview-rise:34px;}
 }
+
+/* Fixed ordering action and independently positioned rating.
+   The button is now a sibling of the 3D food stage; its position never
+   responds to food swipes, info-panel resizing, or category transitions. */
+#rich-menu .rm-app > .rm-customize{
+  position:absolute!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:clamp(200px,39svh,360px)!important;
+  left:clamp(8px,1.4vw,13px)!important;
+  transform:none!important;
+  animation:none!important;
+  transition:none!important;
+  z-index:35!important;
+}
+body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-customize{
+  position:fixed!important;
+  bottom:clamp(200px,39svh,360px)!important;
+}
+@media(min-width:981px){
+  body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-customize{
+    bottom:clamp(240px,42svh,420px)!important;
+  }
+}
+/* The star score sits above the name without taking stage height from
+   the animated meal, and is only displayed when real rating data exists. */
+#rich-menu .rm-info-rating{
+  position:absolute;
+  top:-31px;
+  left:0;
+  right:0;
+  z-index:2;
+  color:var(--rm-yellow);
+  font:800 clamp(12px,2.6vw,14px)/1.2 system-ui,Arial,sans-serif;
+  direction:ltr;
+  text-align:center;
+  pointer-events:none;
+  white-space:nowrap;
+  text-shadow:0 2px 5px #0009;
+}
+#rich-menu .rm-info-rating[hidden]{display:none!important;}
+@media(max-height:660px){
+  #rich-menu .rm-info-rating{top:-27px;}
+}
