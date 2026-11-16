@@ -258,7 +258,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite}){
   if(!active||swapping)return;
   event.preventDefault();const now=performance.now();
   if(now-lastWheel<260||Math.abs(event.deltaY)<8)return;
-  lastWheel=now;step(event.deltaY>0?1:-1);
+  lastWheel=now;step(event.deltaY>0?-1:1);
  }
  function key(event){
   if(!active||document.activeElement?.matches('input,textarea,select'))return;
