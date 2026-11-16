@@ -190,7 +190,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   // as the main dish approaches from depth, matching its physical motion.
   const unit=54,h=u.thumbWindow.clientHeight,th=len*unit-5;
   const visualIndex=len-1-position;
-  const y=th<=h?(h-th)/2:clamp(h/2-visualIndex*unit-(unit-5)/2,h-th,0);
+  // Keep the active item at the middle even at the ends of the list.
+  // Clamping the track would stop its downward motion near meal one.
+  const y=h/2-visualIndex*unit-(unit-5)/2;
   u.thumbTrack.style.transform='translate3d(0,'+y.toFixed(1)+'px,0)';
   const fade=Math.min(1,Math.abs(k-Math.round(k))*2.6+(k<-.4?1:0));
   u.info.style.opacity=(1-fade).toFixed(3);
