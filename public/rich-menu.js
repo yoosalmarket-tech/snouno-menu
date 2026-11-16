@@ -28,7 +28,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  '<span class="rm-info-price" dir="ltr"></span><div class="rm-info-actions">',
  '<button type="button" class="rm-info-details">＋ عرض تفاصيل الوجبة</button>',
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
- '<small class="rm-instruction" dir="rtl">اسحب للأعلى والأسفل للوجبات · يمين ويسار للتصنيفات</small></section>'
+ '<small class="rm-instruction" dir="rtl">اسحب للأعلى والأسفل للوجبات · يمين ويسار للتصنيفات</small></section>',
+ '<dialog class="rm-sheet" aria-labelledby="rm-sheet-title" dir="rtl"><div class="rm-sheet-grab" aria-hidden="true"></div>',
+ '<header class="rm-sheet-head"><div class="rm-sheet-heading"><span class="rm-sheet-overline" lang="en">SNOUNO / RESTAURANT</span>',
+ '<h2 id="rm-sheet-title" class="rm-sheet-title"></h2><p class="rm-sheet-subtitle"></p></div>',
+ '<button type="button" class="rm-sheet-close" aria-label="إغلاق">×</button></header>',
+ '<div class="rm-sheet-body"></div></dialog>'
  ].join('');
  host.replaceChildren(root);
  const u={
@@ -43,7 +48,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   info:at(root,'.rm-info'),title:at(root,'.rm-info-name'),
   desc:at(root,'.rm-info-desc'),price:at(root,'.rm-info-price'),
   details:at(root,'.rm-info-details'),fav:at(root,'.rm-info-fav'),
-  customize:at(root,'.rm-customize')
+  customize:at(root,'.rm-customize'),sheet:at(root,'.rm-sheet'),
+  sheetTitle:at(root,'.rm-sheet-title'),sheetSubtitle:at(root,'.rm-sheet-subtitle'),
+  sheetBody:at(root,'.rm-sheet-body')
  };
  let groups=[],groupIndex=0,front=0,k=2.2,target=0,velocity=-.02;
  let active=false,frame=0,lastTime=0,pointer=null,lastWheel=0,swapping=false,swapToken=0;
@@ -89,7 +96,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    frame.dataset.idx=String(i);frame.setAttribute('role','option');
    frame.setAttribute('aria-label',getName(meal));frame.tabIndex=-1;
    frame.append(mk('div','rm-dish-shadow'));
-   const photo=validImage(meal.image);
+   const photo=validImage(meal.rich_image)||validImage(meal.image);
    if(photo){
     const image=mk('img','rm-dish-photo');image.src=photo;
     image.alt=getName(meal);image.draggable=false;image.decoding='async';
@@ -127,7 +134,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   u.desc.textContent=getDescription(m)||m.ingredients||(isEnglish()?'Discover Snouno favourites':'اختار وجبتك المفضلة من سنونو');
   const price=Number(m.price);
   u.price.textContent=Number.isFinite(price)?price.toLocaleString('en-US',{maximumFractionDigits:2})+' ₪':'';
-  u.details.textContent=m.available===false?(isEnglish()?'View details · Unavailable':'التفاصيل · غير متوفر'):(isEnglish()?'＋ VIEW DETAILS':'＋ عرض تفاصيل الوجبة');
+  u.details.textContent=isEnglish()?'⌖ LOCATION & CONTACT':'⌖ موقعنا و التواصل';
+  at(u.customize,'.rm-customize strong').textContent=isEnglish()?'ORDER':'ORDER PLATFORMS';
+  at(u.customize,'.rm-customize span span').textContent=isEnglish()?'Where to order':'أماكن الطلب';
   const saved=!!snapshot.favorites?.has(m.id);
   u.fav.textContent=saved?'♥':'♡';u.fav.setAttribute('aria-pressed',String(saved));
   u.fav.setAttribute('aria-label',saved?'إزالة من المفضلة':'إضافة إلى المفضلة');
@@ -249,7 +258,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   if(p.axis==='y')goTo(Math.round(k+velocity*7));
   else if(p.axis==='x'){
    const delta=event.clientX-p.x;
-   if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?1:-1));
+   if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?-1:1));
   }else if(p.index!=null){
    if(p.index===front&&Math.abs(k-p.index)<.3){if(dish())onOpen(dish());}
    else goTo(p.index);
@@ -272,6 +281,73 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   event.preventDefault();
  }
  at(root,'.rm-exit').addEventListener('click',()=>{if(typeof onExit==='function')onExit();});
+ const platformInfo={
+  sonbol:{ar:'سنبل',en:'Sonbol',icon:'/assets/sonbol.svg'},
+  makook:{ar:'مكوك',en:'Makook',icon:'/assets/makook.svg'},
+  whatsapp:{ar:'واتساب',en:'WhatsApp',icon:'/assets/whatsapp.svg'}
+ };
+ const restaurantLink=channel=>snapshot.links?.find(item=>item.channel===channel)?.url||'';
+ const safeLink=url=>{const link=validImage(url);return link&&/^https?:\/\//.test(link)?link:'';};
+ const closeSheet=()=>{if(u.sheet.open)u.sheet.close();};
+ const linkCard=(channel,meal)=>{
+   const info=platformInfo[channel];
+   const direct=meal&&(channel==='sonbol'?meal.sonbol_url:channel==='makook'?meal.makook_url:null);
+   const href=safeLink(direct)||safeLink(restaurantLink(channel));
+   if(!href)return null;
+   const isDirect=!!safeLink(direct);
+   const el=mk('a','rm-sheet-link');el.href=href;el.target='_blank';el.rel='noopener noreferrer';
+   el.dataset.platform=channel;
+   const mark=mk('span','rm-sheet-link-mark');
+   const img=mk('img');img.src=info.icon;img.alt='';img.loading='lazy';mark.append(img);
+   const copy=mk('span','rm-sheet-link-copy');
+   copy.append(mk('strong',null,isEnglish()?info.en:info.ar));
+   const detail=channel==='whatsapp'
+    ?isEnglish()?'Chat on WhatsApp':'تواصل عبر واتساب'
+    :isDirect
+     ?isEnglish()?'Order this selected meal':'اطلب هذه الوجبة مباشرة'
+     :isEnglish()?'Restaurant ordering page':'صفحة طلبات المطعم';
+   copy.append(mk('small',null,detail));
+   const arrow=mk('span','rm-sheet-link-arrow','↗');arrow.setAttribute('aria-hidden','true');
+   el.append(mark,copy,arrow);return el;
+ };
+ function openRichSheet(kind,meal){
+   if(destroyed)return;
+   const english=isEnglish();
+   u.sheetTitle.textContent=kind==='order'?(english?'Where to order':'أماكن الطلب'):(english?'Location & contact':'موقعنا و التواصل');
+   u.sheetSubtitle.textContent=kind==='order'?(meal?getName(meal):''):(snapshot.settings?.name||'مطعم سنونو');
+   u.sheetBody.replaceChildren();
+   if(kind==='contact'){
+     const place=mk('div','rm-sheet-information');
+     const hours=mk('section','rm-sheet-detail');
+     hours.append(mk('span','rm-sheet-detail-icon','◷'));
+     const hoursBody=mk('div');hoursBody.append(mk('strong',null,english?'Opening hours':'ساعات العمل'));
+     hoursBody.append(mk('p',null,snapshot.settings?.hours|| (english?'Not provided':'غير محددة')));
+     hours.append(hoursBody);place.append(hours);
+     const location=mk('section','rm-sheet-detail');
+     location.append(mk('span','rm-sheet-detail-icon','⌖'));
+     const locationBody=mk('div');locationBody.append(mk('strong',null,english?'Address':'موقعنا'));
+     locationBody.append(mk('p',null,snapshot.settings?.address|| (english?'Not provided':'غير محدد')));
+     location.append(locationBody);place.append(location);
+     u.sheetBody.append(place);
+   }
+   const heading=mk('h3','rm-sheet-links-heading',english?(kind==='order'?'Choose an ordering service':'Order or contact us'):(kind==='order'?'اختار التطبيق المناسب للطلب':'اطلب أو تواصل معنا'));
+   u.sheetBody.append(heading);
+   const channels=kind==='order'?['sonbol','makook']:['makook','sonbol','whatsapp'];
+   const links=mk('div','rm-sheet-links');
+   for(const channel of channels){const link=linkCard(channel,kind==='order'?meal:null);if(link)links.append(link);}
+   if(!links.children.length)links.append(mk('p','rm-sheet-empty',english?'Ordering links are not currently available.':'روابط الطلب غير متاحة حالياً.'));
+   u.sheetBody.append(links);
+   if(kind==='order'&&meal?.available===false){
+     const note=mk('p','rm-sheet-warning',english?'This meal is marked unavailable. Please confirm with the restaurant before ordering.':'هذه الوجبة محددة كغير متوفرة. تأكد من المطعم قبل الطلب.');
+     u.sheetBody.prepend(note);
+   }
+   if(!u.sheet.open)u.sheet.showModal();
+ }
+ at(u.sheet,'.rm-sheet-close').addEventListener('click',closeSheet);
+ u.sheet.addEventListener('click',event=>{
+   if(event.target===u.sheet)closeSheet();
+ });
+
  u.stage.addEventListener('pointerdown',pointerDown);
  u.stage.addEventListener('pointermove',pointerMove);
  u.stage.addEventListener('pointerup',pointerUp);
@@ -281,8 +357,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  u.catPrev.onclick=()=>changeGroup(groupIndex-1);
  u.catNext.onclick=()=>changeGroup(groupIndex+1);
  u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
- u.details.onclick=()=>{if(dish())onOpen(dish());};
- u.customize.onclick=u.details.onclick;
+ u.details.onclick=()=>openRichSheet('contact');
+ u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
  u.fav.onclick=()=>{
   if(!dish())return;
   onFavorite(dish());
