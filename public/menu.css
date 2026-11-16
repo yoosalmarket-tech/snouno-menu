@@ -448,5 +448,5 @@ html.loader-morphing #welcome .desktop-welcome-top img{visibility:hidden;}
   box-shadow:0 3px 10px #00000014;
  }
  body:not(.dark) #ad-dots button::after{background:#998f80;}
- body:not(.dark) #ad-dots button[aria-pressed=true]::after{background:#d89f13;}
+ body:not(.dark) #ad-dots button[aria-pressed=true]::after{background:#FDBE2D;}
 }
