@@ -80,6 +80,100 @@ function contactLinks(container,channels,meal) {
 }
 
 
+/* Cut out solid-color backdrops in welcome images only.
+   The source meal catalog and images used elsewhere remain untouched. */
+const welcomeCutoutCache=new Map();
+const welcomeCutoutObjects=new Set();
+function transparentWelcomeFood(src){
+ const url=asset(src)||src;
+ if(!url||welcomeCutoutObjects.has(url)||url.startsWith('data:'))return Promise.resolve(url);
+ if(welcomeCutoutCache.has(url))return welcomeCutoutCache.get(url);
+ const promise=new Promise(resolve=>{
+  const img=new Image();img.crossOrigin='anonymous';
+  img.onerror=()=>resolve(url);
+  img.onload=()=>{
+   try{
+    const factor=Math.min(1,850/Math.max(img.naturalWidth,img.naturalHeight));
+    const w=Math.max(1,Math.round(img.naturalWidth*factor));
+    const h=Math.max(1,Math.round(img.naturalHeight*factor));
+    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    if(!ctx){resolve(url);return;}
+    ctx.drawImage(img,0,0,w,h);
+    const pixels=ctx.getImageData(0,0,w,h),arr=pixels.data;
+    const corners=[[2,2],[w-3,2],[2,h-3],[w-3,h-3]].map(([x,y])=>{
+      const p=(Math.max(0,Math.min(h-1,y))*w+Math.max(0,Math.min(w-1,x)))*4;
+      return [arr[p],arr[p+1],arr[p+2],arr[p+3]];
+    });
+    if(corners.filter(p=>p[3]<50).length>=2){resolve(url);return;}
+    // Select an edge color shared by multiple corners, never key arbitrary photo colors.
+    const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+    const seed=corners.map(c=>({c,near:corners.filter(x=>dist(x,c)<65).length}))
+      .sort((a,b)=>b.near-a.near)[0];
+    if(seed.near<2){resolve(url);return;}
+    const bg=seed.c,brightYellow=bg[0]>145&&bg[1]>85&&bg[2]<165&&bg[0]>bg[1];
+    const matches=(p)=>{
+      const at=p*4,r=arr[at],g=arr[at+1],b=arr[at+2];
+      if(arr[at+3]<22)return true;
+      const d=Math.hypot(r-bg[0],g-bg[1],b-bg[2]);
+      if(d<61)return true;
+      return brightYellow&&d<104&&r>155&&g>85&&b<160&&r>g&&g>b*1.2;
+    };
+    const count=w*h,visited=new Uint8Array(count),queue=new Int32Array(count);
+    let front=0,back=0;
+    const enqueue=(p)=>{
+      if(visited[p])return;
+      visited[p]=1;
+      if(matches(p))queue[back++]=p;
+    };
+    for(let x=0;x<w;x++){enqueue(x);enqueue((h-1)*w+x);}
+    for(let y=0;y<h;y++){enqueue(y*w);enqueue(y*w+w-1);}
+    while(front<back){
+      const p=queue[front++],x=p%w,y=Math.floor(p/w);
+      if(x>0)enqueue(p-1);
+      if(x+1<w)enqueue(p+1);
+      if(y>0)enqueue(p-w);
+      if(y+1<h)enqueue(p+w);
+    }
+    // Do not erase irregular photographs whose border colors do not segment well.
+    if(back/count<.035){resolve(url);return;}
+    for(let i=0;i<back;i++)arr[queue[i]*4+3]=0;
+    // Feather the retained boundary one pixel so the cutout has natural antialiasing.
+    for(let i=0;i<back;i++){
+      const p=queue[i],x=p%w,y=Math.floor(p/w);
+      const near=[x>0?p-1:-1,x+1<w?p+1:-1,y>0?p-w:-1,y+1<h?p+w:-1];
+      for(const n of near){if(n>=0&&!visited[n]){
+         const a=n*4+3;arr[a]=Math.min(arr[a],208);
+      }}
+    }
+    ctx.putImageData(pixels,0,0);
+    canvas.toBlob(blob=>{
+      if(!blob){resolve(url);return;}
+      const result=URL.createObjectURL(blob);
+      welcomeCutoutObjects.add(result);resolve(result);
+    },'image/webp',.94);
+   }catch{resolve(url);} // CORS or canvas support: retain the original meal rather than break it.
+  };
+  img.src=url;
+ });
+ welcomeCutoutCache.set(url,promise);
+ return promise;
+}
+function installWelcomeFoodCutouts(){
+ for(const id of ['cover-photo','cover-next','desktop-welcome-hero']){
+  const element=$(id);
+  const convert=()=>{
+   const original=element.getAttribute('src');
+   if(!original||welcomeCutoutObjects.has(original))return;
+   transparentWelcomeFood(original).then(cutout=>{
+     if(cutout!==original&&element.getAttribute('src')===original)element.src=cutout;
+   });
+  };
+  new MutationObserver(convert).observe(element,{attributes:true,attributeFilter:['src']});
+  convert();
+ }
+}
+
 /* Mobile welcome: three exact Snouno meals and the original vertical indicator. */
 const welcomeMobileMeals=[
   {listing:2468,name:'بوكس المشاركة',src:'/assets/meals/2468.webp'},
@@ -774,7 +868,7 @@ async function load(){
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();applyLanguage();installPreview();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
 async function revealPage(){
