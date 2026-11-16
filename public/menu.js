@@ -23,6 +23,89 @@ function contactLinks(container,channels,meal) {
    container.append(a);
  }
 }
+
+/* Desktop-only rotating meal showcase: actual available dishes, every two seconds.
+   The visual wheel moves between plates; no mobile navigation or product data changes. */
+let desktopWheelTimer=null;
+let desktopWheelSwapTimer=null;
+let desktopWheelFinishTimer=null;
+let desktopWheelGeneration=0;
+let desktopWheelCursor=0;
+let desktopWheelAngle=0;
+let desktopWheelMeals=[];
+function stopDesktopMealWheel(){
+  ++desktopWheelGeneration;
+  clearInterval(desktopWheelTimer);
+  clearTimeout(desktopWheelSwapTimer);
+  clearTimeout(desktopWheelFinishTimer);
+  desktopWheelTimer=desktopWheelSwapTimer=desktopWheelFinishTimer=null;
+  const hero=$('desktop-welcome-hero');
+  if(hero)hero.classList.remove('wheel-exit','wheel-enter');
+}
+function canPlayDesktopWheel(){
+  return !isPreview&&!document.hidden&&currentPage()==='welcome'
+    &&matchMedia('(min-width:981px)').matches&&dishes.length>0;
+}
+function startDesktopMealWheel(){
+  if(!canPlayDesktopWheel()){
+    if(desktopWheelTimer)stopDesktopMealWheel();
+    return;
+  }
+  if(desktopWheelTimer)return;
+  const available=dishes.filter(d=>d.available!==false&&asset(d.image)&&
+    !/مشروبات|صوصات|مشروب|صلصة/.test(categories.find(c=>c.id===d.category_id)?.name||''));
+  const firstPerCategory=[],other=[],seen=new Set();
+  for(const meal of available){
+    if(!seen.has(meal.category_id)){seen.add(meal.category_id);firstPerCategory.push(meal);}
+    else other.push(meal);
+  }
+  desktopWheelMeals=[...firstPerCategory,...other].slice(0,12);
+  if(!desktopWheelMeals.length)return;
+  desktopWheelCursor=0;
+  const hero=$('desktop-welcome-hero');
+  const ring=document.querySelector('.desktop-visual-ring');
+  const label=$('desktop-meal-name');
+  if(!hero||!label)return;
+  // Warm the first menu images so a transition never shows an empty frame.
+  for(const meal of desktopWheelMeals.slice(0,4)){
+    const preload=new Image();preload.src=asset(meal.image);
+  }
+  const generation=desktopWheelGeneration;
+  const rotate=()=>{
+    if(!canPlayDesktopWheel()||generation!==desktopWheelGeneration)return;
+    const meal=desktopWheelMeals[desktopWheelCursor++%desktopWheelMeals.length];
+    const nextSrc=asset(meal.image);
+    if(!nextSrc||hero.classList.contains('wheel-exit'))return;
+    const nextImage=new Image();
+    nextImage.onload=()=>{
+      if(generation!==desktopWheelGeneration||!canPlayDesktopWheel())return;
+      hero.classList.remove('wheel-enter');
+      hero.classList.add('wheel-has-rotated','wheel-exit');
+      desktopWheelAngle+=45;
+      if(ring)ring.style.setProperty('--wheel-angle',desktopWheelAngle+'deg');
+      desktopWheelSwapTimer=setTimeout(()=>{
+        if(generation!==desktopWheelGeneration)return;
+        hero.src=nextSrc;
+        hero.alt=meal.name;
+        hero.classList.add('is-menu-meal');
+        label.textContent=meal.name;
+        hero.classList.remove('wheel-exit');
+        hero.classList.add('wheel-enter');
+        desktopWheelFinishTimer=setTimeout(()=>{
+          if(generation===desktopWheelGeneration)hero.classList.remove('wheel-enter');
+        },580);
+      },360);
+    };
+    nextImage.onerror=()=>{}; // Skip an unavailable image without changing the current meal.
+    nextImage.src=nextSrc;
+    if(nextImage.complete&&nextImage.naturalWidth)nextImage.onload();
+  };
+  desktopWheelTimer=setInterval(rotate,2000);
+}
+window.addEventListener('pagechange',startDesktopMealWheel);
+window.addEventListener('resize',startDesktopMealWheel);
+document.addEventListener('visibilitychange',startDesktopMealWheel);
+
 let stopCarousel=()=>{};
 function renderAds() {
  stopCarousel();
@@ -468,7 +551,7 @@ async function load(){
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();renderCards();installPreview();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();renderCards();installPreview();startDesktopMealWheel();$('network').hidden=true;
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
 async function revealPage(){
@@ -476,7 +559,7 @@ async function revealPage(){
  const shell=document.documentElement;
  const onWelcome=!$('welcome').hidden;
  if(onWelcome){
-  const sources=[$('cover-photo').getAttribute('href'),'/assets/mask.webp'];
+  const sources=[$('cover-photo').getAttribute('src'),$('desktop-welcome-hero').getAttribute('src')].filter(Boolean);
   await Promise.allSettled(sources.map(src=>{const img=new Image();img.src=src;return img.decode();}));
  }
  await document.fonts.ready;
