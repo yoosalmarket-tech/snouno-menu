@@ -872,12 +872,17 @@ async function load(){
  }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
 }
 async function revealPage(){
- if(!document.documentElement.classList.contains('loading'))return;
  const shell=document.documentElement;
+ if(!shell.classList.contains('loading'))return;
  const onWelcome=!$('welcome').hidden;
  if(onWelcome){
   const sources=[$('cover-photo').getAttribute('src'),$('desktop-welcome-hero').getAttribute('src')].filter(Boolean);
-  await Promise.allSettled(sources.map(src=>{const img=new Image();img.src=src;return img.decode();}));
+  // Prepare hero cutouts under the loading screen so colored source tiles never flash.
+  await Promise.allSettled(sources.map(transparentWelcomeFood));
+  await Promise.allSettled([
+   $('welcome-logo').decode(),
+   $('desktop-welcome-logo').decode()
+  ]);
  }
  await document.fonts.ready;
  if(!shell.classList.contains('loading'))return;
@@ -888,22 +893,60 @@ async function revealPage(){
   await Promise.allSettled(strokes.map(stroke=>stroke.finished));
  }
  if(onWelcome&&!reduced){
-   const header=matchMedia('(min-width:981px)').matches
-     ?document.querySelector('.desktop-welcome-top')
-     :document.querySelector('.welcome-top');
-   if(header){
-     shell.style.setProperty('--loader-header-height',Math.round(header.getBoundingClientRect().height)+'px');
-     // Reveal the page from beneath the yellow loader while its logo travels upward.
-     shell.classList.add('loader-morphing');
-     shell.classList.remove('loading');
-     await new Promise(resolve=>setTimeout(resolve,1080));
-     shell.classList.add('loader-finishing');
-     shell.classList.remove('loader-morphing');
-     await new Promise(resolve=>setTimeout(resolve,330));
-     shell.classList.remove('loader-finishing');
-     shell.style.removeProperty('--loader-header-height');
-     return;
-   }
+  const header=matchMedia('(min-width:981px)').matches
+    ?document.querySelector('.desktop-welcome-top')
+    :document.querySelector('.welcome-top');
+  const target=matchMedia('(min-width:981px)').matches
+    ?$('desktop-welcome-logo'):$('welcome-logo');
+  const logoSvg=$('page-loader').querySelector('svg');
+  if(header&&target&&logoSvg){
+   const logoStart=logoSvg.getBoundingClientRect();
+   const logoBox=target.getBoundingClientRect();
+   const imageAspect=(target.naturalWidth&&target.naturalHeight)
+     ?target.naturalWidth/target.naturalHeight
+     :logoStart.width/logoStart.height;
+   // object-fit:contain means the actual visible wordmark is centered inside its img box.
+   const boxWidth=Math.min(logoBox.width,logoBox.height*imageAspect);
+   const boxHeight=boxWidth/imageAspect;
+   const centerX=logoBox.left+logoBox.width/2;
+   const centerY=logoBox.top+logoBox.height/2;
+   const scale=Math.min(boxWidth/logoStart.width,boxHeight/logoStart.height);
+   const endWidth=logoStart.width*scale;
+   const endHeight=logoStart.height*scale;
+   const endX=centerX-endWidth/2,endY=centerY-endHeight/2;
+   const duration=1900;
+   shell.style.setProperty('--loader-header-height',Math.round(header.getBoundingClientRect().height)+'px');
+   // Pin the loader's real SVG to viewport coordinates; resizing the yellow parent
+   // cannot shift the logo while it travels to the exact final welcome-logo center.
+   Object.assign(logoSvg.style,{
+     position:'fixed',left:'0px',top:'0px',
+     width:logoStart.width+'px',height:logoStart.height+'px',
+     maxWidth:'none',margin:'0',transformOrigin:'top left',
+     transition:'none',
+     transform:'translate('+logoStart.left+'px,'+logoStart.top+'px)'
+   });
+   shell.classList.add('loader-morphing');
+   shell.classList.remove('loading');
+   const movement=logoSvg.animate([
+     {transform:'translate('+logoStart.left+'px,'+logoStart.top+'px) scale(1)'},
+     {transform:'translate('+endX+'px,'+endY+'px) scale('+scale+')'}
+   ],{duration,easing:'cubic-bezier(.19,.82,.16,1)',fill:'forwards'});
+   const shadowTimer=setTimeout(()=>shell.classList.add('loader-shadow-intro'),duration-620);
+   await Promise.allSettled([
+     movement.finished,
+     new Promise(resolve=>setTimeout(resolve,duration+20))
+   ]);
+   clearTimeout(shadowTimer);
+   // Both logos now occupy the same visual box. The yellow shape clears
+   // while the shadow finishes rising from behind the curved edge.
+   shell.classList.add('loader-finishing');
+   shell.classList.remove('loader-morphing');
+   await new Promise(resolve=>setTimeout(resolve,310));
+   shell.classList.remove('loader-finishing','loader-shadow-intro');
+   shell.style.removeProperty('--loader-header-height');
+   movement.cancel();
+   return;
+  }
  }
  shell.classList.remove('loading');
 }
