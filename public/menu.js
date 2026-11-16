@@ -16,10 +16,10 @@ const reporting=installActionReporting({
 });
 let appliedDeepLink='';
 function applyDeepLink(){
- if(isPreview||currentPage()!=='menu'||!dishes.length)return;
+ if(isPreview||currentPage()!=='menu'||!dishes.length||!firstVisitDecisionComplete)return;
  const params=new URLSearchParams(location.search);
- const hashDish=location.hash.startsWith('#meal-')?location.hash.slice(6):'';
- const hashCategory=location.hash.startsWith('#category-')?location.hash.slice(10):'';
+ const hashDish=location.hash.startsWith('#meal-')?location.hash.slice(6):location.hash.startsWith('#rich-meal-')?location.hash.slice(11):'';
+ const hashCategory=location.hash.startsWith('#category-')?location.hash.slice(10):location.hash.startsWith('#rich-category-')?location.hash.slice(15):'';
  const mealId=params.get('dish')||hashDish;
  const categoryId=params.get('category')||hashCategory;
  if(!mealId&&!categoryId)return;
@@ -43,6 +43,14 @@ function applyDeepLink(){
   requestAnimationFrame(()=>scrollToSection(section));
  }
 }
+function reflectExplicitMode(){
+ if(isPreview||currentPage()!=='menu')return;
+ const url=new URL(location.href);
+ if(!url.searchParams.has('mode'))return;
+ url.searchParams.set('mode',richDesired?'interactive':'standard');
+ history.replaceState(null,'',url.pathname+url.search+url.hash);
+ appliedDeepLink=url.search+'|'+url.hash;
+}
 function noteSelection(kind,id){
  if(isPreview||currentPage()!=='menu'||!id)return;
  const url=new URL(location.href);
@@ -60,6 +68,7 @@ let richDesired=!isPreview&&(explicitMode==='interactive'||(explicitMode!=='stan
 // keep their saved preference instead of repeating the network check.
 const firstVisitModeCheck=!isPreview&&!['interactive','standard'].includes(explicitMode)&&localStorage.getItem('snouno-rich-mode')===null;
 const firstVisitStartedAt=performance.now();
+let firstVisitDecisionComplete=!firstVisitModeCheck;
 let richController=null,richImport=null,richBusy=false,richRevision=0;
 const richToggle=document.getElementById('rich-mode-toggle');
 function updateRichToggle(){
@@ -131,6 +140,7 @@ async function syncRichMode(){
     richDesired=false;
     richToggle.checked=false;
     localStorage.setItem('snouno-rich-mode','0');
+    reflectExplicitMode();
     void syncRichMode();
    },
    onFavorite:meal=>{
@@ -153,6 +163,7 @@ async function syncRichMode(){
 richToggle?.addEventListener('change',()=>{
  richDesired=richToggle.checked;
  localStorage.setItem('snouno-rich-mode',richDesired?'1':'0');
+ reflectExplicitMode();
  void syncRichMode();
 });
 window.addEventListener('pagechange',()=>{void syncRichMode();});
@@ -1233,9 +1244,10 @@ async function chooseFirstVisitMode(initialMenu){
   }).catch(()=>false);
   const fast=await Promise.race([probe,deadline]);
   richDesired=Boolean(fast);
+  firstVisitDecisionComplete=true;
   localStorage.setItem('snouno-rich-mode',fast?'1':'0');
   updateRichToggle();
-  if(currentPage()==='menu')void syncRichMode();
+  if(currentPage()==='menu'){void syncRichMode();applyDeepLink();}
   if(!fast&&!dishes.length){
    $('network').hidden=false;
    $('network').textContent=isEnglish()?'Slow connection — loading the standard menu…':'الاتصال بطيء — جاري تحميل المنيو العادي…';
