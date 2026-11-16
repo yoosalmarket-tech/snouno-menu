@@ -587,3 +587,18 @@ body.rich-menu-active:not([data-preview]) #shell{
   #rich-menu .rm-info{padding-bottom:clamp(18px,calc(7svh - 18px),36px)!important;}
   #rich-menu .rm-customize{bottom:clamp(40px,8svh,56px)!important;}
 }
+
+/* Spacing for the swipe guidance below the contact action.
+   Separate the instruction from the yellow button and its 5px shadow,
+   including on shorter mobile screens. */
+#rich-menu .rm-instruction{
+  display:block;
+  flex:none;
+  margin-top:clamp(14px,2svh,20px)!important;
+  padding-inline:10px;
+  line-height:1.5!important;
+  position:relative;
+}
+@media(max-height:660px){
+  #rich-menu .rm-instruction{margin-top:12px!important;}
+}
