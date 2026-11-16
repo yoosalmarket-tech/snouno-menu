@@ -3,7 +3,7 @@ const apiKey = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const $ = id => document.getElementById(id);
 const sections = {
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق','image'],['available','متوفر','checkbox']]],
-  categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف'],['position','ترتيب العرض','integer']]],
+  categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
   menu_settings: ['تفاصيل المنيو', [
     ['name','اسم المطعم'],
     ['welcome','عبارة الترحيب'],
@@ -26,7 +26,7 @@ const sections = {
     ['hotline','رقم التواصل السريع']
   ]],
   menu_links: ['روابط الطلب والتواصل', [['url','الرابط','url']]],
-  menu_ads: ['إدارة الإعلانات', [['name','عنوان الإعلان'],['image','صورة الإعلان','image'],['dish_id','الطبق المرتبط','product'],['position','ترتيب العرض','integer']]],
+  menu_ads: ['إدارة الإعلانات', [['name','عنوان الإعلان'],['image','صورة الإعلان','image'],['dish_id','الطبق المرتبط','product']]],
   rankings: ['تقييمات الأطباق', []],
   submissions: ['رسائل التواصل', []],
   menu_staff: ['المستخدمون', [['email','بريد المحرر','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]]
@@ -160,6 +160,79 @@ function setupDishSorting(categoryGroups,rows){
   }
  }
 }
+/* Reorder categories and advertisements by dragging, with keyboard support.
+   This replaces manual numeric position fields in their edit dialogs. */
+function setupFlatSorting(key,rows){
+ const container=$('body');
+ const cards=[...container.querySelectorAll('article[data-sort-id]')];
+ if(cards.length<2)return;
+ const original=new Map(rows.map(row=>[String(row.id),Number(row.position)]));
+ let busy=false,active=null,moved=false;
+ const persistOrder=async()=>{
+  if(busy)return;
+  const order=[...container.querySelectorAll('article[data-sort-id]')];
+  const updates=order.map((card,i)=>({id:card.dataset.sortId,position:i+1}))
+    .filter(x=>original.get(x.id)!==x.position);
+  if(!updates.length)return;
+  busy=true;container.classList.add('is-saving-order');notice('جارٍ حفظ ترتيب العرض...');
+  try{
+   for(const item of updates){
+    await api('/rest/v1/'+key+'?id=eq.'+encodeURIComponent(item.id),
+      {method:'PATCH',body:{position:item.position}});
+    original.set(item.id,item.position);
+   }
+   notice('تم حفظ الترتيب الجديد ✓');
+  }catch(e){
+   notice('تعذّر حفظ ترتيب العرض: '+e.message);
+   await openSection(key);
+  }finally{busy=false;container.classList.remove('is-saving-order');}
+ };
+ for(const card of cards){
+  const handle=card.querySelector('.dish-drag-handle');
+  if(!handle)continue;
+  handle.addEventListener('keydown',async event=>{
+   if(!['ArrowUp','ArrowDown'].includes(event.key)||busy)return;
+   event.preventDefault();
+   const peer=event.key==='ArrowUp'?card.previousElementSibling:card.nextElementSibling;
+   if(!peer?.matches('article[data-sort-id]'))return;
+   event.key==='ArrowUp'?peer.before(card):peer.after(card);
+   handle.focus();await persistOrder();
+  });
+  handle.addEventListener('pointerdown',e=>{
+   if(busy||e.button!==0)return;
+   e.preventDefault();
+   active=e.pointerId;moved=false;
+   handle.setPointerCapture(e.pointerId);
+   card.classList.add('is-dragging');
+  });
+  handle.addEventListener('pointermove',e=>{
+   if(active!==e.pointerId||busy)return;
+   // Use positions rather than elementFromPoint, because the dragged card
+   // may cover the element immediately above or below it.
+   const other=[...container.querySelectorAll('article[data-sort-id]')].filter(x=>x!==card);
+   const target=other.find(x=>{const r=x.getBoundingClientRect();return e.clientY>=r.top&&e.clientY<=r.bottom;});
+   if(!target)return;
+   const bounds=target.getBoundingClientRect();
+   e.clientY<bounds.top+bounds.height/2?target.before(card):target.after(card);
+   moved=true;
+   if(e.clientY<75)window.scrollBy(0,-20);
+   else if(e.clientY>window.innerHeight-75)window.scrollBy(0,20);
+  });
+  const finish=async e=>{
+   if(active!==e.pointerId)return;
+   active=null;card.classList.remove('is-dragging');
+   try{handle.releasePointerCapture(e.pointerId)}catch{}
+   if(moved){moved=false;await persistOrder();}
+  };
+  handle.addEventListener('pointerup',finish);
+  handle.addEventListener('pointercancel',finish);
+  handle.addEventListener('lostpointercapture',()=>{
+   if(active===null)return;
+   active=null;card.classList.remove('is-dragging');
+   if(moved){moved=false;persistOrder();}
+  });
+ }
+}
 async function openSection(key){
  const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); $('body').replaceChildren(); $('title').textContent=sections[key][0];
  for(const b of $('tabs').children)b.setAttribute('aria-current',String(b.dataset.section===key));
@@ -174,6 +247,10 @@ async function openSection(key){
  if(!feedback&&!['menu_settings','menu_links'].includes(key))area.append(action('إضافة',()=>edit(key,{})));
  if(!rows.length)area.append(node('p','لا توجد عناصر بعد.'));
  const categoryGroups=new Map();
+ if(['categories','menu_ads'].includes(key)){
+   const hint=node('p','اسحب العنصر من المقبض ⋮⋮ وضعه فوق أو تحت العنصر الآخر لتغيير ترتيب العرض. يتم الحفظ تلقائياً، دون إدخال أرقام.');
+   hint.className='dish-sort-hint';area.append(hint);
+ }
  if(key==='dishes'){
    const hint=node('p','اسحب الطبق من المقبض ⋮⋮ وضعه فوق أو تحت طبق آخر داخل نفس الصنف. يتم حفظ الترتيب تلقائياً.');
    hint.className='dish-sort-hint';area.append(hint);
@@ -188,8 +265,9 @@ async function openSection(key){
  }
  for(const row of rows){
    const card=node('article');
-   if(key==='dishes'){
-     card.dataset.dishId=row.id;
+   if(['dishes','categories','menu_ads'].includes(key)){
+     if(key==='dishes')card.dataset.dishId=row.id;
+     else card.dataset.sortId=row.id;
      card.classList.add('dish-sort-card');
      const handle=node('button','⋮⋮');handle.type='button';
      handle.className='dish-drag-handle';
@@ -235,6 +313,7 @@ async function openSection(key){
    }else area.append(card);
  }
  if(key==='dishes')setupDishSorting(categoryGroups,rows);
+ if(['categories','menu_ads'].includes(key))setupFlatSorting(key,rows);
 }
 const filter=row=>row.id!==undefined?'id=eq.'+row.id:'email=eq.'+encodeURIComponent(row.email);
 async function edit(key,row){
@@ -294,6 +373,10 @@ async function edit(key,row){
          const existing=await api('/rest/v1/dishes?select=position&category_id=eq.'+encodeURIComponent(data.category_id)+'&order=position.desc&limit=1');
          data.position=(Number(existing[0]?.position)||0)+1;
        }
+     }
+     if(['categories','menu_ads'].includes(key)&&!row.id){
+       const existing=await api('/rest/v1/'+key+'?select=position&order=position.desc&limit=1');
+       data.position=(Number(existing[0]?.position)||0)+1;
      }
      if(key==='menu_ads'&&!data.image)throw new Error('أضف صورة للإعلان');
      const result=key==='menu_staff'?await api('/functions/v1/menu-staff',{method:'POST',body:data}):await api('/rest/v1/'+key+(row.id?'?'+filter(row):''),{method:row.id?'PATCH':'POST',body:data});
