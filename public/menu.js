@@ -101,8 +101,8 @@ function renderAds() {
 function renderSettings(){
  const s=settings;
  setText('brand',s.name);setText('greeting',s.welcome);setText('quick',s.hotline);setText('browse',s.welcome_button);
- $('cover-photo').setAttribute('href',asset(s.hero)||'/assets/plate.webp');
- $('logo').src=asset(s.logo)||'/assets/logo.webp';renderAds();
+ $('cover-photo').src=asset(s.hero)||'/assets/plate.webp';
+ $('logo').src=asset(s.logo)||'/assets/logo.webp';$('welcome-logo').src=asset(s.logo)||'/assets/logo.webp';renderAds();
  setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
  credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit;
  contactLinks($('links'),[...ordering,'whatsapp']);contactLinks($('social-links'),['instagram','facebook']);
