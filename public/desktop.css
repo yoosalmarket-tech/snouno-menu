@@ -999,3 +999,61 @@
  }
  body:not([data-preview]) #welcome .desktop-sticker{bottom:14%!important;}
 }
+
+
+/* Desktop welcome language control: isolate the globe SVG from full-width
+   background-curve SVG selectors inherited from the welcome header. */
+@media(min-width:981px){
+ body:not([data-preview]) #welcome .desktop-welcome-top > .desktop-welcome-language{
+   position:absolute!important;
+   inset:auto clamp(20px,4vw,70px) auto auto!important;
+   top:clamp(17px,2.4svh,28px)!important;
+   display:inline-flex!important;
+   align-items:center!important;
+   justify-content:center!important;
+   gap:10px!important;
+   width:96px!important;
+   height:43px!important;
+   min-width:96px!important;
+   min-height:43px!important;
+   padding:0 13px!important;
+   box-sizing:border-box!important;
+   direction:ltr!important;
+   border-radius:22px!important;
+   z-index:20!important;
+   background:#fff3c6!important;
+   color:#1b160b!important;
+   line-height:1!important;
+ }
+ body:not([data-preview]) #welcome .desktop-welcome-top .desktop-welcome-language > svg{
+   position:static!important;
+   inset:auto!important;
+   display:block!important;
+   flex:0 0 20px!important;
+   width:20px!important;
+   height:20px!important;
+   min-width:20px!important;
+   min-height:20px!important;
+   max-width:20px!important;
+   max-height:20px!important;
+   padding:0!important;
+   margin:0!important;
+   filter:none!important;
+   transform:none!important;
+   opacity:1!important;
+   fill:none!important;
+   stroke:currentColor!important;
+   stroke-width:1.7!important;
+   z-index:auto!important;
+ }
+ body:not([data-preview]) #welcome .desktop-welcome-top .desktop-welcome-language > .language-label{
+   position:static!important;
+   display:block!important;
+   flex:0 0 auto!important;
+   min-width:21px!important;
+   font:900 13px/1 system-ui,sans-serif!important;
+   letter-spacing:.04em!important;
+   direction:ltr!important;
+   color:inherit!important;
+ }
+}
