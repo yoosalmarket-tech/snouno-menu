@@ -150,6 +150,8 @@ function stopWelcomeCarousel(){
  ++welcomeCarouselSession;
  clearTimeout(welcomeCarouselTimer);clearTimeout(welcomeCarouselCleanupTimer);
  welcomeCarouselTimer=welcomeCarouselCleanupTimer=null;
+ activeWelcomeAnimations.forEach(animation=>animation.cancel());
+ activeWelcomeAnimations=[];
  welcomeCarouselAnimating=false;welcomeCarouselActive=false;
  $('cover-photo').classList.remove('mobile-food-out');
  $('cover-next').classList.remove('is-visible','mobile-food-in');
@@ -159,45 +161,80 @@ function scheduleWelcomeCarousel(){
  if(!welcomeVisible()||!welcomeCarouselActive)return;
  welcomeCarouselTimer=setTimeout(()=>goToWelcomeMeal((mobileWelcomeIndex+1)%3,'right'),welcomeAutoplayMs);
 }
-function goToWelcomeMeal(index,direction='right'){
+/* GPU-only horizontal carousel: preload/decode the next meal before animating.
+   Keep the incoming layer visible until the current layer has the new image,
+   preventing the brief blank frame and lag from swapping src mid-animation. */
+let activeWelcomeAnimations=[];
+async function goToWelcomeMeal(index,direction='right'){
  index=(index+3)%3;
  if(welcomeCarouselAnimating||!welcomeVisible()||index===mobileWelcomeIndex)return;
  clearTimeout(welcomeCarouselTimer);
  const session=welcomeCarouselSession;
- $('welcome').dataset.mealDirection=direction==='left'?'left':'right';
- const current=$('cover-photo'),next=$('cover-next');
-
+ const current=$('cover-photo'),incoming=$('cover-next');
+ const forward=direction==='left'?-1:1;
  welcomeCarouselAnimating=true;
- const nextAsset=new Image();
- let transitionStarted=false;
- nextAsset.onload=()=>{
-  if(transitionStarted||session!==welcomeCarouselSession)return;
-  transitionStarted=true;
+ const src=welcomeMobileMeals[index].src;
+ try{
+  const image=new Image();
+  image.src=src;
+  await image.decode();
+  if(session!==welcomeCarouselSession||!welcomeVisible())return;
   if(prefersReducedWelcomeMotion()){
-   mobileWelcomeIndex=index;resetWelcomeImages();welcomeCarouselAnimating=false;scheduleWelcomeCarousel();return;
+   mobileWelcomeIndex=index;resetWelcomeImages();
+   return;
   }
-  setWelcomeImage(next,index);next.alt='';
-  next.classList.remove('mobile-food-in');
-  next.classList.add('is-visible');
-  void next.offsetWidth;
-  current.classList.add('mobile-food-out');next.classList.add('mobile-food-in');
-  welcomeCarouselCleanupTimer=setTimeout(()=>{
-   if(session!==welcomeCarouselSession)return;
-   mobileWelcomeIndex=index;
-   setWelcomeImage(current,index);
-   updateWelcomeLabels(index);
+  incoming.src=src;incoming.alt='';
+  await incoming.decode();
+  if(session!==welcomeCarouselSession||!welcomeVisible())return;
+  const leaveX=forward>0?-155:55;
+  const arriveX=forward>0?55:-155;
+  const outFrames=[
+   {transform:'translate3d(-50%,-50%,0) scale(1)',opacity:1},
+   {transform:'translate3d('+leaveX+'%,-50%,0) scale(.90)',opacity:0}
+  ];
+  const inFrames=[
+   {transform:'translate3d('+arriveX+'%,-50%,0) scale(.90)',opacity:0},
+   {transform:'translate3d(-52%,-50%,0) scale(1.018)',opacity:.98,offset:.87},
+   {transform:'translate3d(-50%,-50%,0) scale(1)',opacity:1}
+  ];
+  incoming.classList.add('is-visible');
+  const duration=600;
+  activeWelcomeAnimations=[
+   current.animate(outFrames,{duration,easing:'cubic-bezier(.24,.68,.22,1)',fill:'both'}),
+   incoming.animate(inFrames,{duration,easing:'cubic-bezier(.24,.68,.22,1)',fill:'both'})
+  ];
+  await Promise.allSettled(activeWelcomeAnimations.map(a=>a.finished));
+  if(session!==welcomeCarouselSession||!welcomeVisible())return;
+  // Keep the incoming image fully visible while the background layer catches up.
+  current.src=src;
+  await current.decode();
+  if(session!==welcomeCarouselSession||!welcomeVisible())return;
+  mobileWelcomeIndex=index;
+  updateWelcomeLabels(index);
+  current.style.opacity='1';
+  current.style.transform='translate(-50%,-50%)';
+  for(const anim of activeWelcomeAnimations)anim.cancel();
+  activeWelcomeAnimations=[];
+  incoming.classList.remove('is-visible','mobile-food-in');
+  current.style.removeProperty('opacity');
+  current.style.removeProperty('transform');
+ }catch(error){
+  if(session===welcomeCarouselSession){
+   // Keep a working carousel even if the image failed to load/decode.
+   console.warn('Welcome meal transition skipped:',error);
+  }
+ }finally{
+  if(session===welcomeCarouselSession){
+   activeWelcomeAnimations.forEach(a=>a.cancel());
+   activeWelcomeAnimations=[];
+   incoming.classList.remove('is-visible','mobile-food-in');
    current.classList.remove('mobile-food-out');
-   next.classList.remove('mobile-food-in','is-visible');
-   welcomeCarouselCleanupTimer=setTimeout(()=>{
-    if(session!==welcomeCarouselSession)return;
-    welcomeCarouselAnimating=false;
-    scheduleWelcomeCarousel();
-   },100);
-  },welcomeTransitionMs);
- };
- nextAsset.onerror=()=>{welcomeCarouselAnimating=false;scheduleWelcomeCarousel();};
- nextAsset.src=welcomeMobileMeals[index].src;
- if(nextAsset.complete&&nextAsset.naturalWidth)nextAsset.onload();
+   current.style.removeProperty('transform');
+   current.style.removeProperty('opacity');
+   welcomeCarouselAnimating=false;
+   scheduleWelcomeCarousel();
+  }
+ }
 }
 function startWelcomeCarousel(){
  if(!welcomeVisible()){if(welcomeCarouselActive)stopWelcomeCarousel();return;}
