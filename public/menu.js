@@ -492,9 +492,9 @@ function bindFeedback(form,extra){
  const duplicate=extra.dish_id&&reply.status===409&&(await reply.json()).code==='23505';
  if(!reply.ok&&!duplicate)throw new Error();
  if(extra.dish_id){
-   localStorage.setItem('snouno-rated-'+extra.dish_id,'1');form.replaceChildren(make('p',duplicate?'سبق أن قيّمت هذا الطبق.':'شكراً لك، تم حفظ تقييمك.'));
- }else{form.reset();output.textContent='شكراً لك، وصلتنا رسالتك.';}
- }catch{output.textContent='تعذّر الإرسال. حاول مرة أخرى.';}finally{button.disabled=false;}};
+   localStorage.setItem('snouno-rated-'+extra.dish_id,'1');form.replaceChildren(make('p',tr(duplicate?'سبق أن قيّمت هذا الطبق.':'شكراً لك، تم حفظ تقييمك.')));
+ }else{form.reset();output.textContent=tr('شكراً لك، وصلتنا رسالتك.');}
+ }catch{output.textContent=tr('تعذّر الإرسال. حاول مرة أخرى.');}finally{button.disabled=false;}};
 }
 function ingredientGroups(text=''){
  const groups=new Map();
@@ -511,37 +511,37 @@ function ingredientGroups(text=''){
 }
 function detail(d){
  const box=$('details');box.replaceChildren();
- const categoryLabel=categories.find(c=>c.id===d.category_id)?.name||'';
+ const categoryLabel=tr(categories.find(c=>c.id===d.category_id)?.name||'');
  if(d.image){
    const frame=make('figure');frame.className='dish-photo';
-   frame.append(image(d.image==='/assets/knockout.webp'?'/assets/knockout-detail.webp':d.image,d.name));
+   frame.append(image(d.image==='/assets/knockout.webp'?'/assets/knockout-detail.webp':d.image,displayName(d)));
    if(categoryLabel){const tag=make('span',categoryLabel);tag.className='photo-tag';frame.append(tag);}
    box.append(frame);
  }
  const content=make('div');content.className='content';
- const lead=make('div');lead.className='dish-lead';lead.append(make('h2',d.name));
+ const lead=make('div');lead.className='dish-lead';lead.append(make('h2',displayName(d)));
  if(d.rating!=null)lead.append(startingScore(d.rating));
  content.append(lead);if(d.price!=null)content.append(price(d));
- if(d.description)content.append(make('p',d.description));
- if(d.ingredients){content.append(make('h3','المكونات'));const groups=make('div');groups.className='ingredients';
+ if(d.description)content.append(make('p',displayDescription(d)));
+ if(d.ingredients){content.append(make('h3',tr('المكونات')));const groups=make('div');groups.className='ingredients';
    for(const [group,items] of ingredientGroups(d.ingredients)){
-     const row=make('div');row.setAttribute('aria-label',group);
-     for(const item of items){const chip=make('span',item);chip.title=group;chip.dataset.color=/طماطم/.test(item)?'red':group==='خضار'?'green':group==='ألبان'?'white':'gold';row.append(chip);}
+     const row=make('div');row.setAttribute('aria-label',tr(ingredientEnglish[group]||group));
+     for(const item of items){const chip=make('span',isEnglish()?(ingredientEnglish[item]||item):item);chip.title=isEnglish()?(ingredientEnglish[group]||group):group;chip.dataset.color=/طماطم/.test(item)?'red':group==='خضار'?'green':group==='ألبان'?'white':'gold';row.append(chip);}
      groups.append(row);
    }content.append(groups);
  }else if(d.id){
-   content.append(make('h3','المكونات'),make('p','لم ينشر المطعم تفاصيل المكونات بعد.'));
+   content.append(make('h3',tr('المكونات')),make('p',tr('لم ينشر المطعم تفاصيل المكونات بعد.')));
  }
- const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering,d);else buttons.append('غير متوفر');content.append(buttons);
+ const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering,d);else buttons.append(tr('غير متوفر'));content.append(buttons);
  const show=()=>{box.append(content);if(!$('dish').open){if(isPreview)$('dish').show();else $('dish').showModal();}$('dish').scrollTop=0;};
  if(!d.id){show();return;}
- if(localStorage.getItem('snouno-rated-'+d.id)){content.append(make('p','سبق أن قيّمت هذا الطبق.'));show();return;}
- const form=make('form');form.innerHTML='<h3>قيّم الطبق</h3><fieldset class="stars"><legend>التقييم</legend></fieldset><label>اكتب رأيك عن الطبق<textarea name="message" maxlength="2000"></textarea></label><button class="yellow send-rating" aria-label="إرسال التقييم">➤</button><output></output>';
+ if(localStorage.getItem('snouno-rated-'+d.id)){content.append(make('p',tr('سبق أن قيّمت هذا الطبق.')));show();return;}
+ const form=make('form');form.innerHTML='<h3>'+tr('قيّم الطبق')+'</h3><fieldset class="stars"><legend>'+tr('التقييم')+'</legend></fieldset><label>'+tr('اكتب رأيك عن الطبق')+'<textarea name="message" maxlength="2000"></textarea></label><button class="yellow send-rating" aria-label="'+tr('إرسال التقييم')+'">➤</button><output></output>';
  const stars=form.querySelector('.stars');
  for(let i=1;i<=5;i++){
    const label=make('label');const radio=make('input');
    radio.type='radio';radio.name='stars';radio.value=i;radio.required=true;
-   radio.setAttribute('aria-label',i+' من 5');const star=make('span','★');star.setAttribute('aria-hidden','true');
+   radio.setAttribute('aria-label',isEnglish()?i+' of 5':i+' من 5');const star=make('span','★');star.setAttribute('aria-hidden','true');
    label.append(radio,star);stars.append(label);
  }
  bindFeedback(form,{kind:'تقييم',dish_id:d.id});content.append(form);show();
