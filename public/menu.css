@@ -176,3 +176,6 @@ body[data-preview] *{animation:none!important;transition:none!important}
 @media(max-height:710px){#welcome .welcome-top{height:112px}#welcome .welcome-section-caption{padding:4px 10px 5px}#welcome .welcome-category-strip{padding-bottom:5px}#welcome .welcome-category-chip{min-height:28px}#welcome .welcome-food-badge{top:5%}#welcome .welcome-bottom{padding-top:0;padding-bottom:max(11px,env(safe-area-inset-bottom))}#welcome .welcome-subtitle{margin-bottom:4px}#welcome .browse{min-height:48px}}
 @media(max-width:360px){#welcome .welcome-category-strip{justify-content:flex-start}#welcome .welcome-food-badge{right:2%;padding:5px 9px}#welcome .welcome-top-caption{font-size:10px}}
 @media(prefers-reduced-motion:reduce){#welcome .welcome-food{animation:none}}
+
+/* Desktop has its own independent welcome UI; keep it entirely out of the mobile layout. */
+.desktop-welcome{display:none}
