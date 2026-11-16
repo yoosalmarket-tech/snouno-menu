@@ -240,3 +240,182 @@
   padding-bottom:clamp(12px,2svh,24px)!important;
  }
 }
+
+
+/* Interactive-mode-only overlays. The reference Hungry Buten HTML used
+   a dark, bottom-anchored sheet with rounded top corners, grab handle,
+   inset controls and yellow action chips. Snouno logo/typography retained. */
+#rich-menu .rm-dish-badge{
+  top:34%!important;left:50%!important;
+  z-index:9!important;
+  transform:translateX(-50%) rotate(-3deg)!important;
+  pointer-events:none!important;
+  max-width:82%!important;
+  overflow:hidden;text-overflow:ellipsis;
+}
+/* Native modal is placed in the browser top layer, so it works even when
+   the immersive viewport has overflow:hidden. */
+#rich-menu dialog.rm-sheet:not([open]){display:none!important;}
+#rich-menu dialog.rm-sheet[open]{
+  position:fixed!important;
+  display:flex!important;flex-direction:column!important;
+  box-sizing:border-box!important;
+  inset:auto 0 0!important;
+  margin:0 auto!important;
+  width:min(100%,560px)!important;
+  max-width:100vw!important;max-height:min(82dvh,760px)!important;
+  padding:0 0 env(safe-area-inset-bottom)!important;
+  overflow:hidden!important;
+  background:#292830!important;
+  color:#f5eddd!important;
+  border:1px solid #73664c!important;
+  border-bottom:0!important;
+  border-radius:26px 26px 0 0!important;
+  box-shadow:0 -12px 46px #0009!important;
+  text-align:right!important;
+  font-family:Snouno,Tahoma,sans-serif!important;
+  animation:rm-sheet-slide .35s cubic-bezier(.18,.82,.22,1) both;
+  z-index:500!important;
+}
+#rich-menu dialog.rm-sheet::backdrop{
+  background:rgba(9,8,11,.74);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+@keyframes rm-sheet-slide{
+  from{transform:translateY(38px);opacity:.55}
+  to{transform:translateY(0);opacity:1}
+}
+#rich-menu .rm-sheet-grab{
+  flex:none;width:43px;height:5px;
+  border-radius:99px;
+  background:#82755c;
+  margin:10px auto 0;
+}
+#rich-menu .rm-sheet-head{
+  flex:none;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:12px;
+  padding:15px clamp(17px,4vw,26px) 12px;
+  border-bottom:1px solid #4b463f;
+  background:none!important;
+  min-height:0!important;
+  position:relative!important;
+}
+#rich-menu .rm-sheet-heading{flex:1;min-width:0}
+#rich-menu .rm-sheet-overline{
+  display:block;color:#FDBE2D;
+  font:800 10px/1.4 system-ui,sans-serif;
+  letter-spacing:.13em;text-align:right;
+}
+#rich-menu .rm-sheet-title{
+  margin:2px 0 0;
+  color:#fdf4e5;font:700 clamp(23px,5vw,30px)/1.3 Snouno,Tahoma,sans-serif;
+}
+#rich-menu .rm-sheet-subtitle{
+  margin:2px 0 0;color:#c8bda9;
+  font:700 13px/1.5 Snouno,Tahoma,sans-serif;
+}
+#rich-menu .rm-sheet-close{
+  flex:none;
+  width:37px;height:37px;padding:0;
+  border:1px solid #665f51;border-radius:12px;
+  background:#35323a;color:#f4e8cd;
+  font:700 25px/1 system-ui,sans-serif;
+  display:grid;place-items:center;
+  touch-action:manipulation;
+}
+#rich-menu .rm-sheet-close:hover{background:#49434b;}
+#rich-menu .rm-sheet-close:focus-visible,
+#rich-menu .rm-sheet-link:focus-visible{
+  outline:3px solid #FDBE2D;outline-offset:2px;
+}
+#rich-menu .rm-sheet-body{
+  flex:1;min-height:0;
+  overflow-y:auto;overscroll-behavior:contain;
+  padding:16px clamp(17px,4vw,26px) 24px;
+  scrollbar-width:thin;scrollbar-color:#756647 #292830;
+}
+#rich-menu .rm-sheet-information{
+  display:grid;gap:11px;margin-bottom:20px;
+}
+#rich-menu .rm-sheet-detail{
+  display:flex;flex-direction:row;gap:12px;align-items:center;
+  padding:13px 14px;border:1px solid #544a39;
+  background:#333038;border-radius:15px;
+  box-shadow:inset 0 2px 6px #0003;
+}
+#rich-menu .rm-sheet-detail-icon{
+  flex:none;display:grid;place-items:center;
+  width:37px;height:37px;border-radius:12px;
+  color:#20190f;background:#FDBE2D;
+  font:bold 24px/1 system-ui,sans-serif;
+}
+#rich-menu .rm-sheet-detail strong{
+  display:block;font-size:14px;font-weight:700;color:#ffe4a3;
+}
+#rich-menu .rm-sheet-detail p{
+  margin:4px 0 0;
+  color:#f3eee3;font:600 13px/1.7 Snouno,Tahoma,sans-serif;
+  overflow-wrap:anywhere;
+}
+#rich-menu .rm-sheet-links-heading{
+  margin:0 0 12px;
+  color:#e8dbbd;font:700 15px/1.5 Snouno,Tahoma,sans-serif;
+}
+#rich-menu .rm-sheet-links{display:grid;gap:10px}
+#rich-menu .rm-sheet-link{
+  box-sizing:border-box;
+  display:flex;gap:12px;align-items:center;
+  min-height:72px;padding:12px 13px;
+  text-decoration:none!important;
+  color:#f5e8d5!important;background:#35323a!important;
+  border:1px solid #6e5d3f!important;
+  border-radius:18px!important;
+  box-shadow:inset 0 2px 5px #0002,0 4px 0 #1a1719;
+  transition:transform .16s ease,border-color .16s ease,background-color .16s ease;
+}
+#rich-menu .rm-sheet-link:hover{
+  background:#413a3b!important;border-color:#f0b833!important;
+}
+#rich-menu .rm-sheet-link:active{transform:translateY(3px);box-shadow:inset 0 2px 5px #0002,0 1px 0 #1a1719;}
+#rich-menu .rm-sheet-link-mark{
+  flex:none;display:grid;place-items:center;
+  width:46px;height:46px;
+  border-radius:14px;background:#FDBE2D;
+}
+#rich-menu .rm-sheet-link-mark img{
+  width:31px;height:31px;object-fit:contain;
+  display:block;filter:none;
+}
+#rich-menu .rm-sheet-link-copy{
+  flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;
+}
+#rich-menu .rm-sheet-link-copy strong{
+  color:#fff4df;font:700 17px/1.25 Snouno,Tahoma,sans-serif;
+}
+#rich-menu .rm-sheet-link-copy small{
+  color:#c5bba7;font:600 11px/1.5 Snouno,Tahoma,sans-serif;
+}
+#rich-menu .rm-sheet-link-arrow{
+  flex:none;display:grid;place-items:center;
+  width:26px;height:26px;border-radius:50%;
+  color:#19160d;background:#FDBE2D;
+  font:800 18px/1 system-ui,sans-serif;
+}
+#rich-menu .rm-sheet-warning{
+  border:1px solid #d9a021;
+  background:#4a391e;color:#ffe4ad;
+  border-radius:12px;padding:10px 12px;
+  font-size:12px;line-height:1.65;
+}
+#rich-menu .rm-sheet-empty{color:#d1c2a4;font-size:13px;line-height:1.6}
+@media(min-width:981px){
+ #rich-menu dialog.rm-sheet[open]{
+  border-radius:26px 26px 0 0!important;
+  box-shadow:0 -15px 65px #000b!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #rich-menu dialog.rm-sheet[open]{animation:none!important;}
+}
