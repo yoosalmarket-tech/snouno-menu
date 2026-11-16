@@ -1012,17 +1012,25 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
  #inside.menu-browsing-in{animation:none!important;}
 }
 
-/* Icon-only sharing from the standard meal popup. */
+/* Floating share action on the photo, aligned directly below the close control. */
 #dish .share-meal-link{
- display:inline-grid;place-items:center;
- width:44px;height:44px;
- margin:14px 0 8px;padding:0;
- border:1px solid #c99d3b;border-radius:50%;
- color:var(--ink);background:var(--gold);
+ position:absolute;
+ top:calc(var(--peek) + 88px);
+ left:17px;
+ z-index:7;
+ display:grid;place-items:center;
+ width:29px;height:29px;
+ margin:0;padding:0;
+ border:1px solid #ffffff68;border-radius:50%;
+ color:#fff;background:#151515bc;
  cursor:pointer;
 }
-#dish .share-meal-link svg{display:block;width:21px;height:21px;}
-#dish .share-meal-link:focus-visible{outline:3px solid #86600a;outline-offset:3px;}
+#dish .share-meal-link svg{display:block;width:16px;height:16px;}
+#dish .share-meal-link:hover{background:#151515e8;border-color:#ffffffb0;}
+#dish .share-meal-link:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px;}
+@media(min-width:981px){
+ body:not([data-preview]) #dish .share-meal-link{top:53px;left:16px;}
+}
 
 /* Browser fallback when the system share sheet is unavailable. */
 .meal-share-dialog{border:0;background:transparent;padding:16px;width:min(420px,calc(100vw - 24px));max-width:100%;color:#f9f3e9;}

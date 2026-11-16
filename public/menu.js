@@ -901,6 +901,8 @@ function ingredientGroups(text=''){
 }
 function detail(d){
  const box=$('details');box.replaceChildren();
+ // The dialog persists between dishes: clear its previous floating share action.
+ $('dish').querySelector('.share-meal-link')?.remove();
  $('dish').dataset.mealId=d.id||'';
  if(d.id&&!isPreview)noteSelection('meal',d.id);
  const categoryLabel=tr(categories.find(c=>c.id===d.category_id)?.name||'');
@@ -933,7 +935,8 @@ function detail(d){
   share.title=isEnglish()?'Share meal':'مشاركة الوجبة';
   share.setAttribute('aria-label',share.title);
   share.onclick=()=>{void shareMeal(d,richDesired?'interactive':'standard');};
-  content.append(share);
+  // Keep this control above the meal photo, immediately below the close icon.
+  $('close').after(share);
  }
  const show=()=>{box.append(content);if(!$('dish').open){if(isPreview)$('dish').show();else $('dish').showModal();}$('dish').scrollTop=0;};
  if(!d.id){show();return;}
