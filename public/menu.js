@@ -7,6 +7,51 @@ let dishes=[],categories=[],links=[],advertisements=[],settings={};
 let favorites=new Set(JSON.parse(localStorage.getItem('snouno-favorites')||'[]'));
 const money=value=>Number(value)+' ₪';
 const isPreview=window.parent!==window&&new URLSearchParams(location.search).get('preview')==='1';
+
+let currentLanguage=localStorage.getItem('snouno-language')==='en'?'en':'ar';
+const originalTextNodes=new WeakMap();
+const isEnglish=()=>currentLanguage==='en';
+const tr=value=>isEnglish()?enText(value):value;
+const displayName=d=>isEnglish()?(mealTranslation(d)?.[0]||d.name):d.name;
+const displayDescription=d=>isEnglish()?(mealTranslation(d)?.[1]||d.description):d.description;
+function translateStaticContent(){
+ const nodes=['#welcome','#inside>header','#contact','#dock'];
+ for(const selector of nodes){
+  const root=document.querySelector(selector);if(!root)continue;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  while(walker.nextNode()){
+   const node=walker.currentNode;
+   if(!originalTextNodes.has(node))originalTextNodes.set(node,node.nodeValue);
+   const base=originalTextNodes.get(node);
+   const trimmed=base.trim();
+   if(trimmed&&enText(trimmed)!==trimmed){
+     node.nodeValue=isEnglish()?base.replace(trimmed,enText(trimmed)):base;
+   }
+  }
+ }
+}
+function applyLanguage(){
+ document.documentElement.lang=isEnglish()?'en':'ar';
+ document.body.classList.toggle('lang-en',isEnglish());
+ const toggle=$('language');
+ toggle.textContent=isEnglish()?'عربي':'EN';
+ toggle.setAttribute('aria-pressed',String(isEnglish()));
+ toggle.setAttribute('aria-label',isEnglish()?'العودة إلى العربية':'Switch to English');
+ $('menu').dir=isEnglish()?'ltr':'rtl';
+ $('contact').dir=isEnglish()?'ltr':'rtl';
+ if(settings?.name){
+   renderSettings();
+   renderCards();
+   showMobileWelcomeMeal(mobileWelcomeIndex,false);
+ }
+ translateStaticContent();
+}
+$('language').onclick=()=>{
+ currentLanguage=isEnglish()?'ar':'en';
+ localStorage.setItem('snouno-language',currentLanguage);
+ applyLanguage();
+};
+
 function asset(src){if(!src)return '';if(isPreview&&src.startsWith('blob:'+location.origin+'/'))return src;try{const u=new URL(src,location.origin);return /^(https?:)$/.test(u.protocol)?u.href:'';}catch{return '';}}
 function setText(id,text){$(id).textContent=text||'';}
 function image(src,alt){const img=make('img');img.src=asset(src);img.alt=alt;return img;}
@@ -18,8 +63,8 @@ function contactLinks(container,channels,meal) {
    const url=channel==='sonbol'&&meal?.id?meal.sonbol_url:link?.url;
    if(!link||!url||!/^https?:\/\//i.test(url))continue;
    const a=make('a');a.href=url;a.dataset.channel=channel;
-   a.setAttribute('aria-label',link.name);
-   a.append(image('/assets/'+channel+'.svg',''),make('span',link.name));
+   a.setAttribute('aria-label',tr(link.name));
+   a.append(image('/assets/'+channel+'.svg',''),make('span',tr(link.name)));
    if(ordering.includes(channel))a.classList.add('order-action');
    container.append(a);
  }
@@ -160,9 +205,9 @@ function startDesktopMealWheel(){
       desktopWheelSwapTimer=setTimeout(()=>{
         if(generation!==desktopWheelGeneration)return;
         hero.src=nextSrc;
-        hero.alt=meal.name;
+        hero.alt=displayName(meal);
         hero.classList.add('is-menu-meal');
-        label.textContent=meal.name;
+        label.textContent=displayName(meal);
         hero.classList.remove('wheel-exit');
         hero.classList.add('wheel-enter');
         desktopWheelFinishTimer=setTimeout(()=>{
@@ -258,16 +303,16 @@ function renderAds() {
 }
 function renderSettings(){
  const s=settings;
- setText('brand',s.name);setText('greeting',s.welcome);setText('quick',s.hotline);
- const buttonText=s.welcome_button||'تصفح المنيو';
+ setText('brand',tr(s.name));setText('greeting',tr(s.welcome));setText('quick',s.hotline);
+ const buttonText=tr(s.welcome_button||'تصفح المنيو');
  $('browse').querySelector('span').textContent=buttonText;
  $('desktop-welcome-browse').querySelector('span').textContent=buttonText;
- setText('desktop-welcome-brand',s.name);setText('desktop-welcome-greeting',s.welcome);
+ setText('desktop-welcome-brand',tr(s.name));setText('desktop-welcome-greeting',tr(s.welcome));
  const hero=asset(s.hero)||'/assets/plate.webp',logo=asset(s.logo)||'/assets/logo.webp';
  $('desktop-welcome-hero').src=hero;
  $('logo').src=logo;$('welcome-logo').src=logo;$('desktop-welcome-logo').src=logo;
  renderAds();
- setText('location-name',s.name+' — غزة');setText('address',s.address);setText('hours',s.hours);setText('hotline',s.hotline);setText('intro',s.contact);const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
+ setText('location-name',tr(s.name)+' — '+(isEnglish()?'Gaza':'غزة'));setText('address',tr(s.address));setText('hours',tr(s.hours));setText('hotline',s.hotline);setText('intro',tr(s.contact));const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
  credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit;
  contactLinks($('links'),[...ordering,'whatsapp']);contactLinks($('social-links'),['instagram','facebook']);
 }
