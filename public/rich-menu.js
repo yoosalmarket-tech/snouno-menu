@@ -37,9 +37,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<button type="button" class="rm-sheet-close" aria-label="إغلاق">×</button></header>',
  '<div class="rm-sheet-body"></div></dialog>'
  ].join('');
- const share=mk('button','rm-share','↗');
+ const share=mk('button','rm-share');
+ share.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 13.5 6.6 4M15.3 6.5l-6.6 4"/></svg>';
  share.type='button';share.id='rich-share-meal';share.dataset.trackAction='share_meal_click';
- share.setAttribute('aria-label','نسخ رابط الوجبة');
+ share.setAttribute('aria-label','مشاركة الوجبة');
  at(root,'.rm-info-actions').insertBefore(share,at(root,'.rm-info-fav'));
  host.replaceChildren(root);
  const u={
@@ -157,7 +158,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   u.title.textContent=getName(m);
   u.fav.dataset.mealId=String(m.id);u.share.dataset.mealId=String(m.id);
   u.customize.dataset.mealId=String(m.id);
-  u.share.title=isEnglish()?'Copy meal link':'نسخ رابط الوجبة';
+  u.share.title=isEnglish()?'Share meal':'مشاركة الوجبة';
   const ratingValue=m.rating==null||m.rating===''?NaN:Number(m.rating);
   const hasRating=Number.isFinite(ratingValue)&&ratingValue>=0&&ratingValue<=5;
   u.rating.hidden=!hasRating;
@@ -482,14 +483,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
  u.details.onclick=()=>openRichSheet('contact');
  u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
- u.share.onclick=async()=>{
-  if(!dish()?.id)return;
-  const result=typeof onShare==='function'?await onShare(dish()):null;
-  // A clipboard failure opens the manual-copy prompt, not a false success.
-  if(result?.copied){
-   u.share.textContent='✓';
-   setTimeout(()=>{if(!destroyed)u.share.textContent='↗';},1400);
-  }
+ u.share.onclick=()=>{
+  const current=dish();
+  if(current?.id&&typeof onShare==='function')void onShare(current);
  };
  u.fav.onclick=()=>{
   if(!dish())return;

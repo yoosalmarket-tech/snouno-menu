@@ -1,5 +1,5 @@
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js';
-import {installActionReporting,menuLink,copyMenuLink} from './action-tracking.js?v=links-actions-20261116';
+import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=meal-native-share-20261117';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
@@ -94,13 +94,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=links-actions-20261116';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=meal-native-share-20261117';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=links-actions-20261116')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=meal-native-share-20261117')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -142,10 +142,7 @@ async function syncRichMode(){
     if(selection?.mealId)noteSelection('meal',selection.mealId);
     else if(selection?.categoryId)noteSelection('category',selection.categoryId);
    },
-   onShare:async meal=>{
-    if(meal?.id)return copyMenuLink('meal',meal.id,'interactive');
-    return {copied:false};
-   },
+   onShare:meal=>shareMeal(meal,'interactive'),
    onExit:()=>{
     richDesired=false;
     richToggle.checked=false;
@@ -929,13 +926,13 @@ function detail(d){
  }
  const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering,d);else buttons.append(tr('غير متوفر'));content.append(buttons);
  if(d.id&&!isPreview){
-  const share=make('button',isEnglish()?'↗ Copy meal link':'↗ نسخ رابط الوجبة');
+  const share=make('button');
   share.type='button';share.className='share-meal-link';share.id='share-meal-'+d.id;
+  share.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 13.5 6.6 4M15.3 6.5l-6.6 4"/></svg>';
   share.dataset.mealId=d.id;share.dataset.trackAction='share_meal_click';
-  share.onclick=async()=>{
-   const result=await copyMenuLink('meal',d.id,richDesired?'interactive':'standard');
-   share.textContent=result.copied?(isEnglish()?'Link copied ✓':'تم نسخ الرابط ✓'):(isEnglish()?'Copy the displayed link':'انسخ الرابط الظاهر');
-  };
+  share.title=isEnglish()?'Share meal':'مشاركة الوجبة';
+  share.setAttribute('aria-label',share.title);
+  share.onclick=()=>{void shareMeal(d,richDesired?'interactive':'standard');};
   content.append(share);
  }
  const show=()=>{box.append(content);if(!$('dish').open){if(isPreview)$('dish').show();else $('dish').showModal();}$('dish').scrollTop=0;};

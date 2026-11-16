@@ -20,6 +20,55 @@ export async function copyMenuLink(kind,id,mode=''){
  window.prompt('انسخ الرابط:',url);
  return {url,copied:false};
 }
+
+/* Use native OS sharing when possible. WhatsApp and Email receive the meal name
+   and its deep link together. Desktop browsers without Web Share get direct options. */
+export async function shareMeal(meal, mode=''){
+ if(!meal?.id)return {shared:false};
+ const name=String(meal.name||'').trim()||'الوجبة';
+ const url=menuLink('meal',meal.id,mode);
+ const title='خلينا نجرب '+name;
+ const message=title+'\n'+url;
+ if(typeof navigator.share==='function'){
+  try{
+   await navigator.share({title,text:message});
+   return {shared:true};
+  }catch(error){
+   if(error?.name==='AbortError')return {shared:false,canceled:true};
+   console.warn('Native share unavailable; showing share options',error);
+  }
+ }
+ const dialog=document.createElement('dialog');
+ dialog.className='meal-share-dialog';
+ dialog.setAttribute('aria-label','مشاركة الوجبة');
+ const panel=document.createElement('div');
+ panel.className='meal-share-panel';
+ const heading=document.createElement('h2');heading.textContent='مشاركة الوجبة';
+ const summary=document.createElement('p');summary.textContent=title;
+ const choices=document.createElement('div');choices.className='meal-share-options';
+ const whatsapp=document.createElement('a');
+ whatsapp.id='meal-share-whatsapp';
+ whatsapp.dataset.trackAction='share_whatsapp_click';
+ whatsapp.textContent='واتساب';
+ whatsapp.href='https://wa.me/?text='+encodeURIComponent(message);
+ whatsapp.target='_blank';whatsapp.rel='noopener noreferrer';
+ whatsapp.addEventListener('click',()=>dialog.close());
+ const email=document.createElement('a');
+ email.id='meal-share-email';email.dataset.trackAction='share_email_click';
+ email.textContent='البريد الإلكتروني';
+ email.href='mailto:?subject='+encodeURIComponent(title)+'&body='+encodeURIComponent(message);
+ email.addEventListener('click',()=>dialog.close());
+ const close=document.createElement('button');
+ close.type='button';close.id='meal-share-cancel';
+ close.textContent='إلغاء';close.addEventListener('click',()=>dialog.close());
+ choices.append(whatsapp,email);
+ panel.append(heading,summary,choices,close);dialog.append(panel);
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});
+ document.body.append(dialog);dialog.showModal();
+ return {shared:false,optionsShown:true};
+}
+
 export function installActionReporting({route=()=> 'menu',mode=()=> 'standard',preview=()=>false,token=()=>null}={}){
  const generated=new WeakMap();
  function idFor(element){

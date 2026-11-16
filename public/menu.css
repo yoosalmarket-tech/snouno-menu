@@ -1012,13 +1012,26 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
  #inside.menu-browsing-in{animation:none!important;}
 }
 
-/* Small, clear share action in the standard meal popup. */
+/* Icon-only sharing from the standard meal popup. */
 #dish .share-meal-link{
- display:inline-flex;align-items:center;justify-content:center;
- margin:14px 0 8px;padding:11px 16px;
- border:1px solid #c99d3b;border-radius:12px;
+ display:inline-grid;place-items:center;
+ width:44px;height:44px;
+ margin:14px 0 8px;padding:0;
+ border:1px solid #c99d3b;border-radius:50%;
  color:var(--ink);background:var(--gold);
- font:700 14px/1.45 Snounu,Tahoma,sans-serif;
  cursor:pointer;
 }
+#dish .share-meal-link svg{display:block;width:21px;height:21px;}
 #dish .share-meal-link:focus-visible{outline:3px solid #86600a;outline-offset:3px;}
+
+/* Browser fallback when the system share sheet is unavailable. */
+.meal-share-dialog{border:0;background:transparent;padding:16px;width:min(420px,calc(100vw - 24px));max-width:100%;color:#f9f3e9;}
+.meal-share-dialog::backdrop{background:#080808b9;backdrop-filter:blur(5px);}
+.meal-share-panel{background:#302d33;border:1px solid #72613f;border-radius:22px;padding:22px;display:grid;gap:14px;direction:rtl;text-align:right;box-shadow:0 18px 60px #0009;}
+.meal-share-panel h2{font:700 23px/1.4 Snounu,Tahoma,sans-serif;margin:0;color:#FDBE2D;}
+.meal-share-panel p{margin:0;font:500 16px/1.6 Snounu,Tahoma,sans-serif;overflow-wrap:anywhere;color:#fff;}
+.meal-share-options{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.meal-share-options a,.meal-share-panel button{display:grid;place-items:center;min-height:44px;padding:10px 8px;border:1px solid #786745;border-radius:12px;text-decoration:none;color:#f9f3e9;background:#444046;font:700 15px/1.4 Snounu,Tahoma,sans-serif;cursor:pointer;text-align:center;}
+.meal-share-options a:hover,.meal-share-panel button:hover{background:#5a5148;}
+.meal-share-panel button{justify-self:end;padding-inline:18px;}
+.meal-share-options a:focus-visible,.meal-share-panel button:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px;}
