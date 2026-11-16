@@ -707,7 +707,7 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
   top:auto!important;
   right:auto!important;
   bottom:clamp(200px,39svh,360px)!important;
-  left:clamp(8px,1.4vw,13px)!important;
+  left:clamp(20px,2.6vw,27px)!important;
   transform:none!important;
   animation:none!important;
   transition:none!important;
