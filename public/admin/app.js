@@ -151,8 +151,11 @@ function wireSortableList(list, selector, persist, canDrag=()=>true){
    handle.focus();
    await persist();
   });
-  handle.addEventListener('pointerdown',event=>{
+  const begin=event=>{
    if(active||changing||!canDrag()||event.button!==0)return;
+   // Any non-interactive part of the meal card is now a drag surface.
+   if(event.target.closest('button,a,input,select,textarea,label')&&
+      !event.target.closest('.dish-drag-handle'))return;
    event.preventDefault();event.stopPropagation();
    active={pointer:event.pointerId,card,didMove:false};
    startY=event.clientY;
@@ -162,7 +165,8 @@ function wireSortableList(list, selector, persist, canDrag=()=>true){
    window.addEventListener('pointerup',finish,true);
    window.addEventListener('pointercancel',cancel,true);
    window.addEventListener('blur',cancel,true);
-  });
+  };
+  card.addEventListener('pointerdown',begin);
  }
 }
 function setupDishSorting(categoryGroups,rows){
@@ -263,7 +267,7 @@ async function openSection(key){
      handle.setAttribute('aria-label','تغيير ترتيب '+row.name+' بالسحب أو بأسهم لوحة المفاتيح');
      card.append(handle);
    }
-   if(key==='dishes'&&row.image){const photo=node('img');photo.src=row.image;photo.className='dish-thumb';photo.alt='';card.append(photo);}
+   if(key==='dishes'&&row.image){const photo=node('img');photo.src=row.image;photo.className='dish-thumb';photo.alt='';photo.draggable=false;card.append(photo);}
    if(key==='menu_links'&&row.channel){const icon=node('img');icon.src='/assets/'+row.channel+'.svg';icon.className='channel-icon';icon.alt='';card.append(icon);}
    card.append(node('strong',key==='rankings'?(row.meal_name||'طبق محذوف قبل تسجيل اسمه'):(row.name||row.email||row.kind)));
    if(feedback){card.style.flexWrap='wrap';card.append(node('span',[row.kind,row.phone,row.stars?row.stars+' ★':'',row.message].filter(Boolean).join(' · ')));}
