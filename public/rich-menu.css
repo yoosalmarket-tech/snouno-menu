@@ -1216,3 +1216,23 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-customize{
   }
   #rich-menu .rm-customize .rm-order-icon{width:39px!important;height:39px!important;padding:8px!important;}
 }
+
+/* Share the currently selected meal without affecting stage motion. */
+#rich-menu .rm-share{
+ flex:none;
+ width:48px;height:48px;
+ border:1px solid #786745;border-radius:50%;
+ display:grid;place-items:center;
+ color:#FDBE2D;background:#353239;
+ font:800 25px/1 system-ui,sans-serif;
+ cursor:pointer;
+}
+#rich-menu .rm-share:hover{background:#454034;border-color:#FDBE2D;}
+#rich-menu .rm-share:focus-visible{outline:3px solid #FDBE2D;outline-offset:2px;}
+@media(max-width:980px){#rich-menu .rm-share{width:42px;height:42px;font-size:22px;}}
+@media(min-width:981px){
+ #rich-menu .rm-share{width:68px!important;height:68px!important;font-size:29px!important;}
+}
+@media(min-width:981px) and (max-height:730px){
+ #rich-menu .rm-share{width:51px!important;height:51px!important;font-size:25px!important;}
+}
