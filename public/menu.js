@@ -50,7 +50,7 @@ function applyLanguage(){
  if(settings?.name){
    renderSettings();
    renderCards();
-   showMobileWelcomeMeal(mobileWelcomeIndex,false);
+   updateWelcomeLabels(mobileWelcomeIndex);
  }
  translateStaticContent();
 }
@@ -90,6 +90,19 @@ const welcomeMobileMeals=[
  {listing:2465,name:'نوك أوت',src:'/assets/welcome/2465.webp',fallback:'/assets/meals/2465.webp'},
  {listing:2472,name:'ناشفيل',src:'/assets/welcome/2472.webp',fallback:'/assets/meals/2472.webp'}
 ];
+const welcomeDefaults=[
+ {name:'بوكس المشاركة',image:'/assets/welcome/2468.webp'},
+ {name:'نوك أوت',image:'/assets/welcome/2465.webp'},
+ {name:'ناشفيل',image:'/assets/welcome/2472.webp'}
+];
+function syncWelcomeSettings(){
+ if(!settings)return;
+ welcomeMobileMeals.forEach((item,index)=>{
+   const num=index+1;
+   item.name=String(settings['welcome_meal_'+num]||welcomeDefaults[index].name);
+   item.src=asset(settings['welcome_image_'+num])||welcomeDefaults[index].image;
+ });
+}
 let mobileWelcomeIndex=0;
 let desktopWheelTimer=null,welcomeCarouselTimer=null,welcomeCarouselCleanupTimer=null;
 let welcomeCarouselActive=false,welcomeCarouselAnimating=false,welcomeCarouselSession=0;
@@ -99,8 +112,11 @@ const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'
 const onMobileWelcome=()=>matchMedia('(max-width:980px)').matches;
 function welcomeMealName(index){
  const choice=welcomeMobileMeals[index];
- const d=dishes.find(item=>Number(item.sonbol_listing_id)===choice.listing||item.name===choice.name);
- return d?displayName(d):(isEnglish()?({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville'}[choice.listing]):choice.name);
+ if(!isEnglish())return choice.name;
+ const defaults=welcomeDefaults[index];
+ if(choice.name!==defaults.name)return tr(choice.name);
+ const d=dishes.find(item=>Number(item.sonbol_listing_id)===choice.listing);
+ return d?displayName(d):({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville'}[choice.listing]);
 }
 function setWelcomeImage(img,index){
  const choice=welcomeMobileMeals[index];
@@ -112,12 +128,16 @@ function setWelcomeImage(img,index){
  img.src=choice.src;
 }
 function updateWelcomeLabels(index){
+ const label=tr(settings?.welcome_label||'من سنونو');
+ $('mobile-meal-prefix').textContent=label;
+ $('desktop-meal-prefix').textContent=label;
  $('mobile-meal-name').textContent=welcomeMealName(index);
  $('desktop-meal-name').textContent=welcomeMealName(index);
  $('cover-photo').alt=welcomeMealName(index);
  $('desktop-welcome-hero').alt=welcomeMealName(index);
  [...document.querySelectorAll('.welcome-stage-rail button')].forEach((d,i)=>{
   d.setAttribute('aria-current',String(i===index));
+  d.setAttribute('aria-label',welcomeMealName(i));
  });
 }
 function resetWelcomeImages(){
@@ -153,8 +173,10 @@ function goToWelcomeMeal(index){
  const mobile=onMobileWelcome();
  welcomeCarouselAnimating=true;
  const nextAsset=new Image();
+ let transitionStarted=false;
  nextAsset.onload=()=>{
-  if(session!==welcomeCarouselSession)return;
+  if(transitionStarted||session!==welcomeCarouselSession)return;
+  transitionStarted=true;
   if(prefersReducedWelcomeMotion()){
    mobileWelcomeIndex=index;resetWelcomeImages();welcomeCarouselAnimating=false;scheduleWelcomeCarousel();return;
   }
@@ -327,6 +349,15 @@ function renderAds() {
 }
 function renderSettings(){
  const s=settings;
+ syncWelcomeSettings();
+ setText('mobile-welcome-caption',tr(s.welcome_caption||'أهلاً وسهلاً'));
+ setText('desktop-welcome-caption',tr(s.welcome_caption||'أهلاً وسهلاً'));
+ setText('welcome-subtitle',tr(s.welcome_subtitle||'جاهز تختار وجبتك المفضّلة؟'));
+ setText('desktop-meal-question',tr(s.welcome_question||'شو آكل؟'));
+ setText('desktop-welcome-accent',tr(s.welcome_desktop_accent||'على مزاجك.'));
+ setText('desktop-welcome-description',tr(s.welcome_description||'اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.'));
+ setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
+ setWelcomeImage($('cover-next'),(mobileWelcomeIndex+1)%3);
  setText('brand',tr(s.name));setText('greeting',tr(s.welcome));setText('quick',s.hotline);
  const buttonText=tr(s.welcome_button||'تصفح المنيو');
  $('browse').querySelector('span').textContent=buttonText;
@@ -716,7 +747,7 @@ function installPreview(){
    settings={...original.settings};links=original.links.map(v=>({...v}));
    if(key==='menu_settings'){
      settings={...settings,...data};
-     if(['name','welcome','hero','welcome_button','hotline'].includes(field))dest='welcome';
+     if(['name','welcome','hero','welcome_button','hotline','logo','welcome_caption','welcome_subtitle','welcome_question','welcome_label','welcome_desktop_accent','welcome_description','welcome_meal_1','welcome_meal_2','welcome_meal_3','welcome_image_1','welcome_image_2','welcome_image_3'].includes(field))dest='welcome';
      if(['address','hours','contact'].includes(field))dest='contact';
    }else if(key==='menu_links'){
      dest='contact';links=links.map(link=>link.id===data.id?{...link,url:data.url}:link);
