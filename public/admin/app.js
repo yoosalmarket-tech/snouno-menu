@@ -84,14 +84,18 @@ async function enter(){
   const saved=location.hash.slice(1);
   await openSection(Object.hasOwn(sections,saved)&&(!['menu_staff','account'].includes(saved)||role==='owner')?saved:'dishes');
 }
+$('remember-me').checked=rememberMe;
 $('access').onsubmit=async e=>{
-  e.preventDefault(); const form=e.currentTarget;
-  try {persist(await request('/auth/v1/token?grant_type=password',{method:'POST',body:Object.fromEntries(new FormData(form))})); form.reset(); await enter();}
-  catch(err){persist(null);loggedOut();notice(err.message);}
-};
-$('register').onclick=async()=>{
- const form=$('access'); if(!form.reportValidity()) return;
- try {await request('/auth/v1/signup?redirect_to='+encodeURIComponent(location.origin+'/admin/'),{method:'POST',body:Object.fromEntries(new FormData(form))});notice('تحقق من بريدك لتفعيل الحساب، ثم سجّل الدخول.');} catch(e){notice(e.message);}
+ e.preventDefault();
+ const form=e.currentTarget;
+ rememberMe=$('remember-me').checked;
+ try{
+  const credentials={email:form.elements.email.value.trim().toLowerCase(),password:form.elements.password.value};
+  const loggedIn=await request('/auth/v1/token?grant_type=password',{method:'POST',body:credentials});
+  persist(loggedIn);
+  form.elements.password.value='';
+  await enter();
+ }catch(err){persist(null);loggedOut();notice(err.message);}
 };
 $('logout').onclick=async()=>{try{await api('/auth/v1/logout',{method:'POST'});} finally {persist(null);loggedOut();notice('تم تسجيل الخروج');}};
 /* Drag handles preserve category membership while updating real menu order.
