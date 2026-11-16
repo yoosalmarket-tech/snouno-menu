@@ -27,13 +27,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=rich-order-1';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=rail-black-1';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=rich-order-1')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=rail-black-1')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
