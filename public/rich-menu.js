@@ -114,11 +114,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
    thumbnail.title=getName(meal);thumbnail.setAttribute('aria-label',getName(meal));
    if(photo){const img=mk('img');img.src=photo;img.alt='';img.loading='lazy';img.draggable=false;thumbnail.append(img);}
    else thumbnail.textContent='•';
-   const thumbName=mk('span','rm-thumb-name',getName(meal));
-   thumbName.dir='rtl';thumbnail.append(thumbName);
    thumbnail.addEventListener('click',()=>goTo(i));
-   // Reverse rail order to follow the direction of the main food motion.
-   u.thumbTrack.prepend(thumbnail);thumbEls.push(thumbnail);
+   u.thumbTrack.append(thumbnail);thumbEls.push(thumbnail);
   });
  }
  function labelRail(){
@@ -182,18 +179,15 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
   u.railCount.textContent=(front+1)+' / '+len;
   thumbEls.forEach((el,i)=>{
    const distance=Math.abs(i-position);
-   el.style.opacity=Math.max(.82,1-distance*.06).toFixed(2);
+   el.style.opacity=Math.max(.4,1-distance*.2).toFixed(2);
    el.style.transform='scale('+Math.max(.8,1-distance*.07).toFixed(3)+')';
    el.setAttribute('aria-current',String(i===front));
   });
   // Highest meal index at the top: the thumbnail rail advances downwards
   // as the main dish approaches from depth, matching its physical motion.
-  const unit=54,h=u.thumbWindow.clientHeight,th=len*unit-5;
-  const visualIndex=len-1-position;
-  // Keep the active item at the middle even at the ends of the list.
-  // Clamping the track would stop its downward motion near meal one.
-  const y=h/2-visualIndex*unit-(unit-5)/2;
-  u.thumbTrack.style.transform='translate3d(0,'+y.toFixed(1)+'px,0)';
+  const unit=34,h=u.thumbWindow.clientHeight,th=len*unit-4;
+  const y=clamp(h/2-position*unit-15,Math.min(0,h-th),0);
+  u.thumbTrack.style.transform='translateY('+y.toFixed(1)+'px)';
   const fade=Math.min(1,Math.abs(k-Math.round(k))*2.6+(k<-.4?1:0));
   u.info.style.opacity=(1-fade).toFixed(3);
   u.info.style.transform='translateY('+(fade*12).toFixed(1)+'px)';
@@ -364,7 +358,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
  u.stage.addEventListener('keydown',key);
  u.catPrev.onclick=()=>changeGroup(groupIndex-1);
  u.catNext.onclick=()=>changeGroup(groupIndex+1);
- u.railUp.onclick=()=>step(1);u.railDown.onclick=()=>step(-1);
+ u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
  u.details.onclick=()=>openRichSheet('contact');
  u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
  u.fav.onclick=()=>{
