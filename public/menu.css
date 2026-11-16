@@ -952,3 +952,43 @@ body.rich-menu-active:not([data-preview]) #social-links{
   body.rich-menu-active:not([data-preview]) #menu{height:calc(100vh - 94px)!important;}
  }
 }
+
+
+/* True fullscreen interactive view: remove standard header, navigation,
+   toggle, and footer. The in-stage top-left arrow is the only exit control.
+   All standard chrome returns immediately when interactive mode is switched off. */
+html body.rich-menu-active:not([data-preview]) #inside>header,
+html body.rich-menu-active:not([data-preview]) #dock,
+html body.rich-menu-active:not([data-preview]) #menu>#experience-switch,
+html body.rich-menu-active:not([data-preview]) #credit,
+html body.rich-menu-active:not([data-preview]) #social-links{
+ display:none!important;
+ visibility:hidden!important;
+}
+html body.rich-menu-active:not([data-preview]) #shell #inside #menu{
+ display:flex!important;
+ box-sizing:border-box!important;
+ height:100dvh!important;
+ min-height:0!important;
+ width:100vw!important;
+ max-width:none!important;
+ margin:0!important;
+ padding:0!important;
+ overflow:hidden!important;
+}
+html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
+ display:flex!important;
+ flex:1 1 0%!important;
+ box-sizing:border-box!important;
+ width:100%!important;
+ height:100%!important;
+ min-height:0!important;
+ max-height:none!important;
+ margin:0!important;
+ overflow:hidden!important;
+}
+@supports not (height:100dvh){
+ html body.rich-menu-active:not([data-preview]) #shell #inside #menu{
+  height:100vh!important;
+ }
+}
