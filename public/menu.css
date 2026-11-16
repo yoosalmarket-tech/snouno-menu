@@ -392,3 +392,61 @@ html.loader-morphing #welcome .desktop-welcome-top img{visibility:hidden;}
 }
 #inside>header #language .language-label{font-size:12px;letter-spacing:.06em;}
 #inside>header #language:hover{border-color:#b98d24;box-shadow:0 2px 11px #0002;}
+
+
+/* Welcome language switch: shared AR/EN control, in both yellow logo headers. */
+#welcome .welcome-language{
+ position:absolute;z-index:12;top:calc(env(safe-area-inset-top) + 18px);right:16px;
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;
+ min-width:74px;min-height:36px;padding:5px 9px;
+ border:1px solid #6f5112;border-radius:999px;
+ background:#fff2bf;color:#211909;
+ box-shadow:0 3px 0 #b78617,0 6px 10px #0002;
+ font:850 12px/1 system-ui,Tahoma,sans-serif;
+ cursor:pointer;
+}
+#welcome .welcome-language:hover{background:#fff7d7;}
+#welcome .welcome-language svg{
+ display:block;flex:none;width:18px;height:18px;
+ fill:none;stroke:currentColor;stroke-width:1.7;
+ stroke-linecap:round;stroke-linejoin:round;
+}
+#welcome .welcome-language:focus-visible{outline:3px solid #1c170c;outline-offset:3px;}
+#welcome .welcome-language .language-label{font:900 12px/1 system-ui,sans-serif;letter-spacing:.055em;}
+/* The Arabic line of every category chip uses Snouno's Qatar bold asset. */
+#chips .chip .chip-ar,
+#chips .category-nav-title>span{
+ font-family:Snouno,Tahoma,sans-serif;
+ font-weight:700;
+}
+#theme{display:grid;place-items:center;padding:0;}
+#theme svg{
+ display:block;width:21px;height:21px;
+ fill:none;stroke:currentColor;stroke-width:1.8;
+ stroke-linecap:round;stroke-linejoin:round;
+}
+@media(max-width:980px){
+ #welcome .mobile-welcome-language{right:12px;top:calc(env(safe-area-inset-top) + 15px);}
+ /* Light mode must not keep dark category cards or ad indicators. */
+ body:not(.dark) #chips{background:var(--paper);}
+ body:not(.dark) #chips .chip{
+  background:#fffdf5;color:#28231a;border-color:#d8cbaa;
+  box-shadow:0 2px 4px #21170213,inset 0 -2px #e4ded2;
+ }
+ body:not(.dark) #chips .chip .chip-ar{color:#706354;}
+ body:not(.dark) #chips .chip[aria-current=location]{
+  background:#FDBE2D;color:#211906;border-color:#d39a12;
+  box-shadow:0 4px 0 #a57913,0 7px 13px #0002;
+ }
+ body:not(.dark) #chips .chip[aria-current=location] .chip-ar{color:#44310c;}
+ body:not(.dark) #chips .category-nav-arrow{
+  background:#fffdf7;color:#30271c;border-color:#ddcfb3;
+ }
+ body:not(.dark) #chips #category-position{color:#4f4436;}
+ body:not(.dark) #ad-dots{
+  background:#fffdf5;border-color:#d8cba9;
+  box-shadow:0 3px 10px #00000014;
+ }
+ body:not(.dark) #ad-dots button::after{background:#998f80;}
+ body:not(.dark) #ad-dots button[aria-pressed=true]::after{background:#d89f13;}
+}
