@@ -354,6 +354,48 @@ async function renderOwnerAccount(){
    }catch(error){transferBox.result.textContent=error.message;}
    finally{transferPassword.value='';transferSubmit.disabled=false;}
  };
+
+ setupUnusedUploadCleanup(box);
+}
+function setupUnusedUploadCleanup(box){
+ const cleanup=accountCard(box,'تنظيف الصور القديمة','يُبقي التنظيف الصور المستخدمة في الأطباق، الترحيب والإعلانات. الملفات المحذوفة لا يمكن استعادتها.');
+ const scan=action('فحص الصور غير المستخدمة',async()=>{
+  scan.disabled=true;cleanup.result.textContent='جارٍ الفحص...';
+  try{
+   const [objects,meals,ads,settings]=await Promise.all([
+    api('/storage/v1/object/list/menu-images',{method:'POST',body:{prefix:'',limit:1000,offset:0}}),
+    api('/rest/v1/dishes?select=image,rich_image'),
+    api('/rest/v1/menu_ads?select=image'),
+    api('/rest/v1/menu_settings?select=*')
+   ]);
+   const refs=[...meals,...ads,...settings].flatMap(row=>Object.values(row)).filter(x=>typeof x==='string');
+   const unused=objects.filter(obj=>/^[0-9a-f-]{36}\.(png|jpg|webp)$/i.test(obj.name)&&!refs.some(ref=>ref.includes('/menu-images/'+obj.name)));
+   const mb=unused.reduce((total,obj)=>total+Number(obj.metadata?.size||0),0)/1048576;
+   cleanup.result.textContent=unused.length?unused.length+' ملف غير مستخدم ('+mb.toFixed(2)+' MB)':'لا توجد صور غير مستخدمة.';
+   cleanup.form.querySelector('.cleanup-delete')?.remove();
+   if(!unused.length)return;
+   const remove=action('حذف الصور غير المستخدمة',async()=>{
+    if(!confirm('حذف '+unused.length+' صور قديمة نهائياً؟ قد تنقطع روابط خارجية لها.'))return;
+    remove.disabled=true;
+    try{
+     // Recheck every reference immediately before removal.
+     const [d,a,m]=await Promise.all([
+      api('/rest/v1/dishes?select=image,rich_image'),
+      api('/rest/v1/menu_ads?select=image'),
+      api('/rest/v1/menu_settings?select=*')
+     ]);
+     const latest=[...d,...a,...m].flatMap(row=>Object.values(row)).filter(x=>typeof x==='string');
+     const names=unused.map(o=>o.name).filter(name=>!latest.some(ref=>ref.includes('/menu-images/'+name)));
+     if(names.length)await api('/storage/v1/object/menu-images',{method:'DELETE',body:{prefixes:names}});
+     cleanup.result.textContent='تم حذف '+names.length+' صورة قديمة غير مستخدمة.';
+     remove.remove();
+    }catch(e){cleanup.result.textContent=e.message;remove.disabled=false;}
+   });
+   remove.className='cleanup-delete';cleanup.form.append(remove);
+  }catch(e){cleanup.result.textContent='فشل فحص الملفات: '+e.message;}
+  finally{scan.disabled=false;}
+ });
+ cleanup.form.append(scan);
 }
 async function openSection(key){
  if(['menu_staff','account'].includes(key)&&role!=='owner'){
