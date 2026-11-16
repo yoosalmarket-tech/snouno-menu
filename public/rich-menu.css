@@ -742,3 +742,26 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-customize{
 @media(max-height:660px){
   #rich-menu .rm-info-rating{top:-27px;}
 }
+
+/* Current and previous meal prices in the interactive detail panel. */
+#rich-menu .rm-info-price{
+  display:inline-flex!important;
+  flex-direction:row!important;
+  align-items:baseline!important;
+  justify-content:center!important;
+  gap:9px!important;
+  white-space:nowrap;
+}
+#rich-menu .rm-info-price .rm-current-price{
+  color:var(--rm-yellow);
+  font:inherit;
+}
+#rich-menu .rm-info-price .rm-old-price{
+  color:#a3a3a3!important;
+  font-size:clamp(12px,2vw,15px)!important;
+  font-weight:500!important;
+  line-height:1.2!important;
+  text-decoration:line-through!important;
+  text-decoration-color:#a3a3a3!important;
+  text-decoration-thickness:1.5px!important;
+}
