@@ -44,13 +44,9 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
  </div>
 
 <div class="desktop-welcome" dir="rtl" aria-label="واجهة سنونو للكمبيوتر">
-  <header class="desktop-header">
-    <a href="/welcome" data-page="welcome" class="desktop-logo-link" aria-label="واجهة سنونو"><img id="desktop-welcome-logo" src="/assets/logo.webp" alt="شعار سنونو"></a>
-    <nav aria-label="روابط المنيو"><a href="/welcome" data-page="welcome" aria-current="page">الرئيسية</a><a href="/menu" data-page="menu">قائمة الطعام</a><a href="/contact" data-page="contact">تواصل معنا</a></nav>
-    <a class="desktop-header-cta" href="/menu" data-page="menu">اكتشف الأصناف <span aria-hidden="true">↗</span></a>
-  </header>
   <div class="desktop-hero">
     <div class="desktop-copy">
+      <div class="desktop-hero-mark"><img id="desktop-welcome-logo" src="/assets/logo.webp" alt="شعار سنونو"></div>
       <span class="desktop-eyebrow"><span aria-hidden="true" class="desktop-dot"></span> نكهة سنونو في كل لقمة</span>
       <p class="desktop-greeting" id="desktop-welcome-greeting">أهلاً بك في</p>
       <h1><span id="desktop-welcome-brand">مطعم سنونو</span><span class="desktop-headline-accent">على مزاجك.</span></h1>
@@ -74,6 +70,45 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
 </section>
 <div id="inside" hidden><header><a class="brand-home" href="/welcome" data-page="welcome" aria-label="العودة إلى واجهة سنونو"><img id="logo" src="/assets/logo.webp" alt="سنونو"></a><button id="theme" aria-label="تغيير مظهر المنيو">☾</button></header>
 <section id="menu"><section id="ads" aria-label="إعلانات المطعم" hidden><div id="ad-track" tabindex="0" aria-label="اسحب لتصفح الإعلانات"></div><div id="ad-dots" aria-label="اختيار الإعلان"></div></section><label class="search"><span aria-hidden="true">⌕</span><input type="search" id="search" placeholder="ابحث عن طبقك أو مشروبك المفضل..." aria-label="البحث عن طبق"></label><div class="chips" id="chips"></div><div id="cards"></div></section>
-<section id="contact" hidden><h1>تواصل <em>معنا</em></h1><p id="intro"></p><div class="panel"><h2 id="location-name"></h2><p id="address"></p><h3>ساعات العمل</h3><p id="hours"></p><h3>رقم التواصل السريع</h3><b dir="ltr" id="hotline"></b></div><div class="links" id="links"></div><form id="feedback" class="panel"><h2>أرسل لنا استفسارك أو اقتراحك</h2><label>الاسم الكريم<input name="name" maxlength="100" required></label><label>رقم الهاتف للتواصل<input name="phone" type="tel" maxlength="32" dir="ltr"></label><label>نوع الملاحظة<select name="kind"><option>استفسار</option><option>اقتراح</option></select></label><label>الرسالة<textarea name="message" maxlength="2000" required></textarea></label><button class="yellow">إرسال الرسالة الآن</button><output></output></form></section>
+<section id="contact" hidden>
+  <div class="contact-hero">
+    <span class="contact-kicker"><span aria-hidden="true" class="contact-kicker-dot"></span> تواصل مع سنونو</span>
+    <h1>تواصل <em>معنا</em></h1>
+    <p id="intro"></p>
+  </div>
+  <div class="contact-layout">
+    <aside class="contact-aside" aria-label="معلومات وطرق التواصل">
+      <div class="contact-business-card panel">
+        <div class="contact-card-top"><span>معلومات المطعم</span><span lang="en">SNOUNO</span></div>
+        <div class="contact-info-block">
+          <span class="contact-row-icon" aria-hidden="true">⌖</span>
+          <div class="contact-info-text"><h2 id="location-name"></h2><p id="address"></p></div>
+        </div>
+        <div class="contact-detail-row">
+          <span class="contact-row-icon" aria-hidden="true">◷</span>
+          <div><h3>ساعات العمل</h3><p id="hours"></p></div>
+        </div>
+        <div class="contact-detail-row">
+          <span class="contact-row-icon" aria-hidden="true">✆</span>
+          <div><h3>رقم التواصل السريع</h3><b dir="ltr" id="hotline"></b></div>
+        </div>
+      </div>
+      <div class="contact-channels">
+        <h3>روابط الطلب والتواصل</h3>
+        <p>اختار الطريقة الأنسب لك</p>
+        <div class="links" id="links"></div>
+      </div>
+    </aside>
+    <form id="feedback" class="panel contact-form">
+      <div class="contact-form-head"><span class="contact-form-kicker">رسالتك تهمنا</span><h2>أرسل لنا استفسارك أو اقتراحك</h2><p>املأ الحقول التالية وسنستقبل رسالتك.</p></div>
+      <label>الاسم الكريم<input name="name" autocomplete="name" maxlength="100" placeholder="اسمك الكامل" required></label>
+      <label>رقم الهاتف للتواصل<input name="phone" type="tel" autocomplete="tel" maxlength="32" dir="ltr" placeholder="05xxxxxxxx"></label>
+      <label>نوع الملاحظة<select name="kind"><option>استفسار</option><option>اقتراح</option></select></label>
+      <label class="contact-message-field">الرسالة<textarea name="message" maxlength="2000" placeholder="اكتب رسالتك هنا..." required></textarea></label>
+      <button class="yellow">إرسال الرسالة الآن <span aria-hidden="true">↗</span></button>
+      <output role="status"></output>
+    </form>
+  </div>
+</section>
 <div id="social-links" hidden aria-label="حسابات المطعم"></div><footer id="credit"><button type="button" id="credit-link"></button><span id="credit-hint" role="status" aria-live="polite"></span></footer><nav id="dock"><a href="/menu" data-page="menu"><svg viewBox="0 0 24 24"><path d="M5 3v7c0 2 5 2 5 0V3m-2.5 0v18M18 3c-3 2-4 7-4 10h4m0-10v18"/></svg>القائمة</a><a href="/contact" data-page="contact"><svg viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 11h.1m4 0h.1m4 0h.1"/></svg>تواصل معنا</a></nav></div><div id="network" role="status" hidden></div>
 </main><dialog id="dish"><button id="close" aria-label="إغلاق">×</button><div id="details"></div></dialog></body></html>
