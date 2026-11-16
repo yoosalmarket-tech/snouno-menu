@@ -106,7 +106,14 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit}){
     empty.style.cssText='display:grid;place-items:center;font-size:76px;color:#FDBE2D';
     frame.append(empty);
    }
-   if(meal.badge)frame.append(mk('div','rm-dish-badge',meal.badge));
+   if(meal.badge){
+    const badge=mk('div','rm-dish-badge',meal.badge);
+    const px=clamp(Number(meal.rich_badge_x??77),5,95);
+    const py=clamp(Number(meal.rich_badge_y??36),5,95);
+    badge.style.setProperty('--rich-badge-x',px+'%');
+    badge.style.setProperty('--rich-badge-y',py+'%');
+    frame.append(badge);
+   }
    const smoke=mk('div','rm-dish-steam');smoke.setAttribute('aria-hidden','true');
    for(let n=0;n<4;n++)smoke.append(mk('i'));
    frame.append(smoke);u.stage.append(frame);dishesEls.push(frame);
