@@ -327,3 +327,17 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
 /* Historic dish price, never presented as a discount when it was lower. */
 #body .dish-sort-card .previous-price{color:#868686;font-size:12px;text-decoration:line-through;text-decoration-thickness:1.5px;white-space:nowrap;}
 #body .account-card .cleanup-delete{background:#c83831!important;color:#fff!important;}
+
+/* Owner-only, readable click reports. */
+#body .analytics-report{
+ padding:16px;margin:16px 0;border:1px solid #d6cbaf;
+ border-radius:14px;background:var(--surface,#fff);max-width:100%;
+ overflow-x:auto;
+}
+#body .analytics-report h2{font-size:19px;margin:0 0 13px;}
+#body .analytics-report p{line-height:1.7;margin:5px 0;}
+#body .action-report-table{width:100%;border-collapse:collapse;text-align:right;font-size:13px;min-width:350px;}
+#body .action-report-table th,#body .action-report-table td{padding:10px 12px;border-bottom:1px solid #dbd5c7;overflow-wrap:anywhere;}
+#body .action-report-table th{background:#f8e8ba;color:#302713;white-space:nowrap;}
+#body .action-report-table tbody tr:last-child td{border-bottom:0;}
+#body .action-report-table a{color:#816012;text-decoration:underline;font-weight:800;}
