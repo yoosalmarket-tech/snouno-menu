@@ -71,15 +71,18 @@ async function api(path, options={}) {
 }
 function loggedOut(){ generation++; role=null; $('login').hidden=false; $('logout').hidden=true; $('tabs').replaceChildren(); $('body').replaceChildren(); $('title').textContent='تسجيل الدخول'; }
 async function enter(){
-  const own=await api('/rest/v1/menu_staff?select=role&email=eq.'+encodeURIComponent(session.user.email.toLowerCase()));
+  const user=await api('/auth/v1/user');
+  if(!user?.email)throw new Error('تعذّر التحقق من الحساب');
+  session.user=user;persist(session);
+  const own=await api('/rest/v1/menu_staff?select=role&email=eq.'+encodeURIComponent(user.email.toLowerCase()));
   if(!own.length) throw new Error('لا توجد صلاحية لهذا الحساب');
   role=own[0].role; $('login').hidden=true; $('logout').hidden=false; $('tabs').replaceChildren();
   for(const [key,[label]] of Object.entries(sections)){
-    if(key==='menu_staff'&&role!=='owner') continue;
+    if(['menu_staff','account'].includes(key)&&role!=='owner') continue;
     const b=action(label,()=>openSection(key)); b.dataset.section=key; $('tabs').append(b);
   }
   const saved=location.hash.slice(1);
-  await openSection(Object.hasOwn(sections,saved)&&(saved!=='menu_staff'||role==='owner')?saved:'dishes');
+  await openSection(Object.hasOwn(sections,saved)&&(!['menu_staff','account'].includes(saved)||role==='owner')?saved:'dishes');
 }
 $('access').onsubmit=async e=>{
   e.preventDefault(); const form=e.currentTarget;
