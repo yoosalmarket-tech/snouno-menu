@@ -494,3 +494,85 @@ body.rich-menu-active:not([data-preview]) #shell{
   #rich-menu .rm-info-price{top:-4px;font-size:20px!important;}
   #rich-menu .rm-info{padding-bottom:16px!important;}
 }
+
+/* Three-meal interactive rail: keep thumbnails and their Qatar-font names
+   aligned in one 98px-high window, including while swiping between dishes. */
+#rich-menu .rm-rail-row{
+  position:relative;
+  flex:none;
+  width:38px;
+  height:98px;
+}
+#rich-menu .rm-rail-window{
+  height:98px!important;
+  max-height:98px!important;
+  mask-image:none!important;
+  -webkit-mask-image:none!important;
+}
+#rich-menu .rm-rail-labels{
+  position:absolute!important;
+  top:0!important;
+  right:calc(100% + 9px)!important;
+  left:auto!important;
+  width:clamp(92px,30vw,148px)!important;
+  height:98px!important;
+  transform:none!important;
+  display:block!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+  z-index:5!important;
+  text-align:right!important;
+  direction:rtl!important;
+}
+#rich-menu .rm-rail-labels span{
+  position:absolute;
+  right:0;
+  width:100%;
+  height:30px;
+  box-sizing:border-box;
+  display:grid;
+  align-content:center;
+  padding:2px 8px;
+  border:1px solid #625e53;
+  border-radius:8px;
+  background:rgba(24,23,29,.88);
+  color:#f1eadb;
+  opacity:.94;
+  font-family:Snouno,Tahoma,sans-serif!important;
+  font-size:clamp(11px,2.8vw,14px)!important;
+  font-weight:700!important;
+  line-height:1.1!important;
+  letter-spacing:0!important;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-shadow:none;
+  overflow:hidden;
+}
+#rich-menu .rm-rail-labels span[aria-current="true"]{
+  opacity:1;
+  color:var(--rm-yellow);
+  border-color:var(--rm-yellow);
+  background:#302b24;
+}
+/* Lift the name, description, price and lower action together. Preserve
+   a compact fallback so food imagery is not squeezed out on short screens. */
+@media(max-width:980px){
+  #rich-menu .rm-info{
+    padding-bottom:clamp(70px,11svh,98px)!important;
+  }
+  #rich-menu .rm-customize{
+    bottom:clamp(40px,7svh,65px)!important;
+  }
+}
+@media(min-width:981px){
+  #rich-menu .rm-info{
+    padding-bottom:clamp(85px,10svh,122px)!important;
+  }
+  #rich-menu .rm-customize{
+    bottom:clamp(55px,9svh,95px)!important;
+  }
+}
+@media(max-height:660px){
+  #rich-menu .rm-info{padding-bottom:clamp(36px,7svh,54px)!important;}
+  #rich-menu .rm-customize{bottom:clamp(40px,8svh,56px)!important;}
+}
