@@ -411,6 +411,10 @@ async function openSection(key){
    if(feedback){card.style.flexWrap='wrap';card.append(node('span',[row.kind,row.phone,row.stars?row.stars+' ★':'',row.message].filter(Boolean).join(' · ')));}
    if(key==='dishes') {
      const item=node('bdi',row.price+' ₪');item.dir='ltr';item.className='price';card.append(item);
+     if(row.old_price!==null&&row.old_price!==undefined&&row.old_price!==''&&Number(row.old_price)!==Number(row.price)){
+       const old=node('del',row.old_price+' ₪');old.className='previous-price';
+       old.title='السعر السابق';card.append(old);
+     }
      const control=node('label');control.className='availability-control';
      const input=node('input');input.type='checkbox';input.className='availability-toggle';input.checked=row.available!==false;
      input.setAttribute('aria-label','توفر '+row.name);
@@ -484,6 +488,7 @@ async function edit(key,row,inline=false){
    if(field==='sonbol_url')label.append(node('small','الصق رابط الوجبة من سنبل ليظهر زر طلبها في نافذة الطبق.'));
    if(field==='makook_url')label.append(node('small','اختياري: رابط وجبة مباشر من مكوك؛ عند تركه فارغاً يظهر رابط مطعم سنونو العام على مكوك في الوضع التفاعلي.'));
    if(field==='rich_image')label.append(node('small','خاص بالوضع التفاعلي فقط. حمّل صورة PNG/WebP شفافة مع الحفاظ على صورة الطبق العادي كما هي؛ عند تركه فارغاً نعرض الصورة العادية.'));
+   if(field==='old_price')label.append(node('small','السعر السابق يظهر مشطوباً بالرمادي حتى لو كان أقل من الحالي (ارتفاع سعر). اتركه فارغاً إن لم يكن هناك سعر سابق.'));
    if(field==='rich_badge_x')label.append(node('small','لكل طبق موضع مستقل. يمكنك سحب الشارة فوق الصورة في المعاينة بالأسفل أو تعديل النسبة.'));
    if(field==='ingredients')label.append(node('small','افصل المكونات بفاصلة، أو اكتب «خضار: خس، خيار» في سطر لكل مجموعة.'));
    if(type==='image'){const hint=node('small', 'المقاس المقترح: '+(sizes[field]||'1200 × 740')+' — يُفضّل WebP أو PNG بخلفية شفافة');label.append(hint);const upload=node('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';label.append(upload);uploads[field]=upload;}
@@ -525,7 +530,8 @@ async function edit(key,row,inline=false){
        data.position=(Number(existing[0]?.position)||0)+1;
      }
      if(key==='menu_ads'&&!data.image)throw new Error('أضف صورة للإعلان');
-     const result=key==='menu_staff'?await api('/functions/v1/menu-staff',{method:'POST',body:data}):await api('/rest/v1/'+key+(row.id?'?'+filter(row):''),{method:row.id?'PATCH':'POST',body:data});
+     const result=key==='menu_staff'?await api('/functions/v1/menu-staff',{method:'POST',body:data}):await api('/rest/v1/'+key+(row.id?'?'+filter(row):''),{method:row.id?'PATCH':'POST',body:data,headers:{Prefer:'return=representation'}});
+     if(key!=='menu_staff'&&(!Array.isArray(result)||result.length===0))throw new Error('لم يؤكد الخادم حفظ التغييرات. تحقق من الصلاحيات وأعد المحاولة.');
      if(!inline)$('dialog').close();
      await openSection(key);notice(result?.message||'تم الحفظ');
    }catch(e){error.textContent=e.message;}finally{save.disabled=false;}
