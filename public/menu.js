@@ -108,7 +108,7 @@ let welcomeCarouselTimer=null,welcomeCarouselCleanupTimer=null;
 let welcomeCarouselActive=false,welcomeCarouselAnimating=false,welcomeCarouselSession=0;
 const welcomeAutoplayMs=3000,welcomeTransitionMs=640;
 const prefersReducedWelcomeMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
-const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&matchMedia('(max-width:980px)').matches;
+const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&matchMedia('(max-width:980px)').matches&&document.documentElement.classList.contains('loader-complete');
 const onMobileWelcome=()=>matchMedia('(max-width:980px)').matches;
 function welcomeMealName(index){
  const choice=welcomeMobileMeals[index];
@@ -895,11 +895,13 @@ async function revealPage(){
    loader.style.display='none';
    fly.cancel();fold.cancel();
    root.style.removeProperty('--loader-header-height');
+   startWelcomeCarousel();
    return;
   }
  }
  root.classList.remove('loading');
  root.classList.add('loader-complete');
  $('page-loader').style.display='none';
+ startWelcomeCarousel();
 }
 load().finally(revealPage);
