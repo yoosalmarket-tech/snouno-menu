@@ -11,6 +11,10 @@ const isPreview=window.parent!==window&&new URLSearchParams(location.search).get
 /* Rich menu is an explicit, bandwidth-sensitive opt-in. Nothing from the
    immersive stage is fetched until its switch is on. */
 let richDesired=!isPreview&&localStorage.getItem('snouno-rich-mode')==='1';
+// Test the first visit during the yellow loading screen. Returning visitors
+// keep their saved preference instead of repeating the network check.
+const firstVisitModeCheck=!isPreview&&localStorage.getItem('snouno-rich-mode')===null;
+const firstVisitStartedAt=performance.now();
 let richController=null,richImport=null,richBusy=false,richRevision=0;
 const richToggle=document.getElementById('rich-mode-toggle');
 function updateRichToggle(){
@@ -27,13 +31,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=rich-badge-position-1';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=adaptive-loading-20261116';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=rich-badge-position-1')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=adaptive-loading-20261116')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -938,7 +942,8 @@ async function load(){
   }));
   [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   void syncRichMode();
- }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);}
+  return true;
+ }catch{$('network').hidden=false;$('network').replaceChildren('تعذّر تحميل المنيو. ');const b=make('button','إعادة المحاولة');b.onclick=load;$('network').append(b);return false;}
 }
 async function revealPage(){
  const root=document.documentElement;
@@ -1092,4 +1097,32 @@ async function revealPage(){
  $('page-loader').style.display='none';
  startWelcomeCarousel();
 }
-load().finally(revealPage);
+// Measure menu API, interactive CSS/JS and a real meal image while the
+// loading screen is active. After five seconds choose the lightweight menu.
+async function chooseFirstVisitMode(initialMenu){
+ let timer;
+ try{
+  const remaining=Math.max(0,5000-(performance.now()-firstVisitStartedAt));
+  const deadline=new Promise(resolve=>{timer=setTimeout(()=>resolve(false),remaining);});
+  const probe=Promise.all([initialMenu,richAssets()]).then(async([loaded])=>{
+   if(!loaded||!dishes.length)return false;
+   const meal=dishes.find(d=>asset(d.rich_image||d.image));
+   if(!meal)return false;
+   const sample=new Image();
+   sample.src=asset(meal.rich_image||meal.image);
+   await sample.decode();
+   return true;
+  }).catch(()=>false);
+  const fast=await Promise.race([probe,deadline]);
+  richDesired=Boolean(fast);
+  localStorage.setItem('snouno-rich-mode',fast?'1':'0');
+  updateRichToggle();
+  if(currentPage()==='menu')void syncRichMode();
+  if(!fast&&!dishes.length){
+   $('network').hidden=false;
+   $('network').textContent=isEnglish()?'Slow connection — loading the standard menu…':'الاتصال بطيء — جاري تحميل المنيو العادي…';
+  }
+ }finally{clearTimeout(timer);}
+}
+const initialMenu=load();
+(firstVisitModeCheck?chooseFirstVisitMode(initialMenu):initialMenu).finally(revealPage);
