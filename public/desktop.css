@@ -1175,3 +1175,153 @@
  }
  body:not([data-preview]) #welcome .desktop-main-cta{min-height:48px!important;}
 }
+
+
+/* Desktop LIGHT MODE, consistently. Previous desktop-specific charcoal
+   backgrounds were unconditional and overrode the selected user theme.
+   Do not affect body.dark; photography and brand yellow stay unchanged. */
+@media(min-width:981px){
+ body:not(.dark):not([data-preview]){
+  background:#f6f4ef;color:#29241b;
+ }
+ body:not(.dark):not([data-preview]) #shell:has(#inside:not([hidden])){
+  background:#f6f4ef;color:#29241b;
+ }
+ body:not(.dark):not([data-preview]) #chips{
+  background:#fffaf1;border-color:#dfd2b8;
+  box-shadow:0 9px 23px #2b210d0d;
+  color:#29241b;
+ }
+ body:not(.dark):not([data-preview]) #chips .category-nav-head{
+  border-bottom-color:#e6d8bf;
+ }
+ body:not(.dark):not([data-preview]) #chips .category-nav-title strong{
+  color:#77520c;
+ }
+ body:not(.dark):not([data-preview]) #chips .category-nav-title span,
+ body:not(.dark):not([data-preview]) #chips #category-position{
+  color:#6b5c45;
+ }
+ body:not(.dark):not([data-preview]) #chips .chip{
+  background:#fff;border:1px solid #e4d6c0;color:#332b21;
+  box-shadow:inset 0 -2px 0 #e6ded1;
+ }
+ body:not(.dark):not([data-preview]) #chips .chip .chip-ar{
+  color:#776954;
+ }
+ body:not(.dark):not([data-preview]) #chips .chip[aria-current=location],
+ body:not(.dark):not([data-preview]) #chips .chip[aria-pressed=true]{
+  background:#FDBE2D;border-color:#dfa61d;color:#211706;
+  box-shadow:inset 0 -3px #c58e0f;
+ }
+ body:not(.dark):not([data-preview]) #chips .chip[aria-current=location] .chip-ar,
+ body:not(.dark):not([data-preview]) #chips .chip[aria-pressed=true] .chip-ar{
+  color:#49330c;
+ }
+
+ /* The ad artwork itself is not recolored: only surrounding UI chrome. */
+ body:not(.dark):not([data-preview]) #ads,
+ body:not(.dark):not([data-preview]) #ads .ad-showcase{
+  color:#2d271f;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-main{
+  background:#fffdf8;border-color:#e4d7bf;
+  box-shadow:0 7px 22px #251a0916;
+ }
+ body:not(.dark):not([data-preview]) #ads #ad-track{
+  background:#fffdf8;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-desktop-side{
+  background:#fff9ed;border:1px solid #e2d3b6;color:#34291b;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-side-title{
+  color:#60450c;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-total{
+  color:#7e5b19;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-side-bottom{
+  border-top-color:#e5d6b8;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-controls button{
+  background:#fffdf8;border-color:#d9c49e;color:#624412;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-controls button:hover{
+  background:#FDBE2D;border-color:#d49c19;color:#231807;
+ }
+ body:not(.dark):not([data-preview]) #ads #ad-dots{
+  background:#fffaf0eb;border-color:#dfceab;
+  box-shadow:0 3px 10px #30200818;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-thumb{
+  background:#fffdf8;border-color:#e7d9c2;color:#33281c;
+ }
+ body:not(.dark):not([data-preview]) #ads .ad-thumb-text strong{
+  color:#31291f;
+ }
+
+ /* Welcome has its own charcoal theme in dark mode; in light mode it gets
+    warm cream, readable black headings, and the same Snouno yellow accents. */
+ body:not(.dark):not([data-preview]) #welcome{
+  background:#f6f4ef;color:#252019;
+ }
+ body:not(.dark):not([data-preview]) #welcome .desktop-welcome{
+  background:radial-gradient(ellipse at 48% 10%,#fffdf7 0%,#f9f4e9 54%,#f2eee5 100%);
+  color:#252019;
+ }
+ body:not(.dark):not([data-preview]) #welcome .desktop-copy h1,
+ body:not(.dark):not([data-preview]) #welcome #desktop-welcome-brand{
+  color:#231d15;
+ }
+ body:not(.dark):not([data-preview]) #welcome .desktop-headline-accent{
+  color:#bc8105;
+ }
+ body:not(.dark):not([data-preview]) #welcome .desktop-description{
+  color:#605648;
+ }
+ body:not(.dark):not([data-preview]) #welcome .desktop-section-caption{
+  color:#77684e;
+ }
+ body:not(.dark):not([data-preview]) #welcome .desktop-section-caption span:first-child,
+ body:not(.dark):not([data-preview]) #welcome .desktop-section-caption span:last-child{
+  background:#c6ad75!important;
+ }
+
+ /* Contact page had two permanently dark promotional cards. */
+ body:not(.dark):not([data-preview]) #contact .contact-hero{
+  background:radial-gradient(ellipse at 92% 34%,#fff8df,#fff2d5 55%,#f8e7c1 100%);
+  color:#2b251b;border:1px solid #e8d5a8;
+  box-shadow:0 12px 26px #2e1b0614;
+ }
+ body:not(.dark):not([data-preview]) #contact .contact-hero::after{
+  color:#593f0710;
+ }
+ body:not(.dark):not([data-preview]) #contact .contact-kicker,
+ body:not(.dark):not([data-preview]) #contact h1 em{
+  color:#91670b;
+ }
+ body:not(.dark):not([data-preview]) #contact h1{
+  color:#2b2418;
+ }
+ body:not(.dark):not([data-preview]) #contact #intro{
+  color:#635640;
+ }
+ body:not(.dark):not([data-preview]) #contact .contact-business-card{
+  background:linear-gradient(150deg,#fffdf8,#fff4e1);
+  border-color:#e4d4b4;color:#332a1d;
+  box-shadow:0 11px 30px #2419050d;
+ }
+ body:not(.dark):not([data-preview]) #contact .contact-card-top{
+  color:#8b6514;
+ }
+ body:not(.dark):not([data-preview]) #contact .contact-card-top [lang=en]{
+  color:#82735b;
+ }
+ body:not(.dark):not([data-preview]) #contact .contact-info-block,
+ body:not(.dark):not([data-preview]) #contact .contact-detail-row{
+  border-bottom-color:#e9dcc5;
+ }
+ body:not(.dark):not([data-preview]) #contact .contact-row-icon{
+  background:#fff7e9;border-color:#e8d5ae;color:#805d14;
+ }
+}
