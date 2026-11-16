@@ -654,3 +654,25 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-stage-wrap{
 @media(max-height:660px){
   #rich-menu .rm-info{--rm-info-backdrop-rise:24px;}
 }
+
+/* Immovable meal sidebar: separate from the animated perspective scene.
+   It is a direct child of .rm-app and uses viewport anchoring in fullscreen,
+   so neither meal flings nor category transitions nor the changing info
+   panel can change its x/y coordinates. Only its meal contents update. */
+#rich-menu .rm-app > .rm-thumbs{
+  position:absolute!important;
+  top:clamp(140px,29%,300px)!important;
+  right:clamp(12px,2.6vw,30px)!important;
+  bottom:auto!important;
+  left:auto!important;
+  transform:none!important;
+  animation:none!important;
+  transition:none!important;
+  z-index:30!important;
+  margin:0!important;
+}
+body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
+  position:fixed!important;
+  top:clamp(140px,29svh,300px)!important;
+  right:clamp(12px,2.6vw,30px)!important;
+}
