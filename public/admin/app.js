@@ -175,6 +175,7 @@ function wireSortableList(list, selector, persist, canDrag=()=>true){
   });
   const begin=event=>{
    if(active||changing||!canDrag()||event.button!==0)return;
+   if(matchMedia('(max-width:700px)').matches && !event.target.closest('.dish-drag-handle'))return;
    // Any non-interactive part of the meal card is now a drag surface.
    if(event.target.closest('button,a,input,select,textarea,label')&&
       !event.target.closest('.dish-drag-handle'))return;
