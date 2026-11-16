@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const sections = {
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
-  menu_settings: ['تفاصيل المنيو', [
+  menu_settings: ['مطعم السنونو', [
     ['name','اسم المطعم'],
     ['welcome','عبارة الترحيب'],
     ['welcome_caption','العبارة الصغيرة أعلى شاشة الترحيب'],
@@ -320,7 +320,7 @@ async function openSection(key){
 const filter=row=>row.id!==undefined?'id=eq.'+row.id:'email=eq.'+encodeURIComponent(row.email);
 async function edit(key,row,inline=false){
  const form=inline?node('form'):$('edit');
- form.replaceChildren(node('h2',inline?'إعدادات مطعم سنونو':(row.id?'تعديل':'إضافة')+' · '+sections[key][0]));
+ form.replaceChildren(node('h2',inline?'إعدادات مطعم السنونو':(row.id?'تعديل':'إضافة')+' · '+sections[key][0]));
  if(inline){form.className='inline-settings-form';$('body').append(form);}
  const cats=key==='dishes'?await api('/rest/v1/categories?select=id,name&order=position,name'):[];
  if(key==='dishes'&&!cats.length){notice('أضف صنفاً أولاً لتضع الطبق فيه.');return;}
