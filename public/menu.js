@@ -77,7 +77,10 @@ function startDesktopMealWheel(){
     const nextSrc=asset(meal.image);
     if(!nextSrc||hero.classList.contains('wheel-exit'))return;
     const nextImage=new Image();
-    nextImage.onload=()=>{
+    let transitionStarted=false;
+    const showNextMeal=()=>{
+      if(transitionStarted)return;
+      transitionStarted=true;
       if(generation!==desktopWheelGeneration||!canPlayDesktopWheel())return;
       hero.classList.remove('wheel-enter');
       hero.classList.add('wheel-has-rotated','wheel-exit');
@@ -96,9 +99,10 @@ function startDesktopMealWheel(){
         },580);
       },360);
     };
+    nextImage.onload=showNextMeal;
     nextImage.onerror=()=>{}; // Skip an unavailable image without changing the current meal.
     nextImage.src=nextSrc;
-    if(nextImage.complete&&nextImage.naturalWidth)nextImage.onload();
+    if(nextImage.complete&&nextImage.naturalWidth)showNextMeal();
   };
   desktopWheelTimer=setInterval(rotate,2000);
 }
