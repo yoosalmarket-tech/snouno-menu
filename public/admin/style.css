@@ -250,3 +250,76 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
  #body .account-card{padding:15px;}
  #body .account-card form button{width:100%;}
 }
+
+
+/* Per-dish draggable interactive-label preview (inside meal edit dialog).
+   Kept separate from the existing welcome screen position editor. */
+#edit .rich-badge-editor{
+ display:grid;gap:9px;
+ border:1px solid #e2d7b6;
+ padding:13px;border-radius:16px;
+ background:#fff9eb;
+ min-width:0;
+}
+#edit .rich-badge-editor h3{
+ margin:0;font-size:17px;line-height:1.45;
+ color:#463410;
+}
+#edit .rich-badge-editor>p{
+ font-size:12px;line-height:1.7;
+ color:#685b43;margin:0;
+}
+#edit label.position-setting input[type="range"]{
+ width:100%;min-height:30px;
+ padding:0;border:0;
+ accent-color:#cc9413;
+ cursor:pointer;touch-action:pan-y;
+}
+#edit label.position-setting output.position-value{
+ font-size:12px;
+ display:inline-block;width:max-content;
+ padding:1px 8px;border-radius:8px;
+ background:#ffebac;color:#5f4211;
+}
+#edit .rich-badge-preview{
+ width:100%;height:auto;aspect-ratio:1.16/1;
+ position:relative;isolation:isolate;
+ overflow:hidden;border-radius:15px;
+ background:radial-gradient(ellipse at 50% 45%,#353335,#232323 70%);
+ border:1px solid #544e40;
+ touch-action:pan-y;
+}
+#edit .rich-badge-preview-image{
+ display:block;position:absolute;
+ inset:0;width:100%;height:100%;
+ object-fit:contain;object-position:center;
+ border:0;pointer-events:none;
+ user-select:none;-webkit-user-drag:none;
+}
+#edit .rich-badge-preview-tag{
+ display:grid;place-items:center;
+ position:absolute;z-index:3;
+ left:77%;top:36%;
+ transform:translate(-50%,-50%) rotate(-3deg);
+ box-sizing:border-box;
+ min-width:55px;
+ max-width:72%;
+ border:1px solid #7f7046;
+ background:#252329;color:#FDBE2D;
+ box-shadow:0 4px 8px #0006;
+ border-radius:13px;
+ padding:8px 12px;
+ text-align:center;font:700 12px/1.35 Snouno,Tahoma,sans-serif;
+ cursor:grab;touch-action:none;
+ user-select:none;-webkit-user-select:none;
+ overflow-wrap:anywhere;
+}
+#edit .rich-badge-preview-tag:active{cursor:grabbing}
+#edit .rich-badge-preview-tag.is-placeholder{opacity:.75;border-style:dashed}
+#edit .rich-badge-preview-tag:focus-visible{
+ outline:3px solid #FDBE2D;outline-offset:3px;
+}
+@media(max-width:700px){
+ #edit .rich-badge-editor{padding:10px;}
+ #edit .rich-badge-preview{aspect-ratio:1/1;}
+}
