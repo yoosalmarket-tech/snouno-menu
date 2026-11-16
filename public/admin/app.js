@@ -13,10 +13,16 @@ const sections = {
     ['welcome_label','العبارة بجانب الوجبة (مثل: من سنونو)'],
     ['welcome_meal_1','اسم الوجبة الأولى (بوكس المشاركة)'],
     ['welcome_image_1','صورة الترحيب الأولى — بوكس المشاركة','image'],
+    ['welcome_label_x_1','موضع النص للوجبة 1 — أفقي','position'],
+    ['welcome_label_y_1','موضع النص للوجبة 1 — عمودي','position'],
     ['welcome_meal_2','اسم الوجبة الثانية (نوك أوت)'],
     ['welcome_image_2','صورة الترحيب الثانية — نوك أوت','image'],
+    ['welcome_label_x_2','موضع النص للوجبة 2 — أفقي','position'],
+    ['welcome_label_y_2','موضع النص للوجبة 2 — عمودي','position'],
     ['welcome_meal_3','اسم الوجبة الثالثة (ناشفيل)'],
     ['welcome_image_3','صورة الترحيب الثالثة — ناشفيل','image'],
+    ['welcome_label_x_3','موضع النص للوجبة 3 — أفقي','position'],
+    ['welcome_label_y_3','موضع النص للوجبة 3 — عمودي','position'],
     ['welcome_desktop_accent','السطر الأصفر الكبير في ترحيب الكمبيوتر'],
     ['welcome_description','وصف صفحة الترحيب للكمبيوتر','textarea'],
     ['welcome_button','نص زر تصفح المنيو'],
@@ -238,6 +244,10 @@ async function openSection(key){
  const area=$('body');
  if(!feedback&&!['menu_settings','menu_links'].includes(key))area.append(action('إضافة',()=>edit(key,{})));
  if(!rows.length)area.append(node('p','لا توجد عناصر بعد.'));
+ if(key==='menu_settings'){
+   if(rows[0])await edit('menu_settings',rows[0],true);
+   return;
+ }
  const categoryGroups=new Map();
  if(['categories','menu_ads'].includes(key)){
    const hint=node('p','اسحب العنصر من المقبض ⋮⋮ وضعه فوق أو تحت العنصر الآخر لتغيير ترتيب العرض. يتم الحفظ تلقائياً، دون إدخال أرقام.');
@@ -308,8 +318,10 @@ async function openSection(key){
  if(['categories','menu_ads'].includes(key))setupFlatSorting(key,rows);
 }
 const filter=row=>row.id!==undefined?'id=eq.'+row.id:'email=eq.'+encodeURIComponent(row.email);
-async function edit(key,row){
- const form=$('edit');form.replaceChildren(node('h2',(row.id?'تعديل':'إضافة')+' · '+sections[key][0]));
+async function edit(key,row,inline=false){
+ const form=inline?node('form'):$('edit');
+ form.replaceChildren(node('h2',inline?'إعدادات مطعم سنونو':(row.id?'تعديل':'إضافة')+' · '+sections[key][0]));
+ if(inline){form.className='inline-settings-form';$('body').append(form);}
  const cats=key==='dishes'?await api('/rest/v1/categories?select=id,name&order=position,name'):[];
  if(key==='dishes'&&!cats.length){notice('أضف صنفاً أولاً لتضع الطبق فيه.');return;}
  const dishes=key==='menu_ads'?await api('/rest/v1/dishes?select=id,name&order=name'):[];
@@ -319,7 +331,7 @@ async function edit(key,row){
 
  for(const [field,caption,type='text'] of sections[key][1]){
    const label=node('label',caption);const input=node(type==='textarea'?'textarea':['select','product'].includes(type)?'select':'input');
-   input.name=field;if(input.tagName==='INPUT')input.type=({image:'text',integer:'number',optionalRating:'number',optionalPrice:'number'}[type]||type);
+   input.name=field;if(input.tagName==='INPUT')input.type=({image:'text',integer:'number',optionalRating:'number',optionalPrice:'number',position:'range'}[type]||type);
    if(type==='select')for(const cat of cats){const option=node('option',cat.name);option.value=cat.id;input.append(option);}
    if(type==='product'){
      const empty=node('option','عرض الإعلان مع روابط الطلب');empty.value='';input.append(empty);
@@ -328,6 +340,13 @@ async function edit(key,row){
    if(type==='locked'){input.readOnly=true;input.title='للقراءة فقط';}
    if(type==='checkbox'){input.checked=row[field]??true;label.classList.add('availability-field');}
    else input.value=row[field]??(type==='select'?cats[0].id:field==='position'?0:'');
+   if(type==='position'){
+     input.min='5';input.max='95';input.step='1';
+     input.value=row[field]??(field.includes('_x_')?82:28);
+     const value=node('output',input.value+'%');value.className='position-value';
+     input.addEventListener('input',()=>{value.textContent=input.value+'%';});
+     label.classList.add('position-setting');label.append(value);
+   }
    if(type==='number'){input.step='0.01';input.min='0';}
    if(type==='optionalPrice'||type==='optionalRating'){input.step=type==='optionalPrice'?'0.01':'0.1';input.min=0;if(type==='optionalRating')input.max=5;}
    if(field==='sonbol_url'){input.dir='ltr';input.pattern='https://.+';}
@@ -339,8 +358,10 @@ async function edit(key,row){
    if(type==='image'){const hint=node('small', 'المقاس المقترح: '+(sizes[field]||'1200 × 740')+' — يُفضّل WebP أو PNG بخلفية شفافة');label.append(hint);const upload=node('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';label.append(upload);uploads[field]=upload;}
    form.append(label);
  }
- const error=node('p');error.setAttribute('role','alert'); const save=node('button','حفظ');
- const footer=node('footer');footer.append(save,action('إلغاء',()=>$('dialog').close()));form.append(error,footer);
+ const error=node('p');error.setAttribute('role','alert'); const save=node('button',inline?'حفظ جميع الإعدادات':'حفظ');
+ const footer=node('footer');footer.append(save);
+ if(!inline)footer.append(action('إلغاء',()=>$('dialog').close()));
+ form.append(error,footer);
  form.onsubmit=async event=>{
    event.preventDefault();save.disabled=true;error.textContent='';
    try {
@@ -372,15 +393,86 @@ async function edit(key,row){
      }
      if(key==='menu_ads'&&!data.image)throw new Error('أضف صورة للإعلان');
      const result=key==='menu_staff'?await api('/functions/v1/menu-staff',{method:'POST',body:data}):await api('/rest/v1/'+key+(row.id?'?'+filter(row):''),{method:row.id?'PATCH':'POST',body:data});
-     $('dialog').close();await openSection(key);notice(result?.message||'تم الحفظ');
+     if(!inline)$('dialog').close();
+     await openSection(key);notice(result?.message||'تم الحفظ');
    }catch(e){error.textContent=e.message;}finally{save.disabled=false;}
  };
- setupPreview(key,row,uploads);
- $('dialog').showModal();
+ if(inline){
+   setupWelcomeLabelPositionPreviews(form,row,uploads);
+ }else{
+   setupPreview(key,row,uploads);
+   $('dialog').showModal();
+ }
 }
 if(location.hash.includes('access_token='))history.replaceState(null,'',location.pathname);
 if(session)enter().catch(e=>{persist(null);loggedOut();notice(e.message);});else loggedOut();
 
+/* Dedicated draggable label preview for each of the three welcome meals. */
+function setupWelcomeLabelPositionPreviews(form,row,uploads){
+ const labels=['بوكس المشاركة','نوك أوت','ناشفيل'];
+ const title=node('p','موضع النص مستقل لكل وجبة. اسحب البطاقة فوق الصورة أو استخدم شريطي الموضع. تُحفظ جميع التغييرات عند الضغط على «حفظ جميع الإعدادات».');
+ title.className='inline-settings-help';
+ form.insertBefore(title,form.querySelector('label'));
+ for(let n=1;n<=3;n++){
+   const x=form.elements.namedItem('welcome_label_x_'+n);
+   const y=form.elements.namedItem('welcome_label_y_'+n);
+   const image=form.elements.namedItem('welcome_image_'+n);
+   const name=form.elements.namedItem('welcome_meal_'+n);
+   if(!x||!y||!image)continue;
+   const field=x.closest('label');
+   const widget=node('div');widget.className='label-position-preview';
+   const picture=node('img');picture.className='label-position-food';
+   picture.alt='معاينة وجبة '+labels[n-1];picture.draggable=false;
+   picture.src=row['welcome_image_'+n]||'/assets/welcome/'+[2468,2465,2472][n-1]+'.webp';
+   const floating=node('div');floating.className='label-position-badge';
+   const prefix=node('strong',row.welcome_label||'من سنونو');
+   const mealName=node('span',name.value||labels[n-1]);
+   floating.append(prefix,mealName);
+   floating.tabIndex=0;floating.setAttribute('role','slider');
+   floating.setAttribute('aria-label','اسحب لتغيير موضع النص للوجبة '+n);
+   widget.append(picture,floating);
+   const clamp=v=>Math.min(95,Math.max(5,Math.round(v)));
+   const sync=()=>{
+     floating.style.left=x.value+'%';
+     floating.style.top=y.value+'%';
+     floating.setAttribute('aria-valuetext','أفقي '+x.value+' بالمئة وعمودي '+y.value+' بالمئة');
+     x.dispatchEvent(new Event('input',{bubbles:false}));
+     y.dispatchEvent(new Event('input',{bubbles:false}));
+   };
+   const start=event=>{
+     if(event.button!==0)return;
+     event.preventDefault();floating.setPointerCapture(event.pointerId);
+     const move=e=>{
+       const r=widget.getBoundingClientRect();
+       x.value=clamp((e.clientX-r.left)/r.width*100);
+       y.value=clamp((e.clientY-r.top)/r.height*100);
+       sync();
+     };
+     move(event);
+     floating.addEventListener('pointermove',move);
+     floating.addEventListener('pointerup',()=>floating.removeEventListener('pointermove',move),{once:true});
+     floating.addEventListener('pointercancel',()=>floating.removeEventListener('pointermove',move),{once:true});
+   };
+   floating.addEventListener('pointerdown',start);
+   floating.addEventListener('keydown',event=>{
+     const delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[event.key];
+     if(!delta)return;event.preventDefault();
+     x.value=clamp(Number(x.value)+delta[0]);
+     y.value=clamp(Number(y.value)+delta[1]);sync();
+   });
+   x.addEventListener('input',()=>{floating.style.left=x.value+'%';});
+   y.addEventListener('input',()=>{floating.style.top=y.value+'%';});
+   name.addEventListener('input',()=>mealName.textContent=name.value||labels[n-1]);
+   form.elements.namedItem('welcome_label')?.addEventListener('input',e=>prefix.textContent=e.target.value||'من سنونو');
+   image.addEventListener('input',()=>{if(!uploads['welcome_image_'+n]?.files?.length)picture.src=image.value||picture.src;});
+   uploads['welcome_image_'+n]?.addEventListener('change',event=>{
+     const file=event.target.files[0];
+     if(file)picture.src=URL.createObjectURL(file);
+   });
+   sync();
+   field.parentNode.insertBefore(widget,field);
+ }
+}
 function setupPreview(key,row,uploads){
  const panel=$('preview'),dialog=$('dialog'),form=$('edit');
  const enabled=['dishes','categories','menu_settings','menu_links'].includes(key);
