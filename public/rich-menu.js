@@ -484,9 +484,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
  u.share.onclick=async()=>{
   if(!dish()?.id)return;
-  if(typeof onShare==='function')await onShare(dish());
-  u.share.textContent='✓';
-  setTimeout(()=>{if(!destroyed)u.share.textContent='↗';},1400);
+  const result=typeof onShare==='function'?await onShare(dish()):null;
+  // A clipboard failure opens the manual-copy prompt, not a false success.
+  if(result?.copied){
+   u.share.textContent='✓';
+   setTimeout(()=>{if(!destroyed)u.share.textContent='↗';},1400);
+  }
  };
  u.fav.onclick=()=>{
   if(!dish())return;
