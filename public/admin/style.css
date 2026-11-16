@@ -323,3 +323,7 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
  #edit .rich-badge-editor{padding:10px;}
  #edit .rich-badge-preview{aspect-ratio:1/1;}
 }
+
+/* Historic dish price, never presented as a discount when it was lower. */
+#body .dish-sort-card .previous-price{color:#868686;font-size:12px;text-decoration:line-through;text-decoration-thickness:1.5px;white-space:nowrap;}
+#body .account-card .cleanup-delete{background:#c83831!important;color:#fff!important;}
