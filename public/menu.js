@@ -695,7 +695,14 @@ function price(d){
  const p=make('div');p.className='price';
  const amount=(tag,value)=>{const el=make(tag,money(value));el.dir='ltr';return el;};
  p.append(amount('bdi',d.price));
- if(d.old_price>d.price)p.append(amount('del',d.old_price));
+ // Preserve historical previous prices for increases as well as discounts.
+ const previous=d.old_price===null||d.old_price===undefined||d.old_price===''?NaN:Number(d.old_price);
+ if(Number.isFinite(previous)&&previous!==Number(d.price)){
+  const old=amount('del',previous);
+  old.title='السعر السابق';
+  old.setAttribute('aria-label','السعر السابق '+previous+' شيكل');
+  p.append(old);
+ }
  return p;
 }
 function renderCards(){
