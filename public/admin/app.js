@@ -526,6 +526,78 @@ function gaEventsGraph(events){
  section.append(bars);return section;
 }
 
+// A scenario model, not actual sales. GA4 only provides first-referral events;
+// conversion to completed orders and average order value remain explicit assumptions.
+function gaEstimatedSalesPanel(data,pending){
+ const panel=node('section');panel.id='ga-potential-sales';panel.className='analytics-report ga-sales-estimate';
+ const heading=node('div');heading.className='ga-chart-heading';
+ heading.append(node('h2','المبيعات المحتملة (تقديرية)'));
+ heading.append(node('p','توقع مبني على إحالات التوصيل الأولى × نسبة التحويل المفترضة × متوسط قيمة الطلب. ليس مبيعات مؤكدة.'));
+ panel.append(heading);
+ const canCalculate=!pending&&data.reportStatus?.eventsAvailable===true&&
+  Number.isFinite(Number(data.totals?.uniqueReferrals))&&data.totals?.uniqueReferrals!=null;
+ const count=canCalculate?Math.max(0,Number(data.totals.uniqueReferrals)):null;
+ let preferences={};
+ try{preferences=JSON.parse(localStorage.getItem('snounu-estimated-sales-settings-v1')||'{}')||{};}catch{}
+ const clamp=(v,minimum,maximum,fallback)=>{
+  const n=Number(v);return Number.isFinite(n)&&n>=minimum&&n<=maximum?n:fallback;
+ };
+ let rate=clamp(preferences.conversionRate,10,20,15);
+ let average=clamp(preferences.averageOrderValue,1,10000,60);
+ const controls=node('div');controls.className='ga-estimate-controls';
+ const conversion=node('label');conversion.className='ga-estimate-control';
+ const rateLabel=node('span','نسبة التحويل المفترضة من إحالة إلى طلب');
+ const rateValue=node('strong',rate+'%');rateValue.id='ga-conversion-rate-display';
+ const slider=node('input');slider.type='range';slider.min='10';slider.max='20';slider.step='1';slider.value=String(rate);
+ slider.id='ga-conversion-rate';slider.setAttribute('aria-label','نسبة التحويل المفترضة، من 10 إلى 20 بالمئة');
+ const rangeLabels=node('div');rangeLabels.className='ga-estimate-range';
+ rangeLabels.append(node('small','10%'),node('small','20%'));
+ conversion.append(rateLabel,rateValue,slider,rangeLabels);
+ const orderValue=node('label');orderValue.className='ga-estimate-control';
+ orderValue.append(node('span','متوسط قيمة الطلب المفترض (₪)'));
+ const priceInput=node('input');priceInput.type='number';priceInput.min='1';priceInput.max='10000';priceInput.step='5';priceInput.value=String(average);
+ priceInput.id='ga-average-order-value';priceInput.setAttribute('aria-label','متوسط قيمة الطلب المفترض بالشيكل');
+ orderValue.append(priceInput,node('small','قيمة افتراضية قابلة للتعديل، وليست متوسط طلبات موثّقاً.'));
+ controls.append(conversion,orderValue);
+ panel.append(controls);
+ const summary=node('p','إحالات التوصيل الفريدة حسب GA4: '+(count===null?'لم تتوفر بعد':gaNumber(count)));
+ summary.className='ga-estimate-referrals';panel.append(summary);
+ const cases=node('div');cases.className='ga-estimate-scenarios';
+ const low=node('div'),selected=node('div'),high=node('div');
+ for(const [box,title] of [[low,'المتحفظ (10%)'],[selected,'السيناريو المختار'],[high,'المتفائل (20%)']]){
+  box.className='ga-estimate-scenario';
+  box.append(node('span',title),node('strong','—'),node('small','—'));
+  cases.append(box);
+ }
+ selected.classList.add('ga-estimate-selected');
+ panel.append(cases);
+ const explanation=node('p','الحساب: الإحالات الفريدة × نسبة التحويل × متوسط قيمة الطلب. كل إحالة تُحتسب مرة واحدة في نافذة الجلسة المستخدمة في الموقع. تغيير الافتراضات لا يغيّر بيانات GA4.');
+ explanation.className='ga-estimate-disclaimer';panel.append(explanation);
+ const store=()=>{try{localStorage.setItem('snounu-estimated-sales-settings-v1',JSON.stringify({conversionRate:rate,averageOrderValue:average}));}catch{}};
+ function update(){
+  rateValue.textContent=rate+'%';
+  const values=[[low,10],[selected,rate],[high,20]];
+  for(const [box,pct] of values){
+   const value=box.querySelector('strong'),caption=box.querySelector('small');
+   value.textContent=count===null?'—':gaMoney(count*pct/100*average);
+   caption.textContent=count===null?'بانتظار معالجة بيانات الإحالات':gaNumber(count*pct/100)+' طلب متوقع عند '+pct+'%';
+  }
+  selected.querySelector('span').textContent='السيناريو المختار ('+rate+'%)';
+ }
+ slider.addEventListener('input',()=>{
+  rate=clamp(slider.value,10,20,15);
+  update();store();
+ });
+ priceInput.addEventListener('input',()=>{
+  const n=Number(priceInput.value);
+  if(!Number.isFinite(n)||n<1||n>10000){priceInput.setCustomValidity('أدخل متوسطاً بين 1 و10000 شيكل');return;}
+  priceInput.setCustomValidity('');
+  average=n;update();store();
+ });
+ update();
+ return panel;
+}
+
 async function renderGaOverview(days=28){
  const area=$('body'),ticket=generation;
  const top=node('div');top.className='ga-heading';
@@ -580,6 +652,7 @@ async function renderGaOverview(days=28){
   if(pendingNote)pendingNote.className='ga-notice';
   const historyTitle=node('h2','التقارير التاريخية — آخر '+String(days)+' يوماً');
   historyTitle.className='ga-history-title';
+  const estimate=gaEstimatedSalesPanel(data,pending);
   const metrics=node('section');metrics.id='ga-summary-cards';metrics.className='ga-stats-grid';
   const cards=[
    ['الزيارات (Sessions)',gaNumber(data.summary.sessions),'عدد الجلسات، وليس عدد الأشخاص'],
@@ -642,7 +715,7 @@ async function renderGaOverview(days=28){
   foot.className='ga-footnote';
   const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
   if(notes)notes.className='ga-notice';
-  area.replaceChildren(top,live,...(pendingNote?[pendingNote]:[]),historyTitle,sources,ranks,trend,metrics,eventsGraph,refTable,eventsTable,foot,...(notes?[notes]:[]));
+  area.replaceChildren(top,live,...(pendingNote?[pendingNote]:[]),historyTitle,estimate,sources,ranks,trend,metrics,eventsGraph,refTable,eventsTable,foot,...(notes?[notes]:[]));
  }catch(error){
   if(ticket===generation){status.textContent='حدث خطأ أثناء قراءة GA4. '+(error?.message||'');status.className='ga-notice';}
  }
