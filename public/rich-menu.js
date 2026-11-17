@@ -25,10 +25,11 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<div class="rm-rail-row"><div class="rm-rail-labels" aria-hidden="true"></div><div class="rm-rail-window"><div class="rm-rail-track"></div></div></div><button type="button" class="rm-rail-button rm-rail-down" aria-label="التالي">⌄</button>',
  '<span class="rm-rail-count" dir="ltr">1 / 1</span></aside>',
  '<section class="rm-info" aria-live="polite">',
- '<span class="rm-info-rating" dir="ltr" hidden></span><h2 class="rm-info-name"></h2><p class="rm-info-desc"></p>',
- '<span class="rm-info-price" dir="ltr"></span>',
- // Keep ORDER NOW directly below the current meal price, in the same swipe transition.
+ // ORDER NOW stays above the rating; both continue to track the selected meal.
  '<div class="rm-order-wrap"><button type="button" class="rm-customize" dir="rtl" aria-label="اطلب الآن"><span class="rm-order-ar" dir="rtl">اطلب الآن</span><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><strong class="rm-order-en" lang="en" dir="ltr">ORDER NOW</strong></button></div>',
+ '<span class="rm-info-rating" dir="ltr" hidden></span>',
+ // Center meal copy as a group between the rating and the bottom action.
+ '<div class="rm-meal-copy"><h2 class="rm-info-name"></h2><p class="rm-info-desc"></p><span class="rm-info-price" dir="ltr"></span></div>',
  '<div class="rm-info-actions">',
  '<button type="button" class="rm-info-details">＋ عرض تفاصيل الوجبة</button>',
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
