@@ -2212,3 +2212,177 @@ main:has(#body.ga-overview) #tabs .admin-profile-logout{
  margin:0;vertical-align:middle;
  transform:none;
 }
+
+/* Unified welcome settings: immediate visual desktop/mobile mock previews.
+   These previews never load the public menu or generate GA4 page views. */
+#body .welcome-shared-previews{
+ grid-column:1/-1;display:flex;flex-direction:column;gap:13px;
+ min-width:0;width:100%;padding:20px;
+ background:#FFFFFF;border:1px solid #D6D6D6;
+ border-radius:19px;box-shadow:0 9px 20px #0000000a;
+}
+#body .welcome-shared-previews h3{
+ color:#262626;font-size:19px;font-weight:900;line-height:1.4;margin:0;
+}
+#body .welcome-shared-previews>p{
+ margin:0;color:#595959;font-size:12px;line-height:1.75;
+}
+#body .welcome-shared-picker{
+ display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+}
+#body .welcome-shared-choice{
+ min-height:34px;padding:6px 13px;
+ border:1px solid #D6D6D6;border-radius:10px;
+ background:#F2F2F2;color:#262626;
+ font-size:12px;font-weight:800;cursor:pointer;
+ transition:background .18s ease,border-color .18s ease;
+}
+#body .welcome-shared-choice[aria-pressed=true]{
+ background:#FDBE2D;border-color:#FDBE2D;color:#000000;
+}
+#body .welcome-shared-choice:focus-visible{
+ outline:2px solid #000000;outline-offset:2px;
+}
+#body .welcome-shared-devices{
+ display:grid;grid-template-columns:minmax(0,2fr) minmax(190px,.85fr);
+ align-items:start;gap:18px;min-width:0;
+}
+#body .welcome-device-panel{
+ display:flex;flex-direction:column;align-items:center;
+ gap:9px;min-width:0;width:100%;
+}
+#body .welcome-device-panel h4{
+ align-self:stretch;text-align:right;
+ margin:0;font-size:13px;font-weight:850;color:#262626;
+}
+#body .welcome-device-mock{
+ box-sizing:border-box;position:relative;
+ display:flex;flex-direction:column;
+ isolation:isolate;min-width:0;overflow:hidden;
+ background:#262626;color:#FFFFFF;
+ border:1px solid #595959;border-radius:15px;
+ box-shadow:0 9px 22px #0000001a;
+ text-align:center;pointer-events:none;
+}
+#body .welcome-device-desktop{
+ width:100%;max-width:690px;aspect-ratio:16/9;
+}
+#body .welcome-device-mobile{
+ width:min(100%,200px);aspect-ratio:9/16;
+}
+#body .welcome-device-top{
+ box-sizing:border-box;position:relative;z-index:4;
+ flex:0 0 19%;width:100%;min-height:0;
+ display:flex;align-items:flex-start;justify-content:center;
+ padding:2.1% 6%;
+ border-radius:0 0 50% 50% / 0 0 23% 23%;
+ background:#FDBE2D;
+}
+#body .welcome-device-logo{
+ display:block;width:auto;max-width:40%;
+ height:85%;max-height:70px;
+ padding:2px 9px;object-fit:contain;
+ border:1px solid #595959;border-radius:10px;
+ background:#262626;box-shadow:0 4px 8px #00000040;
+}
+#body .welcome-device-caption{
+ position:relative;z-index:3;
+ flex:0 0 7%;
+ display:flex;align-items:center;justify-content:center;
+ color:#F2F2F2;font-size:clamp(8px,.85vw,11px);
+ font-weight:750;
+}
+#body .welcome-device-stage{
+ position:relative;z-index:5;flex:1 1 0;
+ align-self:center;width:min(100%,380px);
+ min-height:0;
+}
+#body .welcome-device-photo{
+ display:block;position:absolute;z-index:2;
+ width:75%;height:120%;max-height:none;
+ left:50%;top:56%;transform:translate(-50%,-50%);
+ object-fit:contain;filter:drop-shadow(0 8px 12px #000000a0);
+}
+#body .welcome-device-badge{
+ position:absolute;z-index:4;
+ transform:translate(-50%,-50%) rotate(5deg);
+ display:flex;flex-direction:column;align-items:center;
+ gap:1px;max-width:37%;
+ padding:4px 8px;border:1px solid #595959;
+ border-radius:7px;background:#000000;color:#FDBE2D;
+ font-size:clamp(7px,.7vw,9px);line-height:1.35;
+ box-shadow:0 3px 0 #00000080;
+}
+#body .welcome-device-badge strong{font-size:1.1em;color:#FDBE2D;}
+#body .welcome-device-badge span{overflow-wrap:anywhere;}
+#body .welcome-device-dots{
+ position:relative;z-index:8;flex:0 0 6%;
+ display:flex;align-items:center;justify-content:center;gap:4px;
+}
+#body .welcome-device-dots>span{
+ width:5px;height:5px;border-radius:20px;background:#262626;
+}
+#body .welcome-device-dots>span.selected{width:15px;}
+#body .welcome-device-footer{
+ position:relative;z-index:4;isolation:isolate;
+ box-sizing:border-box;flex:0 0 39%;
+ display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+ gap:1px;width:100%;min-height:0;
+ padding:6% 9% 4%;
+ background:#FDBE2D;color:#000000;
+}
+#body .welcome-device-footer::before{
+ content:"";position:absolute;z-index:-1;
+ left:-10%;top:-14%;width:120%;height:33%;
+ background:#FDBE2D;
+ border-radius:50% 50% 0 0 / 100% 100% 0 0;
+}
+#body .welcome-device-greeting{
+ color:#262626;font-size:clamp(8px,.9vw,12px);line-height:1.2;
+}
+#body .welcome-device-brand{
+ color:#000000;font-weight:900;
+ font-size:clamp(14px,2vw,25px);line-height:1.25;
+}
+#body .welcome-device-subtitle{
+ margin:1px 0 5px;color:#262626;
+ font-size:clamp(7px,.75vw,11px);line-height:1.35;
+}
+#body .welcome-device-cta{
+ display:grid;place-items:center;
+ width:min(78%,280px);min-height:26px;
+ padding:3px 7px;border-radius:9px;
+ background:#000000;color:#FDBE2D;
+ font-size:clamp(10px,1.15vw,14px);font-weight:900;
+}
+#body .welcome-device-mobile .welcome-device-logo{
+ max-width:57%;padding:2px 5px;border-radius:7px;
+}
+#body .welcome-device-mobile .welcome-device-caption{font-size:8px;}
+#body .welcome-device-mobile .welcome-device-badge{
+ max-width:47%;padding:3px 5px;font-size:7px;
+}
+#body .welcome-device-mobile .welcome-device-greeting{font-size:9px;}
+#body .welcome-device-mobile .welcome-device-brand{font-size:17px;}
+#body .welcome-device-mobile .welcome-device-subtitle{font-size:8px;}
+#body .welcome-device-mobile .welcome-device-cta{
+ min-height:27px;font-size:12px;border-radius:7px;
+ width:90%;
+}
+@media(max-width:760px){
+ #body .welcome-shared-devices{grid-template-columns:1fr;gap:13px;}
+ #body .welcome-device-desktop{max-width:570px;}
+ #body .welcome-device-mobile{width:min(68%,210px);}
+ #body .welcome-device-desktop .welcome-device-brand{font-size:clamp(14px,4vw,22px);}
+ #body .welcome-device-desktop .welcome-device-greeting{font-size:clamp(8px,2vw,11px);}
+ #body .welcome-device-desktop .welcome-device-subtitle{font-size:clamp(7px,1.8vw,10px);}
+ #body .welcome-device-desktop .welcome-device-cta{font-size:clamp(10px,3vw,14px);}
+}
+@media(max-width:450px){
+ #body .welcome-shared-previews{padding:13px;}
+ #body .welcome-device-badge{font-size:7px;}
+ #body .welcome-device-desktop{border-radius:10px;}
+}
+@media(prefers-reduced-motion:reduce){
+ #body .welcome-shared-choice{transition:none;}
+}
