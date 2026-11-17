@@ -2014,3 +2014,6 @@ main:has(> #tabs:empty) #admin-title-row #title{text-align:center;}
   justify-content:flex-start;
  }
 }
+
+/* Greeting role accent, Snounu brand yellow. */
+#body.ga-overview .ga-hero-heading h2 em{color:#FDBE2D!important;}
