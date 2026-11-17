@@ -187,8 +187,16 @@ function buildAdminSidebar(email){
  const avatar=node('span',role==='owner'?'م':'ف');avatar.className='admin-profile-avatar';
  const info=node('span');info.className='admin-profile-info';
  info.append(node('strong',role==='owner'?'مدير الموقع':'فريق المطعم'),node('small',String(email||'')));
- const logout=action('↪',async()=>{try{await api('/auth/v1/logout',{method:'POST'});}finally{persist(null);loggedOut();notice('تم تسجيل الخروج');}});
+ const logout=action('',async()=>{try{await api('/auth/v1/logout',{method:'POST'});}finally{persist(null);loggedOut();notice('تم تسجيل الخروج');}});
  logout.id='logout';logout.className='admin-profile-logout';logout.title='تسجيل الخروج';logout.setAttribute('aria-label','تسجيل الخروج');
+ const logoutIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ logoutIcon.setAttribute('viewBox','0 0 24 24');
+ logoutIcon.setAttribute('width','21');logoutIcon.setAttribute('height','21');
+ logoutIcon.setAttribute('fill','none');logoutIcon.setAttribute('stroke','currentColor');
+ logoutIcon.setAttribute('stroke-width','1.9');logoutIcon.setAttribute('stroke-linecap','round');
+ logoutIcon.setAttribute('stroke-linejoin','round');logoutIcon.setAttribute('aria-hidden','true');
+ logoutIcon.innerHTML='<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>';
+ logout.append(logoutIcon);
  profile.append(avatar,info,logout);tabs.append(profile);
 }
 
