@@ -146,6 +146,13 @@ export default async function handler(req,res){
       eventCounts:realtimeEvents
     };
     const processedHasRows=(summaryResult.value?.rows||[]).length>0;
+    const uniqueReferrals=eventsResult.status==='fulfilled'?(eventCounts.delivery_referral_unique?.count??0):null;
+    // Sum the menu prices sent with first-referral events, never confirmed order revenue.
+    const referralValue=valueAvailable?monetaryRows.reduce((n,r)=>n+r.metrics[0],0):null;
+    // Average recorded price = total value / first-referral event count (only when
+    // both processed GA4 series are available). Never substitute a guessed AOV.
+    const averageReferralPrice=uniqueReferrals>0&&referralValue!=null
+      ?referralValue/uniqueReferrals:null;
     return json(res,200,{
       source:'Google Analytics 4',propertyId:PROPERTY_ID,days,asOf:new Date().toISOString(),
       realtime,processedHasRows,
@@ -160,10 +167,7 @@ export default async function handler(req,res){
         referralValueAvailable:valueAvailable,
         trafficSourcesAvailable:trafficSourcesResult.status==='fulfilled'
       },
-      totals:{
-        uniqueReferrals:eventsResult.status==='fulfilled'?(eventCounts.delivery_referral_unique?.count??0):null,
-        referralValue:valueAvailable?monetaryRows.reduce((n,r)=>n+r.metrics[0],0):null
-      },
+      totals:{uniqueReferrals,referralValue,averageReferralPrice},
       daily:dailyResult.status==='fulfilled'?rows(dailyResult.value).map(r=>({date:r.dimensions[0],sessions:r.metrics[0],users:r.metrics[1]})):[],
       warning
     });
