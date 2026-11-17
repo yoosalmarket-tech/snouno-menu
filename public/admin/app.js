@@ -603,16 +603,20 @@ function gaEstimatedSalesPanel(data,pending){
  heading.append(node('h2','المبيعات المحتملة (تقديرية)'));
  heading.append(node('p','توقع مبني على إحالات التوصيل الأولى × نسبة التحويل المفترضة × متوسط قيمة الطلب. ليس مبيعات مؤكدة.'));
  panel.append(heading);
- const canCalculate=!pending&&data.reportStatus?.eventsAvailable===true&&
-  Number.isFinite(Number(data.totals?.uniqueReferrals))&&data.totals?.uniqueReferrals!=null;
- const count=canCalculate?Math.max(0,Number(data.totals.uniqueReferrals)):null;
+ const countReady=!pending&&data.reportStatus?.eventsAvailable===true&&
+  data.totals?.uniqueReferrals!=null&&Number.isFinite(Number(data.totals.uniqueReferrals));
+ const count=countReady?Math.max(0,Number(data.totals.uniqueReferrals)):null;
+ const recordedAverage=data.totals?.averageReferralPrice;
+ // GA4 recorded prices, not an editable assumption. A missing custom metric is unknown, not zero.
+ const average=count>0&&data.reportStatus?.referralValueAvailable===true&&
+  recordedAverage!=null&&Number.isFinite(Number(recordedAverage))
+  ?Number(recordedAverage):null;
  let preferences={};
  try{preferences=JSON.parse(localStorage.getItem('snounu-estimated-sales-settings-v1')||'{}')||{};}catch{}
  const clamp=(v,minimum,maximum,fallback)=>{
   const n=Number(v);return Number.isFinite(n)&&n>=minimum&&n<=maximum?n:fallback;
  };
  let rate=clamp(preferences.conversionRate,10,20,15);
- let average=clamp(preferences.averageOrderValue,1,10000,60);
  const controls=node('div');controls.className='ga-estimate-controls';
  const conversion=node('label');conversion.className='ga-estimate-control';
  const rateLabel=node('span','نسبة التحويل المفترضة من إحالة إلى طلب');
@@ -622,11 +626,14 @@ function gaEstimatedSalesPanel(data,pending){
  const rangeLabels=node('div');rangeLabels.className='ga-estimate-range';
  rangeLabels.append(node('small','10%'),node('small','20%'));
  conversion.append(rateLabel,rateValue,slider,rangeLabels);
- const orderValue=node('label');orderValue.className='ga-estimate-control';
- orderValue.append(node('span','متوسط قيمة الطلب المفترض (₪)'));
- const priceInput=node('input');priceInput.type='number';priceInput.min='1';priceInput.max='10000';priceInput.step='5';priceInput.value=String(average);
- priceInput.id='ga-average-order-value';priceInput.setAttribute('aria-label','متوسط قيمة الطلب المفترض بالشيكل');
- orderValue.append(priceInput,node('small','قيمة افتراضية قابلة للتعديل، وليست متوسط طلبات موثّقاً.'));
+ const orderValue=node('div');orderValue.className='ga-estimate-control ga-estimate-calculated';
+ orderValue.append(node('span','متوسط سعر الوجبة المُحال إليها (₪)'));
+ const averageOutput=node('output',average===null?'—':gaMoney(average));
+ averageOutput.id='ga-average-order-value';
+ averageOutput.setAttribute('aria-label','متوسط قيمة الإحالة المحسوب تلقائياً من أسعار الوجبات');
+ orderValue.append(averageOutput,node('small',average===null
+  ?'بانتظار معالجة أسعار الإحالات من GA4'
+  :'محسوب تلقائياً: '+gaMoney(data.totals.referralValue)+' ÷ '+gaNumber(count)+' إحالة فريدة. لا يمكن تعديله.'));
  controls.append(conversion,orderValue);
  panel.append(controls);
  const summary=node('p','إحالات التوصيل الفريدة حسب GA4: '+(count===null?'لم تتوفر بعد':gaNumber(count)));
@@ -640,28 +647,22 @@ function gaEstimatedSalesPanel(data,pending){
  }
  selected.classList.add('ga-estimate-selected');
  panel.append(cases);
- const explanation=node('p','الحساب: الإحالات الفريدة × نسبة التحويل × متوسط قيمة الطلب. كل إحالة تُحتسب مرة واحدة في نافذة الجلسة المستخدمة في الموقع. تغيير الافتراضات لا يغيّر بيانات GA4.');
+ const explanation=node('p','الحساب: الإحالات الفريدة × نسبة التحويل × متوسط سعر الوجبة المُحال إليها. المتوسط يُحتسب من مجموع أسعار الإحالات المسجلة في GA4 ÷ عدد الإحالات الفريدة للفترة نفسها، بافتراض تسجيل سعر لكل إحالة. هذه قيمة محتملة وليست مبيعات حقيقية، والتعديل متاح لنسبة التحويل فقط.');
  explanation.className='ga-estimate-disclaimer';panel.append(explanation);
- const store=()=>{try{localStorage.setItem('snounu-estimated-sales-settings-v1',JSON.stringify({conversionRate:rate,averageOrderValue:average}));}catch{}};
+ const store=()=>{try{localStorage.setItem('snounu-estimated-sales-settings-v1',JSON.stringify({conversionRate:rate}));}catch{}};
  function update(){
   rateValue.textContent=rate+'%';
   const values=[[low,10],[selected,rate],[high,20]];
   for(const [box,pct] of values){
    const value=box.querySelector('strong'),caption=box.querySelector('small');
-   value.textContent=count===null?'—':gaMoney(count*pct/100*average);
-   caption.textContent=count===null?'بانتظار معالجة بيانات الإحالات':(count*pct/100).toLocaleString('en-US',{maximumFractionDigits:2})+' طلب متوقع عند '+pct+'%';
+   value.textContent=average===null?'—':gaMoney(count*pct/100*average);
+   caption.textContent=average===null?'بانتظار أسعار الإحالات المسجلة في GA4':(count*pct/100).toLocaleString('en-US',{maximumFractionDigits:2})+' طلب متوقع عند '+pct+'%';
   }
   selected.querySelector('span').textContent='السيناريو المختار ('+rate+'%)';
  }
  slider.addEventListener('input',()=>{
   rate=clamp(slider.value,10,20,15);
   update();store();
- });
- priceInput.addEventListener('input',()=>{
-  const n=Number(priceInput.value);
-  if(!Number.isFinite(n)||n<1||n>10000){priceInput.setCustomValidity('أدخل متوسطاً بين 1 و10000 شيكل');return;}
-  priceInput.setCustomValidity('');
-  average=n;update();store();
  });
  update();
  return panel;
