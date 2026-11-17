@@ -2199,3 +2199,16 @@ dialog[open]::backdrop{
  body.admin-mobile-open main:has(> #tabs:not(:empty)) > nav#tabs,
  body.admin-mobile-open main:has(#body.ga-overview) > nav#tabs{transform:translateX(0)!important;}
 }
+
+/* Logout: smaller 17px exit glyph precisely centered in its square. */
+main:has(> #tabs:not(:empty)) #tabs .admin-profile-logout,
+main:has(#body.ga-overview) #tabs .admin-profile-logout{
+ display:grid;place-items:center;align-content:center;justify-content:center;
+ padding:0;line-height:0;text-align:center;
+}
+#tabs .admin-profile-logout svg{
+ display:block;position:static;flex:none;
+ width:17px;height:17px;min-width:17px;min-height:17px;
+ margin:0;vertical-align:middle;
+ transform:none;
+}
