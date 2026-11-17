@@ -36,13 +36,46 @@ function trackMealEvent(name,meal,params={}){
  }
  window.gtag('event',name,event);
 }
+// Deduplicate referral VALUE separately from raw outbound clicks. There is no
+// visitor ID here: only a short-lived timestamp and a first-referral flag.
+// The 30-minute inactivity window approximates GA4's default session timeout.
+const referralSessionKey='snounu-first-referral-session-v1';
+const referralInactivityMs=30*60*1000;
+let referralMemory=null;
+function registerReferralSession(firstReferral=false){
+ if(isPreview)return false;
+ const now=Date.now();
+ let previous=referralMemory;
+ try{previous=JSON.parse(localStorage.getItem(referralSessionKey)||'null');}catch{}
+ const active=previous&&Number.isFinite(previous.lastActivity)
+  &&now>=previous.lastActivity&&now-previous.lastActivity<referralInactivityMs;
+ const alreadyAttributed=!!(active&&previous.attributed);
+ const next={lastActivity:now,attributed:alreadyAttributed||firstReferral};
+ referralMemory=next;
+ try{localStorage.setItem(referralSessionKey,JSON.stringify(next));}catch{}
+ return firstReferral&&!alreadyAttributed;
+}
 function trackMenuAction(action,target,mealId){
  const meal=dishes.find(d=>d.id===mealId);
  if(action==='order_platform_click'){
   const platform=target?.dataset.platform||target?.dataset.channel;
-  if(['utlob','sonbol','makook'].includes(platform))
+  if(['utlob','sonbol','makook'].includes(platform)){
+   const firstReferral=registerReferralSession(true);
+   // Raw click event remains unchanged for click-through analysis.
    trackMealEvent('delivery_app_click',meal,{delivery_platform:platform});
+   if(firstReferral){
+    const price=Number(meal?.price);
+    const hasPrice=meal?.price!=null&&meal.price!==''&&Number.isFinite(price)&&price>=0;
+    trackMealEvent('delivery_referral_unique',meal,{
+     delivery_platform:platform,
+     meal_name:meal?.name||'General menu',
+     currency:'ILS',
+     ...(hasPrice?{value:price,referral_value:price}:{})
+    });
+   }
+  }
  }else if(action==='favorite_toggle'&&meal){
+  registerReferralSession();
   if(!favorites.has(meal.id))trackMealEvent('add_to_wishlist',meal);
  }else if(action==='share_meal_click'&&meal){
   trackMealEvent('meal_share_click',meal);
