@@ -161,7 +161,7 @@ export default async function handler(req,res){
         trafficSourcesAvailable:trafficSourcesResult.status==='fulfilled'
       },
       totals:{
-        uniqueReferrals:eventCounts.delivery_referral_unique?.count??null,
+        uniqueReferrals:eventsResult.status==='fulfilled'?(eventCounts.delivery_referral_unique?.count??0):null,
         referralValue:valueAvailable?monetaryRows.reduce((n,r)=>n+r.metrics[0],0):null
       },
       daily:dailyResult.status==='fulfilled'?rows(dailyResult.value).map(r=>({date:r.dimensions[0],sessions:r.metrics[0],users:r.metrics[1]})):[],
