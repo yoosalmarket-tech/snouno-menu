@@ -285,7 +285,10 @@ function applyLanguage(){
  }
  translateStaticContent();
  const installLabel=$('install-app-label');
- if(installLabel)installLabel.textContent=isEnglish()?'Install the menu app':'تثبيت المنيو على الهاتف';
+ if(installLabel)installLabel.textContent=isEnglish()?'Install the app':'تثبيت التطبيق';
+ const promoTitle=$('install-promo-title'),promoText=$('install-promo-subtitle');
+ if(promoTitle)promoTitle.textContent=isEnglish()?'Keep Snounu on your phone!':'خلي منيو سنونو على هاتفك!';
+ if(promoText)promoText.textContent=isEnglish()?'Open the menu like an app, in one tap.':'افتح المنيو مثل التطبيق، بضغطة واحدة.';
  updateRichToggle();
  if(richController)richController.refresh();
 }
@@ -1425,44 +1428,76 @@ const initialMenu=load();
    Installation never affects visitor reporting or dashboard routes. */
 function setupMenuInstall(){
  if(isPreview)return;
- const button=$('install-snounu-app'),guide=$('install-guide');
- if(!button||!guide)return;
- let installPrompt=null;
+ const promo=$('install-snounu-promo'),button=$('install-snounu-app'),guide=$('install-guide');
+ if(!promo||!button||!guide)return;
+ let installPrompt=null,showTimer=0,hideTimer=0;
+ const dismissedKey='snounu-install-promo-dismissed-v1';
  const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
  const mobile=()=>window.matchMedia('(max-width: 980px)').matches;
- const update=()=>{
-  button.hidden=standalone()||!mobile();
-  $('install-app-label').textContent=isEnglish()?'Install the menu app':'تثبيت المنيو على الهاتف';
+ const dismissed=()=>{try{return sessionStorage.getItem(dismissedKey)==='yes';}catch{return false;}};
+ const markDismissed=()=>{try{sessionStorage.setItem(dismissedKey,'yes');}catch{}};
+ const hide=({remember=false}={})=>{
+  clearTimeout(showTimer);clearTimeout(hideTimer);
+  promo.hidden=true;
+  if(remember)markDismissed();
  };
+ const updateLanguage=()=>{
+  $('install-promo-title').textContent=isEnglish()?'Keep Snounu on your phone!':'خلي منيو سنونو على هاتفك!';
+  $('install-promo-subtitle').textContent=isEnglish()?'Open the menu like an app, in one tap.':'افتح المنيو مثل التطبيق، بضغطة واحدة.';
+  $('install-app-label').textContent=isEnglish()?'Install the app':'تثبيت التطبيق';
+  $('install-promo-close').setAttribute('aria-label',isEnglish()?'Dismiss install offer':'إغلاق إعلان التثبيت');
+ };
+ const eligible=()=>mobile()&&!standalone()&&!dismissed()&&currentPage()==='welcome';
+ const showWhenReady=(attempt=0)=>{
+  if(!eligible())return;
+  if(!document.documentElement.classList.contains('loader-complete')){
+   if(attempt<8)showTimer=setTimeout(()=>showWhenReady(attempt+1),500);
+   return;
+  }
+  updateLanguage();
+  promo.hidden=false;
+  // It is informational: never trap focus, cover the screen or require a response.
+  hideTimer=setTimeout(()=>hide({remember:true}),11000);
+ };
+ // Show once per browser tab, after the welcome animation. Ignore or close it freely.
+ showTimer=setTimeout(()=>showWhenReady(),2100);
+ $('install-promo-close').addEventListener('click',()=>hide({remember:true}));
+ document.addEventListener('click',event=>{
+  if(event.target.closest('a[data-page="menu"],a[href="/menu"]'))hide({remember:true});
+ },{capture:true});
+ window.addEventListener('popstate',()=>{if(currentPage()!=='welcome')hide({remember:true});});
+ window.addEventListener('resize',()=>{if(!mobile())hide();},{passive:true});
  window.addEventListener('beforeinstallprompt',event=>{
   event.preventDefault();
   installPrompt=event;
-  update();
  });
- window.addEventListener('appinstalled',()=>{installPrompt=null;update();});
- window.addEventListener('resize',update,{passive:true});
- window.matchMedia('(display-mode: standalone)').addEventListener?.('change',update);
+ window.addEventListener('appinstalled',()=>{
+  installPrompt=null;
+  hide({remember:true});
+ });
+ window.matchMedia('(display-mode: standalone)').addEventListener?.('change',()=>{
+  if(standalone())hide({remember:true});
+ });
  $('install-guide-close').addEventListener('click',()=>guide.close());
  button.addEventListener('click',async()=>{
+  hide({remember:true});
   if(standalone())return;
   if(installPrompt){
    const prompt=installPrompt;installPrompt=null;
    prompt.prompt();
    try{await prompt.userChoice;}catch{}
-   update();
    return;
   }
   const iOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
     (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   $('install-guide-title').textContent=isEnglish()?'Install Snounu':'تثبيت منيو سنونو';
   $('install-guide-body').textContent=iOS
-    ?(isEnglish()?'In your browser, tap Share, then Add to Home Screen.':'اضغط على زر المشاركة في المتصفح، ثم اختر «إضافة إلى الشاشة الرئيسية».')
-    :(isEnglish()?'Open the browser menu (⋮) and choose Install app or Add to Home Screen.':'افتح قائمة المتصفح (⋮)، ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».');
+    ?(isEnglish()?'Tap Share in Safari, then Add to Home Screen.':'اضغط على زر المشاركة في سفاري، ثم اختر «إضافة إلى الشاشة الرئيسية».')
+    :(isEnglish()?'Open your browser menu (⋮) and choose Install app or Add to Home Screen.':'افتح قائمة المتصفح (⋮)، ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».');
   $('install-guide-close').textContent=isEnglish()?'Got it':'تمام';
   if(typeof guide.showModal==='function')guide.showModal();
   else alert($('install-guide-body').textContent);
  });
- update();
  if('serviceWorker' in navigator&&window.isSecureContext){
   navigator.serviceWorker.register('/sw.js',{scope:'/'})
    .catch(error=>console.warn('Snounu install service worker:',error));
