@@ -910,13 +910,17 @@ async function renderGaOverview(days=28){
   const sourceNote=node('p','QR scans لا تُحتسب إلا لروابط QR الموسومة في GA4. وDirect / Unknown تعني أن مصدر الزيارة غير معروف. تسمية Instagram Feeds للتبسيط ولا تثبت مكان ظهور الرابط داخل إنستغرام.');
   sourceNote.className='ga-traffic-source-note';sources.append(sourceNote);
   const trend=gaDailyLineChart(data.daily||[]);
+  const devices=gaDeviceDonutPanel(data.devices||[],data.reportStatus?.devicesAvailable===true);
+  const languages=gaLanguagePanel(data.languages||[],data.reportStatus?.languagesAvailable===true);
   const eventsGraph=gaEventsGraph(data.eventCounts||{});
+  const chartsRow=node('div');chartsRow.className='ga-overview-chart-row';chartsRow.append(trend,devices);
+  const insightsRow=node('div');insightsRow.className='ga-overview-insights-row';insightsRow.append(eventsGraph,topSources,languages);
   const foot=node('p','المصدر: Google Analytics 4 · آخر جلب: '+new Date(data.asOf).toLocaleString('ar')+' · لا تمثل قيمة الإحالات مبيعات فعلية.');
   foot.className='ga-footnote';
   const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
   if(notes)notes.className='ga-notice';
   area.classList.add('ga-overview');
-  area.replaceChildren(hero,topSources,live,...(pendingNote?[pendingNote]:[]),historyTitle,estimate,ranks,trend,metrics,eventsGraph,refTable,eventsTable,sources,foot,...(notes?[notes]:[]));
+  area.replaceChildren(hero,primaryMetrics,chartsRow,insightsRow,...(pendingNote?[pendingNote]:[]),estimate,ranks,live,historyTitle,metrics,refTable,eventsTable,sources,foot,...(notes?[notes]:[]));
  }catch(error){
   if(ticket===generation){status.textContent='حدث خطأ أثناء قراءة GA4. '+(error?.message||'');status.className='ga-notice';}
  }
