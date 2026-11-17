@@ -212,7 +212,7 @@ window.addEventListener('resize',()=>{
  if(window.innerWidth>850)closeAdminMobileNav();
 });
 window.addEventListener('popstate',()=>{
- if(!session||!role)return;
+ if(!session||!role||!/^\/admin(?:\/|$)/.test(location.pathname))return;
  const requested=keyFromAdminLocation();
  const next=authorizedAdminSection(requested)?requested:(role==='owner'?'overview':'dishes');
  void openSection(next,{fromHistory:true}).catch(error=>notice(error.message));
@@ -1055,7 +1055,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  }else if(location.pathname!==path||location.hash){
   history.pushState({adminSection:key},'',path);
  }
- closeAdminMobileNav();
+ closeAdminMobileNav({restoreFocus:true});
  updateAdminHeader(key);
  $('body').classList.toggle('ga-overview',key==='overview');
  const sameSection=section===key;
