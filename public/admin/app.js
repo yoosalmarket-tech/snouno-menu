@@ -459,7 +459,8 @@ async function openSection(key){
  if(['menu_staff','account','events'].includes(key)&&role!=='owner'){
   notice('هذه الصفحة متاحة للمالك فقط');return;
  }
- const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); $('body').replaceChildren(); $('title').textContent=sections[key][0];
+ const sameSection=section===key;
+ const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0];
  for(const b of $('tabs').children)b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='account'){await renderOwnerAccount();return;}
  if(key==='events'){await renderActionReports();return;}
@@ -471,10 +472,13 @@ async function openSection(key){
  const categoryRows=key==='dishes'?await api('/rest/v1/categories?select=id,name,position&order=position,name'):[];
  if(ticket!==generation)return;
  const area=$('body');
+ const previousY=sameSection?window.scrollY:0;
+ area.replaceChildren();
  if(!feedback&&!['menu_settings','menu_links'].includes(key))area.append(action('إضافة',()=>edit(key,{})));
  if(!rows.length)area.append(node('p','لا توجد عناصر بعد.'));
  if(key==='menu_settings'){
    if(rows[0])await edit('menu_settings',rows[0],true);
+   if(ticket===generation&&sameSection)window.scrollTo({top:previousY,behavior:'instant'});
    return;
  }
  const categoryGroups=new Map();
@@ -560,6 +564,7 @@ async function openSection(key){
  }
  if(key==='dishes')setupDishSorting(categoryGroups,rows);
  if(['categories','menu_ads'].includes(key))setupFlatSorting(key,rows);
+ if(sameSection)window.scrollTo({top:previousY,behavior:'instant'});
 }
 const filter=row=>row.id!==undefined?'id=eq.'+row.id:'email=eq.'+encodeURIComponent(row.email);
 async function edit(key,row,inline=false){

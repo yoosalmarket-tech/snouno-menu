@@ -1,6 +1,7 @@
 // Human-edited English labels for Snounu's existing Sonbol catalog.
 // Prices, ordering URLs, availability and original Arabic data are unchanged.
 export const categoryEnglish={
+ 'الأطباق المميزة':'Featured',
  'سنونو ساندويش':'Snounu Sandwiches','برجر اللحم':'Beef Burgers',
  'برجر الدجاج المقلي':'Chicken Burgers','فرايز':'Fries',
  'شاورما':'Shawarma','السلطات / المقبلات':'Salads & Sides',

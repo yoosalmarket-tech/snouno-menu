@@ -100,13 +100,13 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=meal-native-share-20261117')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=featured-utlob-1')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
 }
 function richData(){
- return {categories,dishes,favorites,settings,links,lang:currentLanguage,categoryEnglish,
+ return {categories:[{...featuredCategory,items:dishes.filter(hasMealLabel)},...categories],dishes,favorites,settings,links,lang:currentLanguage,categoryEnglish,
   displayName,displayDescription};
 }
 async function syncRichMode(){
@@ -294,7 +294,7 @@ function welcomeMealName(index){
 
 /* Optical centering for dashboard-uploaded transparent welcome photos.
    CSS centers the full image rectangle, which can contain asymmetric blank
-   alpha padding. Read its opaque bounds and offset only the visible food.
+   alpha padding. Measure its opacity-weighted center and offset only the visible food.
    The horizontal translate/scale used by the swipe animation is unchanged. */
 const welcomeVisualCenters=new Map();
 function getWelcomeVisualCenter(src){
@@ -310,16 +310,13 @@ function getWelcomeVisualCenter(src){
    if(!context)return {delta:0,ratio:1};
    context.drawImage(probe,0,0,256,256);
    const data=context.getImageData(0,0,256,256).data;
-   let left=256,right=-1;
-   for(let y=0;y<256;y++){
-    for(let x=0;x<256;x++){
-     if(data[(y*256+x)*4+3]>64){
-      if(x<left)left=x;
-      if(x>right)right=x;
-     }
-    }
+   let totalWeight=0,weightedX=0;
+   for(let i=0;i<data.length;i+=4){
+    const weight=(data[i+3]/255)**3;
+    totalWeight+=weight;
+    weightedX+=weight*((i/4)%256+.5);
    }
-   const delta=right<left?0:Math.max(-.25,Math.min(.25,(127.5-(left+right)/2)/256));
+   const delta=totalWeight ? .5-weightedX/(256*totalWeight) : 0;
    return {delta,ratio:(probe.naturalWidth||1)/(probe.naturalHeight||1)};
   })().catch(()=>({delta:0,ratio:1}));
   welcomeVisualCenters.set(src,result);
@@ -766,6 +763,8 @@ $('theme').onclick=()=>{
  theme(dark);
 };
 let activeCategory=null,categoryFrame=0;
+const featuredCategory={id:'featured',name:'الأطباق المميزة'};
+const hasMealLabel=meal=>Boolean(meal.badge?.trim());
 const favoritesCategory={id:'favorites',name:'المفضلة',icon:'★'};
 let menuSections=[];
 const categoryButtons=new Map();
@@ -887,15 +886,16 @@ function renderCards(){
  }
  // Favorites is a genuine scrollable category, not a filter.
  // Favorite dishes remain visible in their original categories too.
- const saved=visible.filter(d=>favorites.has(d.id));
- for(const category of [favoritesCategory,...categories]){
-   const matches=category===favoritesCategory?saved:(byCategory.get(category.id)||[]);
+ byCategory.set(favoritesCategory.id,visible.filter(d=>favorites.has(d.id)));
+ byCategory.set(featuredCategory.id,visible.filter(hasMealLabel));
+ for(const category of [favoritesCategory,featuredCategory,...categories]){
+   const matches=byCategory.get(category.id)||[];
    if(!matches.length&&category!==favoritesCategory)continue;
    const section=make('section'),heading=make('h2',tr(category.name)),cards=make('div');
    section.id='category-'+category.id;section.dataset.category=category.id;section.dataset.categoryId=category.id;
    heading.id=section.id+'-title';section.setAttribute('aria-labelledby',heading.id);
    cards.className='meal-grid';
-   if(matches.length)cards.append(...matches.map(meal=>mealCard(meal,category.id==='favorites'?'favorite':'regular')));
+   if(matches.length)cards.append(...matches.map(meal=>mealCard(meal,category===favoritesCategory?'favorite':category===featuredCategory?'featured':'regular')));
    else{const p=make('p',tr('اضغط على القلب لحفظ أطباقك المفضلة.'));p.className='empty favorites-empty';cards.append(p);}
    section.append(heading,cards);grid.append(section);groups.push({category,section});
  }
@@ -911,9 +911,9 @@ function startingScore(value){
 }
 function mealCard(d,context='regular'){
    const article=make('article');article.className='card';
-   article.id=(context==='favorite'?'favorite-meal-':'meal-')+d.id;
+   article.id=(context==='regular'?'meal-':context+'-meal-')+d.id;
    article.dataset.mealId=d.id;article.dataset.categoryId=d.category_id;
-   const open=make('button');open.className='card-open';open.id=(context==='favorite'?'favorite-open-':'open-meal-')+d.id;
+   const open=make('button');open.className='card-open';open.id=(context==='regular'?'open-meal-':context+'-open-')+d.id;
    open.dataset.mealId=d.id;open.dataset.trackAction='meal_open';
    open.onclick=()=>detail(d);
    if(d.image)open.append(image(d.image,displayName(d)));
@@ -921,7 +921,7 @@ function mealCard(d,context='regular'){
    open.append(make('strong',displayName(d)),make('p',displayDescription(d)),price(d));if(!d.available)open.append(make('small',tr('غير متوفر')));
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';if(isEnglish())badge.textContent=tr(d.badge);article.append(badge);}
-   const heart=make('button');heart.className='heart';heart.id=(context==='favorite'?'favorite-heart-':'heart-meal-')+d.id;heart.dataset.mealId=d.id;heart.dataset.trackAction='favorite_toggle';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label',tr('المفضلة')+' · '+displayName(d));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
+   const heart=make('button');heart.className='heart';heart.id=(context==='regular'?'heart-meal-':context+'-heart-')+d.id;heart.dataset.mealId=d.id;heart.dataset.trackAction='favorite_toggle';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label',tr('المفضلة')+' · '+displayName(d));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
    heart.onclick=()=>{favorites.has(d.id)?favorites.delete(d.id):favorites.add(d.id);localStorage.setItem('snounu-favorites',JSON.stringify([...favorites]));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));renderCards();};article.append(heart);return article;
 }
 function bindFeedback(form,extra){

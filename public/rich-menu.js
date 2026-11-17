@@ -373,6 +373,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  const platformInfo={
   sonbol:{ar:'سنبل',en:'Sonbol',icon:'/assets/sonbol.svg'},
   makook:{ar:'مكوك',en:'Makook',icon:'/assets/makook.svg'},
+  utlob:{ar:'اطلب',en:'Utlob',url:'https://utlob.co/stores/172'},
   whatsapp:{ar:'واتساب',en:'WhatsApp',icon:'/assets/whatsapp.svg'}
  };
  const restaurantLink=channel=>snapshot.links?.find(item=>item.channel===channel)?.url||'';
@@ -395,7 +396,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  const linkCard=(channel,meal)=>{
    const info=platformInfo[channel];
    const direct=meal&&(channel==='sonbol'?meal.sonbol_url:channel==='makook'?meal.makook_url:null);
-   const href=safeLink(direct)||safeLink(restaurantLink(channel));
+   const href=safeLink(direct)||safeLink(restaurantLink(channel))||info.url;
    if(!href)return null;
    const isDirect=!!safeLink(direct);
    const el=mk('a','rm-sheet-link');el.href=href;el.target='_blank';el.rel='noopener noreferrer';
@@ -404,7 +405,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    if(meal?.id)el.dataset.mealId=String(meal.id);
    el.dataset.platform=channel;
    const mark=mk('span','rm-sheet-link-mark');
-   const img=mk('img');img.src=info.icon;img.alt='';img.loading='lazy';mark.append(img);
+   if(info.icon){
+    const img=mk('img');img.src=info.icon;img.alt='';img.loading='lazy';mark.append(img);
+   }else{mark.textContent=info.en[0];mark.setAttribute('aria-hidden','true');}
    const copy=mk('span','rm-sheet-link-copy');
    copy.append(mk('strong',null,isEnglish()?info.en:info.ar));
    const detail=channel==='whatsapp'
@@ -438,7 +441,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    }
    const heading=mk('h3','rm-sheet-links-heading',english?(kind==='order'?'Choose an ordering service':'Order or contact us'):(kind==='order'?'اختار التطبيق المناسب للطلب':'اطلب أو تواصل معنا'));
    u.sheetBody.append(heading);
-   const channels=kind==='order'?['sonbol','makook']:['makook','sonbol','whatsapp'];
+   const channels=kind==='order'?['sonbol','makook','utlob']:['makook','sonbol','utlob','whatsapp'];
    const links=mk('div','rm-sheet-links');
    for(const channel of channels){const link=linkCard(channel,kind==='order'?meal:null);if(link)links.append(link);}
    if(!links.children.length)links.append(mk('p','rm-sheet-empty',english?'Ordering links are not currently available.':'روابط الطلب غير متاحة حالياً.'));
@@ -499,7 +502,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const all=snapshot.dishes||[];
   groups=(snapshot.categories||[]).map(cat=>({
    ...cat,english:snapshot.categoryEnglish?.[cat.name]||cat.name,
-   items:all.filter(d=>String(d.category_id)===String(cat.id))
+   items:cat.items||all.filter(d=>String(d.category_id)===String(cat.id))
   })).filter(c=>c.items.length);
   const favorites=all.filter(d=>snapshot.favorites?.has(d.id));
   if(favorites.length)groups.unshift({id:'favorites',name:'المفضلة',english:'FAVORITES',items:favorites});
