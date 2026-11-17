@@ -346,7 +346,6 @@ let welcomeCarouselActive=false,welcomeCarouselAnimating=false,welcomeCarouselSe
 const welcomeAutoplayMs=3000,welcomeTransitionMs=600;
 const prefersReducedWelcomeMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&document.documentElement.classList.contains('loader-complete');
-const onSharedWelcome=()=>true;
 function welcomeMealName(index){
  const choice=welcomeMobileMeals[index];
  if(!isEnglish())return choice.name;
@@ -391,7 +390,7 @@ async function centerWelcomePhoto(img,src){
  if(!img||!src)return;
  img.style.setProperty('--welcome-visual-offset','0px');
  const {delta,ratio}=await getWelcomeVisualCenter(src);
- if(!onSharedWelcome()||img.getAttribute('src')!==src)return;
+ if(img.getAttribute('src')!==src)return;
  const width=img.clientWidth,height=img.clientHeight;
  // object-fit: contain centers the bitmap inside an image box that can be taller
  // or wider than the actual image. Use the rendered bitmap width, not box width.
@@ -593,7 +592,7 @@ window.addEventListener('pagechange',startWelcomeCarousel);
 window.addEventListener('resize',()=>{
  if(welcomeCarouselAnimating)stopWelcomeCarousel();
  startWelcomeCarousel();
- if(onMobileWelcome())for(const id of ['cover-photo','cover-next']){
+ for(const id of ['cover-photo','cover-next']){
   const img=$(id),src=img?.getAttribute('src');
   if(src)void centerWelcomePhoto(img,src);
  }
@@ -1302,8 +1301,9 @@ async function revealPage(){
     transform:'none',transition:'none',filter:'none'
    });
    const shape=movingCurve.querySelector('path');
-   const width=mobile?390:1200,fullHeight=mobile?112:135;
-   const endEdge=mobile?87:112,endControl=mobile?122:159;
+   // Both layouts use the 390 × 112 curved mobile SVG shape.
+   const width=390,fullHeight=112;
+   const endEdge=87,endControl=122;
    const finalPath=shape.getAttribute('d');
    shape.setAttribute('d',`M0 0H${width}V${fullHeight}Q${width/2} ${fullHeight} 0 ${fullHeight}Z`);
    loader.append(movingCurve);
