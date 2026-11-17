@@ -589,7 +589,7 @@ async function renderGaOverview(days=28){
    ['الأحداث الرئيسية',gaNumber(data.summary.keyEvents),'جميع الأحداث المحددة كأحداث رئيسية'],
    ['نقرات التوصيل',gaNumber(data.eventCounts?.delivery_app_click?.count),'تشمل النقرات المتكررة'],
    ['إحالات التوصيل الفريدة',gaNumber(data.eventCounts?.delivery_referral_unique?.count),'أول إحالة من كل نافذة جلسة في المنيو'],
-   ['قيمة الإحالات',data.warning?.some(t=>t.includes('Referral breakdown'))?'—':gaMoney(data.totals?.referralValue),'قيمة سعر الطبق، وليست إيرادات مبيعات مثبتة']
+   ['قيمة الإحالات',data.reportStatus?.referralValueAvailable?gaMoney(data.totals.referralValue):'—','قيمة سعر الطبق، وليست إيرادات مبيعات مثبتة']
   ];
   if(pending)for(const card of cards){
    card[1]='—';
@@ -616,28 +616,26 @@ async function renderGaOverview(days=28){
   ]);
   const eventsTable=makeTable('الأحداث المهمة',['الحدث','مرات التنفيذ','أحداث رئيسية'],eventCounts);
   const topReferrals=(data.referrals||[]).slice(0,30).map(r=>[
-   r.meal,r.platform,gaNumber(r.count),gaMoney(r.value)
+   r.meal,r.platform,gaNumber(r.count),r.value==null?'—':gaMoney(r.value)
   ]);
   const refTable=makeTable('الإحالات حسب الطبق والتطبيق',['الطبق','تطبيق التوصيل','إحالات','قيمة الإحالات'],topReferrals);
-  const trend=node('section');trend.id='ga-daily-trend';trend.className='analytics-report';
-  trend.append(node('h2','الزيارات اليومية'));
-  const daily=(data.daily||[]).slice(-30),largest=Math.max(1,...daily.map(r=>r.sessions));
-  if(!daily.length)trend.append(node('p','لا توجد بيانات يومية لهذه الفترة.'));
-  else {
-   const chart=node('div');chart.className='ga-trend-bars';
-   for(const r of daily){
-    const column=node('div');column.className='ga-trend-day';
-    const bar=node('div');bar.className='ga-trend-bar';bar.style.height=Math.max(3,r.sessions/largest*100)+'%';
-    column.title=r.date+': '+gaNumber(r.sessions)+' زيارة، '+gaNumber(r.users)+' زائر فريد في ذلك اليوم';
-    column.append(bar);chart.append(column);
-   }
-   trend.append(chart,node('p','كل عمود يمثل عدد الزيارات (Sessions) في يوم واحد.'));
-  }
+  // Rank by the first attributed referral, never by repeated outbound clicks.
+  const ranks=node('div');ranks.id='ga-referral-rankings';ranks.className='ga-charts-grid';
+  ranks.append(
+   gaRankGraph('الوجبات الأكثر إحالة','الوجبات التي دفعت الزوار إلى تطبيق طلب لأول مرة في جلستهم',data.topMeals,{
+    available:data.reportStatus?.mealRankingAvailable===true,kind:'meal'
+   }),
+   gaRankGraph('تطبيقات التوصيل الأكثر إحالة','التطبيق الذي اختاره الزائر أولاً خلال الجلسة',data.topPlatforms,{
+    available:data.reportStatus?.platformRankingAvailable===true,kind:'platform'
+   })
+  );
+  const trend=gaDailyLineChart(data.daily||[]);
+  const eventsGraph=gaEventsGraph(data.eventCounts||{});
   const foot=node('p','المصدر: Google Analytics 4 · آخر جلب: '+new Date(data.asOf).toLocaleString('ar')+' · لا تمثل قيمة الإحالات مبيعات فعلية.');
   foot.className='ga-footnote';
   const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
   if(notes)notes.className='ga-notice';
-  area.replaceChildren(top,live,...(pendingNote?[pendingNote]:[]),historyTitle,metrics,trend,refTable,eventsTable,foot,...(notes?[notes]:[]));
+  area.replaceChildren(top,live,...(pendingNote?[pendingNote]:[]),historyTitle,ranks,trend,metrics,eventsGraph,refTable,eventsTable,foot,...(notes?[notes]:[]));
  }catch(error){
   if(ticket===generation){status.textContent='حدث خطأ أثناء قراءة GA4. '+(error?.message||'');status.className='ga-notice';}
  }
