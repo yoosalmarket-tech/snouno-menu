@@ -1979,3 +1979,38 @@ main:has(> #tabs:empty) #admin-title-row #title{text-align:center;}
   min-height:40px;padding:8px 15px;font-size:13px;border-radius:10px;
  }
 }
+
+/* Page notes precede the section title without changing any list/card controls. */
+#admin-page-note[hidden]{display:none!important;}
+#admin-page-note.admin-page-note{margin:0 0 12px;min-width:0;}
+#admin-page-note .dish-sort-hint{
+ display:block;max-width:100%;margin:0;
+ padding:10px 14px;border:1px solid #D6D6D6;
+ border-inline-start:4px solid #FDBE2D;border-radius:12px;
+ background:#FFFFFF;color:#262626;
+ font-size:12px;line-height:1.8;text-align:right;overflow-wrap:anywhere;
+}
+/* In a stacked flex layout, flex-basis:300px reserved a blank 300px
+   BELOW the mobile greeting. Explicitly eliminate that forced basis. */
+@media(max-width:640px){
+ #body.ga-overview .ga-overview-hero{
+  padding:0!important;margin:0 0 12px!important;
+  min-height:0!important;height:auto!important;
+ }
+ #body.ga-overview .ga-hero-top{
+  display:flex;flex-direction:column;align-items:stretch;
+  gap:8px!important;min-height:0!important;
+ }
+ #body.ga-overview .ga-hero-heading{
+  width:100%;min-width:0;flex:0 0 auto!important;
+  min-height:0!important;height:auto!important;
+  margin:0!important;padding:0!important;
+ }
+ #body.ga-overview .ga-hero-heading h2{margin:0 0 3px;}
+ #body.ga-overview .ga-hero-heading p{margin:0;line-height:1.5;}
+ #body.ga-overview .ga-heading{
+  width:100%;flex:0 0 auto!important;
+  margin:0!important;min-height:0!important;
+  justify-content:flex-start;
+ }
+}
