@@ -860,8 +860,7 @@ async function renderGaOverview(days=28){
  interval.onchange=()=>renderGaOverview(Number(interval.value));
  const refresh=action('تحديث',()=>renderGaOverview(Number(interval.value)));
  refresh.id='ga-refresh';refresh.dataset.trackAction='ga_overview_refresh';
- const siteLink=node('a','عرض المنيو ↗');siteLink.className='ga-open-site';siteLink.href='/menu';siteLink.target='_blank';siteLink.rel='noopener noreferrer';
- top.append(interval,refresh,siteLink);
+ top.append(interval,refresh);
  const status=node('p','جارٍ تحميل الإحصائيات من GA4…');status.id='ga-loading';
  area.replaceChildren(top,status);
  try{
@@ -1046,13 +1045,21 @@ async function renderActionReports(){
  refresh.id='admin-report-refresh';refresh.dataset.trackAction='admin_report_refresh';
  area.replaceChildren(refresh,summary,actions,controls,dishesBox,recent);
 }
-async function openSection(key){
- if(['menu_staff','account','events','overview'].includes(key)&&role!=='owner'){
-  notice('هذه الصفحة متاحة للمالك فقط');return;
+async function openSection(key,{initial=false,fromHistory=false}={}){
+ if(!authorizedAdminSection(key)){
+  notice('هذه الصفحة غير متاحة لهذا الحساب');return;
  }
+ const path=adminPath(key);
+ if(initial||fromHistory){
+  if(location.pathname!==path||location.hash)history.replaceState({adminSection:key},'',path);
+ }else if(location.pathname!==path||location.hash){
+  history.pushState({adminSection:key},'',path);
+ }
+ closeAdminMobileNav();
+ updateAdminHeader(key);
  $('body').classList.toggle('ga-overview',key==='overview');
  const sameSection=section===key;
- const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0];
+ const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0];
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='account'){await renderOwnerAccount();return;}
  if(key==='overview'){await renderGaOverview();return;}
