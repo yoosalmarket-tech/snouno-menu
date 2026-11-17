@@ -1,5 +1,5 @@
 /* Opt-in immersive Snounu menu, based on motion behavior in the supplied
-   Hungry Buten HTML: spring inertia, vertical 3D dish feed, swipe-driven
+   Hungry Buten HTML: spring inertia, horizontal 3D dish feed, swipe-driven
    category transitions, and a perspective thumbnail rail. No original art. */
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
@@ -21,8 +21,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<div class="rm-shadow" aria-hidden="true"></div><div class="rm-stage" role="listbox" tabindex="0"></div>',
  '</div>',
  // The entire sidebar is a sibling of the 3D scene, not its descendant.
- '<aside class="rm-thumbs" aria-label="اختيار وجبة"><button type="button" class="rm-rail-button rm-rail-up" aria-label="السابق">⌃</button>',
- '<div class="rm-rail-row"><div class="rm-rail-labels" aria-hidden="true"></div><div class="rm-rail-window"><div class="rm-rail-track"></div></div></div><button type="button" class="rm-rail-button rm-rail-down" aria-label="التالي">⌄</button>',
+ '<aside class="rm-thumbs" aria-label="اختيار وجبة"><button type="button" class="rm-rail-button rm-rail-previous" aria-label="السابق">←</button>',
+ '<div class="rm-rail-row"><div class="rm-rail-window"><div class="rm-rail-track"></div></div></div><button type="button" class="rm-rail-button rm-rail-next" aria-label="التالي">→</button>',
  '<span class="rm-rail-count" dir="ltr">1 / 1</span></aside>',
  '<section class="rm-info" aria-live="polite">',
  // ORDER NOW stays above the rating; both continue to track the selected meal.
@@ -33,7 +33,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<div class="rm-info-actions">',
  '<button type="button" class="rm-info-details">＋ عرض تفاصيل الوجبة</button>',
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
- '<small class="rm-instruction" dir="rtl">اسحب للأعلى والأسفل للوجبات · يمين ويسار للتصنيفات</small></section>',
+ '<small class="rm-instruction" dir="rtl">اسحب يمين ويسار للتنقل بين الوجبات، وفوق وتحت لتغيير التصنيفات</small></section>',
  '<dialog class="rm-sheet" aria-labelledby="rm-sheet-title" dir="rtl"><div class="rm-sheet-grab" aria-hidden="true"></div>',
  '<header class="rm-sheet-head"><div class="rm-sheet-heading"><span class="rm-sheet-overline" lang="en">SNOUNU / RESTAURANT</span>',
  '<h2 id="rm-sheet-title" class="rm-sheet-title"></h2><p class="rm-sheet-subtitle"></p></div>',
@@ -56,8 +56,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   catCount:at(root,'.rm-categories-count'),
   catPrev:at(root,'.rm-category-previous'),catNext:at(root,'.rm-category-next'),
   thumbWindow:at(root,'.rm-rail-window'),thumbTrack:at(root,'.rm-rail-track'),
-  labels:at(root,'.rm-rail-labels'),railCount:at(root,'.rm-rail-count'),
-  railUp:at(root,'.rm-rail-up'),railDown:at(root,'.rm-rail-down'),
+  railCount:at(root,'.rm-rail-count'),
+  railUp:at(root,'.rm-rail-previous'),railDown:at(root,'.rm-rail-next'),
   info:at(root,'.rm-info'),orderWrap:at(root,'.rm-order-wrap'),rating:at(root,'.rm-info-rating'),title:at(root,'.rm-info-name'),
   desc:at(root,'.rm-info-desc'),price:at(root,'.rm-info-price'),
   details:at(root,'.rm-info-details'),share:at(root,'.rm-share'),fav:at(root,'.rm-info-fav'),
@@ -65,6 +65,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   sheetTitle:at(root,'.rm-sheet-title'),sheetSubtitle:at(root,'.rm-sheet-subtitle'),
   sheetBody:at(root,'.rm-sheet-body')
  };
+ // Anchor the horizontal selector below categories, outside the animated scene.
+ root.insertBefore(at(root,'.rm-thumbs'),u.wrap);
  // Reuse the existing site's two-click agency-credit behavior on the interactive screen.
  // Two taps also work on phones; the first tap never leaves the menu.
  const creditButton=at(root,'.rm-interactive-credit-link');
@@ -85,7 +87,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   creditTimer=setTimeout(resetInteractiveCredit,5000);
  });
  let groups=[],groupIndex=0,front=0,k=2.2,target=0,velocity=-.02;
- let active=false,frame=0,lastTime=0,pointer=null,lastWheel=0,swapping=false,swapToken=0;
+ let active=false,frame=0,lastTime=0,pointer=null,lastWheel=-Infinity,wheelAxis=null,wheelHandled=false,wheelDistance=0,swapping=false,swapToken=0;
+ let motionDirection=1,visualDirection=1;
  let dishesEls=[],thumbEls=[],categoryEls=[],snapshot={},destroyed=false;
  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
  const group=()=>groups[groupIndex];
@@ -161,22 +164,22 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    thumbnail.title=getName(meal);thumbnail.setAttribute('aria-label',getName(meal));
    if(photo){const img=mk('img');img.src=photo;img.alt='';img.loading='lazy';img.draggable=false;thumbnail.append(img);}
    else thumbnail.textContent='•';
+   const label=mk('span','rm-thumb-name',getName(meal));label.dir=isEnglish()?'ltr':'rtl';
+   thumbnail.append(label);
    thumbnail.addEventListener('click',()=>goTo(i));
    u.thumbTrack.append(thumbnail);thumbEls.push(thumbnail);
   });
  }
  function labelRail(){
   const g=group();if(!g)return;
-  u.labels.replaceChildren();
-  // Show the same three nearby dishes as the compact thumbnail selector.
   const start=clamp(front-1,0,Math.max(0,g.items.length-3));
-  for(let i=start;i<Math.min(g.items.length,start+3);i++){
-   const name=mk('span',null,getName(g.items[i]));
-   name.dataset.index=String(i);
-   name.setAttribute('dir','rtl');
-   name.setAttribute('aria-current',String(i===front));
-   u.labels.append(name);
-  }
+  thumbEls.forEach((el,i)=>{
+   const visible=i>=start&&i<start+3;
+   el.hidden=!visible;el.style.display=visible?'grid':'none';
+   el.setAttribute('aria-current',String(i===front));
+  });
+  u.railCount.textContent=(front+1)+' / '+g.items.length;
+  u.stage.setAttribute('aria-activedescendant',dishesEls[front]?.id||'');
  }
  let viewTimer,viewCandidate=null;
  function trackVisibleMeal(){
@@ -192,6 +195,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  function info(){
   trackVisibleMeal();
   const m=dish();if(!m)return;
+  const instruction=at(root,'.rm-instruction');
+  instruction.textContent=isEnglish()?'Swipe left or right for meals, up or down for categories.':'اسحب يمين ويسار للتنقل بين الوجبات، وفوق وتحت لتغيير التصنيفات';
+  instruction.dir=isEnglish()?'ltr':'rtl';
   u.title.textContent=getName(m);
   u.fav.dataset.mealId=String(m.id);u.share.dataset.mealId=String(m.id);
   u.customize.dataset.mealId=String(m.id);
@@ -233,58 +239,44 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   // The order action follows the selected meal, rating, name and price.
   // Contact and favorite controls stay steady during dish swipes.
   for(const el of [u.orderWrap,u.rating,u.title,u.desc,u.price]){
-   el.animate?.([{opacity:.75,transform:'translateY(10px)'},{opacity:1,transform:'none'}],{duration:230,easing:'cubic-bezier(.28,.8,.2,1)'});
+   if(!reduced.matches)el.animate?.([{opacity:.75,transform:'translateY(10px)'},{opacity:1,transform:'none'}],{duration:230,easing:'cubic-bezier(.28,.8,.2,1)'});
   }
  }
  function draw(){
   const g=group();if(!g)return;
-  const len=g.items.length,position=clamp(k,-.5,len-.5);
-  const height=u.wrap.clientHeight;
+  const len=g.items.length;
+  const height=u.wrap.clientHeight,width=u.wrap.clientWidth;
+  const travel=clamp(width*.56,180,440);
   // Desktop makes better use of the wide food showroom, while preserving
   // the existing mobile animation and its swipe physics.
   const desktop=window.matchMedia('(min-width:981px)').matches;
-  const scale=clamp(height/380,height<200?.42:.5,1)*(desktop?1.02:.88);
+  const availableHeight=desktop?Math.max(120,height-110):height;
+  const scale=clamp(availableHeight/380,availableHeight<200?.42:.5,1)*(desktop?1.02:.88);
   for(let i=0;i<dishesEls.length;i++){
    const el=dishesEls[i],dif=i-k;
-   if(dif< -1.3||dif>5.6){el.style.visibility='hidden';continue;}
+   if(Math.abs(dif)>5.6){el.style.visibility='hidden';continue;}
    el.style.visibility='visible';
    let x=0,y=0,z=0,rotateY=0,rotateZ=0,opacity=1;
-   if(dif>=0){
-    z=-dif*300;y=Math.max(-dif*62-Math.max(0,dif-1)*6,-150);
-    x=-Math.sin(Math.min(dif,4)*.75)*110;
-    rotateY=Math.min(dif,2)*7;
-    const fade=dif>4?Math.max(0,1-(dif-4)*.7):1;
-    opacity=fade*(.35+.65*(1-Math.min(dif,4)*.17));
-   }else{
-    const behind=-dif,side=i%2?1:-1;
-    z=behind*420;y=behind*110;x=side*behind*50;rotateZ=side*behind*6;
-    opacity=Math.max(0,1-behind*1.3);
-   }
+   // Keep the original incoming/outgoing depth and opacity curves. Blend
+   // their handedness on reversal, without touching k or its spring.
+   const distance=Math.abs(dif);
+   const incoming=clamp((1+Math.sign(dif)*visualDirection)/2,0,1);
+   const inZ=-distance*300,outZ=Math.min(distance,1.3)*420;
+   const inY=Math.min(distance*42+Math.max(0,distance-1)*6,115);
+   const outY=-distance*55;
+   x=dif*travel+Math.sin(Math.min(distance,4)*.75)*24*Math.sign(dif);
+   y=outY+(inY-outY)*incoming;
+   z=outZ+(inZ-outZ)*incoming;
+   rotateY=Math.sign(dif)*Math.min(distance,2)*7*incoming;
+   rotateZ=Math.sign(dif)*distance*6*(1-incoming);
+   const inOpacity=(distance>4?Math.max(0,1-(distance-4)*.7):1)*(.35+.65*(1-Math.min(distance,4)*.17));
+   const outOpacity=Math.max(0,1-distance*1.3);
+   opacity=outOpacity+(inOpacity-outOpacity)*incoming;
    const rotX=clamp(-velocity*25,-8,8);
    el.style.transform='translate(-50%,0) translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,'+z.toFixed(1)+'px) rotateX('+rotX.toFixed(2)+'deg) rotateY('+rotateY.toFixed(2)+'deg) rotateZ('+rotateZ.toFixed(2)+'deg) scale('+scale.toFixed(3)+')';
    el.style.opacity=opacity.toFixed(3);
-   el.style.zIndex=String(Math.round(1000-dif*10));
+   el.style.zIndex=String(Math.round(1000+z*.1));
    el.setAttribute('aria-selected',String(i===front));
-  }
-  u.railCount.textContent=(front+1)+' / '+len;
-  // The sidebar stays physically fixed. Swap up to three visible meals
-  // in stationary rows instead of translating the whole thumbnail track.
-  const visibleStart=clamp(Math.round(position)-1,0,Math.max(0,len-3));
-  thumbEls.forEach((el,i)=>{
-   el.style.display=i>=visibleStart&&i<visibleStart+3?'grid':'none';
-   el.style.visibility='visible';
-   el.style.opacity='';
-   el.style.transform='none';
-   el.setAttribute('aria-current',String(i===front));
-  });
-  u.thumbTrack.style.transform='none';
-  // Larger desktop thumbnails need matching stationary label slots.
-  const unit=desktop?46:34;
-  for(const label of u.labels.children){
-   const i=Number(label.dataset.index);
-   label.style.top=((i-visibleStart)*unit)+'px';
-   label.style.display=i>=visibleStart&&i<visibleStart+3?'grid':'none';
-   label.setAttribute('aria-current',String(i===front));
   }
   // Keep the name, rating and price steady while food bounces at an edge.
   const infoPosition=clamp(k,0,len-1);
@@ -299,7 +291,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  function tick(now){
   if(!active||destroyed){frame=0;return;}
   const dt=clamp((now-(lastTime||now))/16.67,.5,3);lastTime=now;
-  if(!pointer||pointer.axis!=='y'){
+  visualDirection+=(motionDirection-visualDirection)*(1-Math.pow(.78,dt));
+  if(!pointer||pointer.axis!=='x'){
    velocity+=(target-k)*.07*dt;
    velocity*=Math.pow(.8,dt);
    k+=velocity*dt;
@@ -319,12 +312,16 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   frame=requestAnimationFrame(tick);
  }
  function goTo(index){
-  const g=group();if(!g)return;
-  target=clamp(index,0,g.items.length-1);
-  if(typeof onSelection==='function')onSelection({mealId:g.items[target]?.id,categoryId:g.id});
+  const g=group();if(!g||swapping||pointer)return;
+  const next=clamp(index,0,g.items.length-1);
+  if(Math.abs(next-k)>.001)motionDirection=Math.sign(next-k);
+  const changed=next!==target;target=next;
+  if(changed&&typeof onSelection==='function')onSelection({mealId:g.items[target]?.id,categoryId:g.id});
   if(reduced.matches){k=target;velocity=0;updateFront(target);draw();}
  }
  const step=delta=>{
+  if(swapping||pointer||!active)return;
+  motionDirection=Math.sign(delta);
   const maxIndex=(group()?.items.length||1)-1;
   const next=Math.round(target)+delta;
   if(next<0||next>maxIndex){
@@ -338,15 +335,17 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   goTo(next);
  };
  async function changeGroup(index){
-  if(swapping||destroyed||index<0||index>=groups.length||index===groupIndex)return;
-  swapping=true;const serial=++swapToken,direction=index>groupIndex?1:-1;
+  if(swapping||pointer||destroyed||index<0||index>=groups.length||index===groupIndex)return;
+  swapping=true;clearTimeout(viewTimer);viewCandidate=null;
+  target=front;k=front;velocity=0;
+  const serial=++swapToken,direction=index>groupIndex?1:-1;
   root.style.setProperty('--rm-shift-out',-direction*115+'px');
   root.style.setProperty('--rm-shift-in',direction*125+'px');
   root.classList.remove('rm-category-in');root.classList.add('rm-category-out');
   await new Promise(r=>setTimeout(r,reduced.matches?0:220));
   if(serial!==swapToken||destroyed)return;
-  groupIndex=index;front=0;k=reduced.matches?0:2.2;target=0;velocity=-.02;
-  paintStage();info();selectCategoryTab();
+  groupIndex=index;front=0;k=0;target=0;velocity=0;motionDirection=visualDirection=1;
+  paintStage();info();selectCategoryTab();draw();
   root.classList.remove('rm-category-out');root.classList.add('rm-category-in');
   await new Promise(r=>setTimeout(r,reduced.matches?0:550));
   if(serial!==swapToken||destroyed)return;
@@ -354,9 +353,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   if(typeof onSelection==='function')onSelection({categoryId:group()?.id});
  }
  function pointerDown(event){
-  if(event.button!==0||swapping||!active)return;
+  if(event.button!==0||swapping||!active||pointer||u.sheet.open)return;
   const el=event.target.closest('.rm-dish');
   pointer={id:event.pointerId,x:event.clientX,y:event.clientY,lastT:performance.now(),startK:k,axis:null,index:el?Number(el.dataset.idx):null};
+  u.stage.focus({preventScroll:true});
   u.stage.setPointerCapture?.(event.pointerId);
  }
  function pointerMove(event){
@@ -366,14 +366,15 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    if(Math.hypot(dx,dy)<8)return;
    p.axis=Math.abs(dy)>Math.abs(dx)?'y':'x';
   }
-  if(p.axis==='y'){
+  if(p.axis==='x'){
    const len=group()?.items.length||1,maxIndex=len-1;
-   const raw=p.startK+dy/160;
+   const raw=p.startK-dx/160;
    // Resist motion beyond either edge, but allow a bounded elastic stretch.
    const elastic=raw<0?raw*.32:raw>maxIndex?maxIndex+(raw-maxIndex)*.32:raw;
    const value=clamp(elastic,-.42,maxIndex+.42);
    const now=performance.now(),dt=Math.max((now-p.lastT)/16.67,.5);
    velocity=velocity*.5+(value-k)/dt*.5;
+   if(Math.abs(value-k)>.001)motionDirection=Math.sign(value-k);
    k=value;p.lastT=now;
   }
  }
@@ -381,30 +382,48 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const p=pointer;if(!p||event.pointerId!==p.id)return;
   pointer=null;
   if(u.stage.hasPointerCapture?.(event.pointerId))u.stage.releasePointerCapture(event.pointerId);
-  if(p.axis==='y')goTo(Math.round(k+velocity*7));
-  else if(p.axis==='x'){
-   const delta=event.clientX-p.x;
+  if(p.axis==='x')goTo(Math.round(k+velocity*7));
+  else if(p.axis==='y'){
+   const delta=event.clientY-p.y;
    if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?1:-1));
   }else if(p.index!=null){
    const selected=group()?.items[p.index];
    if(selected){goTo(p.index);scheduleMealOpen(selected);}
   }
  }
+ function cancelPointer(){
+  const p=pointer;if(!p)return;
+  pointer=null;
+  if(u.stage.hasPointerCapture?.(p.id))u.stage.releasePointerCapture(p.id);
+  if(p.axis==='x')goTo(Math.round(k));
+ }
  function wheel(event){
-  if(!active||swapping)return;
-  event.preventDefault();const now=performance.now();
-  if(now-lastWheel<260||Math.abs(event.deltaY)<8)return;
-  lastWheel=now;step(event.deltaY>0?-1:1);
+  if(!active||pointer||u.sheet.open||event.ctrlKey)return;
+  const now=performance.now(),dx=event.deltaX,dy=event.deltaY;
+  if(!dx&&!dy)return;
+  // A wheel burst (including its inertial tail) owns one axis and one action.
+  if(now-lastWheel>260){wheelAxis=null;wheelHandled=false;wheelDistance=0;}
+  lastWheel=now;
+  if(!wheelAxis)wheelAxis=Math.abs(dx)>Math.abs(dy)?'x':'y';
+  event.preventDefault();
+  if(swapping){wheelHandled=true;return;}
+  if(wheelHandled)return;
+  wheelDistance+=(wheelAxis==='x'?dx:dy)*(event.deltaMode===1?16:event.deltaMode===2?u.wrap.clientHeight:1);
+  if(Math.abs(wheelDistance)<8)return;
+  wheelHandled=true;
+  if(wheelAxis==='x')step(wheelDistance>0?1:-1);
+  else changeGroup(groupIndex+(wheelDistance>0?1:-1));
  }
  function key(event){
-  if(!active||document.activeElement?.matches('input,textarea,select'))return;
-  if(event.key==='ArrowUp')step(-1);
-  else if(event.key==='ArrowDown')step(1);
-  else if(event.key==='ArrowLeft')changeGroup(groupIndex+1);
-  else if(event.key==='ArrowRight')changeGroup(groupIndex-1);
-  else if(event.key==='Enter'||event.key===' '){if(dish())openRichSheet('order',dish());}
-  else return;
+  if(!active||u.sheet.open||document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
+  if(!['ArrowRight','ArrowLeft','ArrowDown','ArrowUp','Enter',' '].includes(event.key))return;
   event.preventDefault();
+  if(swapping||pointer)return;
+  if(event.key==='ArrowRight')step(1);
+  else if(event.key==='ArrowLeft')step(-1);
+  else if(event.key==='ArrowDown'){if(!event.repeat)changeGroup(groupIndex+1);}
+  else if(event.key==='ArrowUp'){if(!event.repeat)changeGroup(groupIndex-1);}
+  else if(dish())openRichSheet('order',dish());
  }
  at(root,'.rm-exit').addEventListener('click',()=>{if(typeof onExit==='function')onExit();});
  const platformInfo={
@@ -508,7 +527,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  u.stage.addEventListener('pointerdown',pointerDown);
  u.stage.addEventListener('pointermove',pointerMove);
  u.stage.addEventListener('pointerup',pointerUp);
- u.stage.addEventListener('pointercancel',()=>{if(pointer?.axis==='y')goTo(Math.round(k));pointer=null;});
+ u.stage.addEventListener('pointercancel',cancelPointer);
+ u.stage.addEventListener('lostpointercapture',cancelPointer);
  u.stage.addEventListener('wheel',wheel,{passive:false});
  u.stage.addEventListener('keydown',key);
  at(root,'.rm-exit').id='rich-exit';
@@ -532,6 +552,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   info();
  };
  function refresh(){
+  cancelPointer();++swapToken;swapping=false;
+  root.classList.remove('rm-category-out','rm-category-in');
   snapshot=getData();
   const oldGroup=group()?.id,oldDish=dish()?.id;
   const all=snapshot.dishes||[];
@@ -555,7 +577,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   if(groupAt<0&&selected)groupAt=groups.findIndex(g=>g.items.some(m=>String(m.id)===String(mealId)));
   if(!selected)groupAt=groups.findIndex(g=>String(g.id)===String(categoryId));
   if(groupAt<0)return false;
-  groupIndex=groupAt;
+  cancelPointer();groupIndex=groupAt;
   const index=selected?group().items.findIndex(m=>String(m.id)===String(selected.id)):0;
   front=Math.max(0,index);k=front;target=front;velocity=0;
   root.classList.remove('rm-category-out','rm-category-in');
@@ -568,6 +590,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   trackVisibleMeal();
   if(active){lastTime=0;if(!frame)frame=requestAnimationFrame(tick);}
   else{
+   cancelPointer();
    cancelAnimationFrame(frame);frame=0;
    if(pendingMealOpen){clearTimeout(pendingMealOpen);pendingMealOpen=0;}
   }
