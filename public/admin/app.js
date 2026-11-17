@@ -50,6 +50,55 @@ try {
 const sessionKey='snounu-session';
 let rememberMe=!!localStorage.getItem(sessionKey);
 let session=JSON.parse(localStorage.getItem(sessionKey)||sessionStorage.getItem(sessionKey)||'null');
+// Clean, refreshable URLs for every dashboard section. Legacy # links are
+// accepted on initial load only and replaced with canonical path URLs.
+const adminRouteSlugs={
+ overview:'overview',dishes:'dishes',categories:'categories',
+ menu_settings:'restaurant',menu_links:'links',menu_ads:'ads',
+ rankings:'ratings',events:'analytics',submissions:'messages',
+ menu_staff:'staff',account:'account'
+};
+const adminPath=key=>'/admin/'+(adminRouteSlugs[key]||adminRouteSlugs.overview);
+function keyFromAdminLocation(){
+ const slug=decodeURIComponent(location.pathname.replace(/\\/g,'/').replace(/\/+$/,'').split('/').pop()||'');
+ const found=Object.keys(adminRouteSlugs).find(key=>adminRouteSlugs[key]===slug);
+ if(found)return found;
+ const hash=location.hash.replace(/^#/,'');
+ return Object.hasOwn(sections,hash)?hash:null;
+}
+function authorizedAdminSection(key){
+ return Object.hasOwn(sections,key)&&(!['menu_staff','account','events','overview'].includes(key)||role==='owner');
+}
+function closeAdminMobileNav({restoreFocus=false}={}){
+ const open=document.body.classList.contains('admin-mobile-open');
+ document.body.classList.remove('admin-mobile-open');
+ const toggle=$('admin-mobile-menu-toggle'),backdrop=$('admin-mobile-backdrop');
+ if(toggle){toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','فتح قائمة الأقسام');}
+ if(backdrop)backdrop.hidden=true;
+ if(open&&restoreFocus&&toggle)toggle.focus();
+}
+function toggleAdminMobileNav(){
+ const open=document.body.classList.contains('admin-mobile-open');
+ if(open){closeAdminMobileNav({restoreFocus:true});return;}
+ document.body.classList.add('admin-mobile-open');
+ $('admin-mobile-backdrop').hidden=false;
+ const toggle=$('admin-mobile-menu-toggle');
+ toggle.setAttribute('aria-expanded','true');
+ toggle.setAttribute('aria-label','إغلاق قائمة الأقسام');
+ $('tabs').querySelector('[data-section][aria-current="true"]')?.focus();
+}
+function updateAdminHeader(key){
+ const header=$('admin-page-header'),crumb=$('admin-breadcrumb');
+ if(!header||!crumb)return;
+ header.hidden=false;
+ crumb.replaceChildren();
+ const root=node('span','لوحة التحكم');root.className='admin-crumb-root';
+ crumb.append(root);
+ const divider=node('span','/');divider.className='admin-crumb-divider';
+ crumb.append(divider);
+ const current=node('strong',sections[key]?.[0]||'اللوحة الرئيسية');
+ current.className='admin-crumb-current';crumb.append(current);
+}
 let role, section = 'dishes', generation = 0;
 const adminReporting=installActionReporting({
  route:()=> 'admin',mode:()=> 'dashboard',
@@ -82,7 +131,7 @@ async function api(path, options={}) {
   }
   return request(path,{...options,token:session.access_token});
 }
-function loggedOut(){ generation++; role=null; $('body').classList.remove('ga-overview'); $('login').hidden=false; $('tabs').replaceChildren(); $('body').replaceChildren(); $('title').textContent='تسجيل الدخول'; }
+function loggedOut(){ generation++;role=null;closeAdminMobileNav();$('admin-page-header').hidden=true;$('body').classList.remove('ga-overview');$('login').hidden=false;$('tabs').replaceChildren();$('body').replaceChildren();$('title').textContent='تسجيل الدخول'; }
 function adminSidebarIcon(key){
  const icons={
   overview:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
