@@ -920,7 +920,7 @@ async function renderGaOverview(days=28){
    ['الزوار الجدد',gaNumber(data.summary.newUsers),'أول زيارة مقاسة'],
    ['مشاهدات الصفحات',gaNumber(data.summary.views),'تشمل المشاهدات المتكررة'],
    ['الجلسات المتفاعلة',gaNumber(data.summary.engagedSessions),'حسب تعريف GA4 للجلسة المتفاعلة'],
-   ['الأحداث الرئيسية',gaNumber(data.summary.keyEvents),'جميع الأحداث المحددة كأحداث رئيسية'],
+   ['مرات تسجيل الأحداث المهمة',gaNumber(data.summary.keyEvents),'عدد مرات تسجيل أحداث صنّفتها GA4 كأحداث رئيسية، وليس جميع التفاعلات'],
    ['نقرات التوصيل',gaNumber(data.eventCounts?.delivery_app_click?.count),'تشمل النقرات المتكررة'],
    ['إحالات التوصيل الفريدة',gaNumber(data.eventCounts?.delivery_referral_unique?.count),'أول إحالة من كل نافذة جلسة في المنيو'],
    ['قيمة الإحالات',data.reportStatus?.referralValueAvailable?gaMoney(data.totals.referralValue):'—','قيمة سعر الطبق، وليست إيرادات مبيعات مثبتة']
@@ -939,7 +939,21 @@ async function renderGaOverview(days=28){
    if(isPrimary){
     card.classList.add('ga-primary-stat');
     const symbol=['◴','◎','▣','◈','◈','◇','↗','✦','₪'][index];
-    const icon=node('span',symbol);icon.className='ga-primary-icon';card.prepend(icon);
+    const icon=node('span');icon.className='ga-primary-icon';
+    const svgPaths={
+      1:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+      3:'<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>'
+    };
+    if(svgPaths[index]){
+      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('viewBox','0 0 24 24');
+      svg.setAttribute('width','23');svg.setAttribute('height','23');
+      svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');
+      svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');
+      svg.setAttribute('stroke-linejoin','round');svg.setAttribute('aria-hidden','true');
+      svg.innerHTML=svgPaths[index];icon.append(svg);
+    }else icon.textContent=symbol;
+    card.prepend(icon);
    }
    return card;
   };
