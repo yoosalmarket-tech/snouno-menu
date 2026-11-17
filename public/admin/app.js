@@ -719,6 +719,66 @@ function gaEstimatedSalesPanel(data,pending){
  return panel;
 }
 
+function gaDeviceDonutPanel(devices,available){
+ const panel=node('section');panel.id='ga-devices';panel.className='analytics-report ga-device-panel';
+ panel.append(node('h2','الأجهزة'),node('p','توزيع المستخدمين النشطين حسب نوع الجهاز'));
+ if(!available){panel.append(node('p','لا تتوفر بيانات الأجهزة بعد.'));return panel;}
+ const map={mobile:'الجوال',desktop:'الكمبيوتر',tablet:'الجهاز اللوحي','smart tv':'التلفاز'};
+ const items=(devices||[]).filter(r=>Number(r.count)>0).map(r=>({
+  name:map[String(r.name).toLowerCase()]||String(r.name),
+  count:Number(r.count)
+ })).sort((a,b)=>b.count-a.count);
+ if(!items.length){panel.append(node('p','لا تتوفر بيانات الأجهزة لهذه الفترة.'));return panel;}
+ const sum=items.reduce((n,r)=>n+r.count,0);
+ const colors=['#ec6937','#232c54','#6b8f9b','#c6b078','#a6a8b0'];
+ let position=0;
+ const gradients=items.map((r,i)=>{
+  const from=position;position+=(r.count/sum)*100;
+  return colors[i%colors.length]+' '+from.toFixed(2)+'% '+position.toFixed(2)+'%';
+ });
+ const ring=node('div');ring.className='ga-device-ring';
+ ring.style.background='conic-gradient('+gradients.join(',')+')';
+ ring.setAttribute('role','img');
+ ring.setAttribute('aria-label',items.map(r=>r.name+' '+gaNumber(r.count)).join('، '));
+ const middle=node('div');middle.className='ga-device-center';
+ middle.append(node('strong',Math.round(items[0].count/sum*100)+'%'),node('span',items[0].name));
+ ring.append(middle);panel.append(ring);
+ const legend=node('div');legend.className='ga-device-legend';
+ items.forEach((r,i)=>{
+  const line=node('div');line.className='ga-device-legend-row';
+  const label=node('span',r.name);label.style.setProperty('--device-color',colors[i%colors.length]);
+  line.append(label,node('strong',Math.round(r.count/sum*100)+'%'));legend.append(line);
+ });
+ panel.append(legend);return panel;
+}
+function gaLanguagePanel(languages,available){
+ const panel=node('section');panel.id='ga-languages';panel.className='analytics-report ga-language-panel';
+ panel.append(node('h2','اللغة والمتصفح'),node('p','لغة المستخدم حسب تقارير GA4'));
+ if(!available){panel.append(node('p','لم تتوفر بيانات اللغة بعد.'));return panel;}
+ const mapping={ar:'العربية',en:'English',he:'עברית',fr:'Français',tr:'Türkçe',es:'Español',de:'Deutsch'};
+ const totals=new Map();
+ for(const r of languages||[]){
+  const count=Number(r.count)||0;
+  if(count<=0)continue;
+  const code=String(r.name||'').toLowerCase().split(/[-_]/)[0];
+  const name=mapping[code]||code.toUpperCase();
+  totals.set(name,(totals.get(name)||0)+count);
+ }
+ const items=[...totals].sort((a,b)=>b[1]-a[1]).slice(0,6);
+ if(!items.length){panel.append(node('p','لا تتوفر لغات معالجة لهذه الفترة.'));return panel;}
+ const maximum=Math.max(...items.map(r=>r[1]),1);
+ const body=node('div');body.className='ga-mini-bars';
+ for(const [name,value] of items){
+  const line=node('div');line.className='ga-mini-bar';
+  const labels=node('div');labels.className='ga-mini-bar-top';
+  labels.append(node('span',name),node('strong',gaNumber(value)));
+  const track=node('div');track.className='ga-mini-bar-track';
+  const fill=node('div');fill.className='ga-mini-bar-fill';fill.style.width=(100*value/maximum).toFixed(2)+'%';
+  track.append(fill);line.append(labels,track);body.append(line);
+ }
+ panel.append(body);return panel;
+}
+
 async function renderGaOverview(days=28){
  const area=$('body'),ticket=generation;
  const top=node('div');top.className='ga-heading';
