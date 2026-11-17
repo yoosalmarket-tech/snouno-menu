@@ -361,3 +361,14 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
 #body .ga-trend-bar{width:100%;min-height:3px;background:#FDBE2D;border-radius:5px 5px 0 0;}
 @media(max-width:700px){#body .ga-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}#body .ga-stat{min-height:125px;padding:13px;}#body .ga-stat strong{font-size:23px;}#body .ga-trend-bars{gap:2px;}}
 @media(max-width:400px){#body .ga-stats-grid{grid-template-columns:1fr;}#body .ga-heading select{flex:1;}}
+
+/* Clearly separate the last 30 minutes of realtime data from processed GA4 reports. */
+#body .ga-live{border-color:#e1c273;background:#fffdf5;margin-bottom:14px;}
+#body .ga-live h2{margin:0 0 12px;}
+#body .ga-live p{font-size:12px;color:#6b6659;margin:12px 0 0;}
+#body .ga-live-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+#body .ga-live-metric{display:flex;flex-direction:column;gap:5px;border:1px solid #e9dfc3;background:white;border-radius:12px;padding:12px;}
+#body .ga-live-metric span{font-size:12px;color:#615a4a;}
+#body .ga-live-metric strong{font:800 25px/1.3 system-ui,sans-serif;}
+#body .ga-history-title{font-size:20px;margin:18px 0 12px;}
+@media(max-width:700px){#body .ga-live-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}}
