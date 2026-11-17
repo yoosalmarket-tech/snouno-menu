@@ -1405,7 +1405,7 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-info > .rm-customize{
  display:block!important;align-self:center!important;
  color:#FFFFFF!important;white-space:nowrap!important;
  font-family:Snounu,Tahoma,sans-serif!important;
- font-size:10px!important;font-weight:900!important;
+ font-size:11px!important;font-weight:900!important;
  line-height:1.2!important;text-align:center!important;
 }
 #rich-menu .rm-order-wrap .rm-customize .rm-order-en{
@@ -1449,7 +1449,7 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-info > .rm-customize{
   grid-template-columns:minmax(0,1fr) 29px minmax(0,1fr)!important;
  }
  #rich-menu .rm-order-wrap .rm-customize .rm-order-ar{font-size:12px!important;}
- #rich-menu .rm-order-wrap .rm-customize .rm-order-en{font-size:11px!important;}
+ #rich-menu .rm-order-wrap .rm-customize .rm-order-en{font-size:10px!important;}
  #rich-menu .rm-order-wrap .rm-customize .rm-order-icon{
   width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;
  }
