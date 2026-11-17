@@ -131,7 +131,7 @@ async function api(path, options={}) {
   }
   return request(path,{...options,token:session.access_token});
 }
-function loggedOut(){ generation++;role=null;closeAdminMobileNav();$('admin-page-header').hidden=true;$('body').classList.remove('ga-overview');$('login').hidden=false;$('tabs').replaceChildren();$('body').replaceChildren();$('title').textContent='تسجيل الدخول'; }
+function loggedOut(){ generation++;role=null;closeAdminMobileNav();$('admin-page-header').hidden=true;$('body').classList.remove('ga-overview');$('login').hidden=false;$('tabs').replaceChildren();$('body').replaceChildren();$('admin-title-action').replaceChildren();$('title').textContent='تسجيل الدخول'; }
 function adminSidebarIcon(key){
  const icons={
   overview:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
@@ -1059,7 +1059,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  updateAdminHeader(key);
  $('body').classList.toggle('ga-overview',key==='overview');
  const sameSection=section===key;
- const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0];
+ const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren();
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='account'){await renderOwnerAccount();return;}
  if(key==='overview'){await renderGaOverview();return;}
@@ -1074,7 +1074,11 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  const area=$('body');
  const previousY=sameSection?window.scrollY:0;
  area.replaceChildren();
- if(!feedback&&!['menu_settings','menu_links'].includes(key))area.append(action('إضافة',()=>edit(key,{})));
+ if(!feedback&&!['menu_settings','menu_links'].includes(key)){
+  const add=action('إضافة',()=>edit(key,{}));
+  add.id='admin-add-button';
+  $('admin-title-action').replaceChildren(add);
+ }
  if(!rows.length)area.append(node('p','لا توجد عناصر بعد.'));
  if(key==='menu_settings'){
    if(rows[0])await edit('menu_settings',rows[0],true);
