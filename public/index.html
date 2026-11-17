@@ -93,7 +93,7 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <span id="greeting" class="welcome-greeting">أهلاً بك في</span>
   <h1 id="brand">مطعم سنونو</h1>
   <p class="welcome-subtitle" id="welcome-subtitle">جاهز تختار وجبتك المفضّلة؟</p>
-  <div class="welcome-controls"><a class="browse" href="/menu" data-page="menu" id="browse"><span>تصفح المنيو</span><span class="welcome-browse-icon" aria-hidden="true">←</span></a><span id="quick"></span><button type="button" id="install-snounu-app" class="welcome-install-button" hidden><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span id="install-app-label">تثبيت المنيو على الهاتف</span></button></div>
+  <div class="welcome-controls"><a class="browse" href="/menu" data-page="menu" id="browse"><span>تصفح المنيو</span><span class="welcome-browse-icon" aria-hidden="true">←</span></a><span id="quick"></span></div>
  </div>
 
 <div class="desktop-welcome" dir="rtl" aria-label="واجهة سنونو للكمبيوتر">
@@ -171,4 +171,8 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   </div>
 </section>
 <div id="social-links" hidden aria-label="حسابات المطعم"></div><footer id="credit"><button type="button" id="credit-link"></button><span id="credit-hint" role="status" aria-live="polite"></span></footer><nav id="dock"><a href="/menu" data-page="menu"><svg viewBox="0 0 24 24"><path d="M5 3v7c0 2 5 2 5 0V3m-2.5 0v18M18 3c-3 2-4 7-4 10h4m0-10v18"/></svg>القائمة</a><a href="/contact" data-page="contact"><svg viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 11h.1m4 0h.1m4 0h.1"/></svg>تواصل معنا</a></nav></div><div id="network" role="status" hidden></div>
-</main><dialog id="dish"><button id="close" aria-label="إغلاق">×</button><div id="details"></div></dialog><dialog id="install-guide" class="install-guide" aria-labelledby="install-guide-title"><h2 id="install-guide-title">تثبيت منيو سنونو</h2><p id="install-guide-body">من قائمة المتصفح اختر «إضافة إلى الشاشة الرئيسية».</p><button type="button" id="install-guide-close">تمام</button></dialog></body></html>
+</main><aside id="install-snounu-promo" class="install-snounu-promo" aria-label="تثبيت منيو سنونو" hidden>
+ <button type="button" id="install-promo-close" class="install-promo-close" aria-label="إغلاق إعلان التثبيت" title="إغلاق">×</button>
+ <div class="install-promo-top"><img src="/assets/snounu-icon.png" alt="" class="install-promo-logo"><div class="install-promo-copy"><strong id="install-promo-title">خلي منيو سنونو على هاتفك!</strong><p id="install-promo-subtitle">افتح المنيو مثل التطبيق، بضغطة واحدة.</p></div></div>
+ <button type="button" id="install-snounu-app" class="install-promo-action"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span id="install-app-label">تثبيت التطبيق</span></button>
+ </aside><dialog id="dish"><button id="close" aria-label="إغلاق">×</button><div id="details"></div></dialog><dialog id="install-guide" class="install-guide" aria-labelledby="install-guide-title"><h2 id="install-guide-title">تثبيت منيو سنونو</h2><p id="install-guide-body">من قائمة المتصفح اختر «إضافة إلى الشاشة الرئيسية».</p><button type="button" id="install-guide-close">تمام</button></dialog></body></html>
