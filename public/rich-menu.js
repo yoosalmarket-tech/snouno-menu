@@ -11,7 +11,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
  '<button type="button" class="rm-exit" aria-label="العودة إلى المنيو العادي" title="العودة إلى المنيو العادي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>',
- '<span class="rm-top-caption" lang="en">SNOUNU / INTERACTIVE</span><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></div>',
+ '<span class="rm-top-caption" lang="en">SNOUNU / INTERACTIVE</span><a class="rm-top-logo-home" href="/welcome" data-page="welcome" aria-label="العودة إلى شاشة ترحيب سنونو" title="العودة إلى شاشة الترحيب"><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></a></div>',
  '<nav class="rm-categories" aria-label="تصنيفات الأطباق"><div class="rm-categories-header">',
  '<div class="rm-categories-label"><strong lang="en">CATEGORIES</strong><span dir="rtl">التصنيفات</span></div>',
  '<div class="rm-categories-controls"><button class="rm-category-previous" type="button" aria-label="الصنف السابق">←</button>',
