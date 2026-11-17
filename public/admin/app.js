@@ -14,19 +14,17 @@ const sections = {
     ['welcome_question','السؤال على ملصق الوجبة'],
     ['welcome_label','العبارة بجانب الوجبة (مثل: من سنونو)'],
     ['welcome_meal_1','اسم الوجبة الأولى (بوكس المشاركة)'],
-    ['welcome_image_1','صورة الترحيب الأولى — بوكس المشاركة','image'],
+    ['welcome_image_1','صورة الترحيب الأولى — للجوال والكمبيوتر','image'],
     ['welcome_label_x_1','موضع النص للوجبة 1 — أفقي','position'],
     ['welcome_label_y_1','موضع النص للوجبة 1 — عمودي','position'],
     ['welcome_meal_2','اسم الوجبة الثانية (نوك أوت)'],
-    ['welcome_image_2','صورة الترحيب الثانية — نوك أوت','image'],
+    ['welcome_image_2','صورة الترحيب الثانية — للجوال والكمبيوتر','image'],
     ['welcome_label_x_2','موضع النص للوجبة 2 — أفقي','position'],
     ['welcome_label_y_2','موضع النص للوجبة 2 — عمودي','position'],
     ['welcome_meal_3','اسم الوجبة الثالثة (ناشفيل)'],
-    ['welcome_image_3','صورة الترحيب الثالثة — ناشفيل','image'],
+    ['welcome_image_3','صورة الترحيب الثالثة — للجوال والكمبيوتر','image'],
     ['welcome_label_x_3','موضع النص للوجبة 3 — أفقي','position'],
     ['welcome_label_y_3','موضع النص للوجبة 3 — عمودي','position'],
-    ['welcome_desktop_accent','السطر الأصفر الكبير في ترحيب الكمبيوتر'],
-    ['welcome_description','وصف صفحة الترحيب للكمبيوتر','textarea'],
     ['welcome_button','نص زر تصفح المنيو'],
     ['logo','شعار سنونو','image'],
     ['contact','نص صفحة التواصل','textarea'],
@@ -1300,7 +1298,7 @@ if(session)enter().catch(e=>{persist(null);loggedOut();notice(e.message);});else
 /* Dedicated draggable label preview for each of the three welcome meals. */
 function setupWelcomeLabelPositionPreviews(form,row,uploads){
  const labels=['بوكس المشاركة','نوك أوت','ناشفيل'];
- const title=node('p','موضع النص مستقل لكل وجبة. اسحب البطاقة فوق الصورة أو استخدم شريطي الموضع. تُحفظ جميع التغييرات عند الضغط على «حفظ جميع الإعدادات».');
+ const title=node('p','تُستخدم الصور الثلاث، وأسماء الوجبات، ومواضع الشارات نفسها في شاشة الترحيب على الكمبيوتر والجوال. اسحب الشارة على الصورة أو عدّل شريطي موضعها، ثم احفظ جميع الإعدادات.');
  title.className='inline-settings-help';
  form.insertBefore(title,form.querySelector('label'));
  for(let n=1;n<=3;n++){
