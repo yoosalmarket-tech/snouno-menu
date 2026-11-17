@@ -421,18 +421,19 @@ const gaEventLabels={
 function gaNumber(number){return Number(number||0).toLocaleString('en-US',{maximumFractionDigits:0});}
 function gaMoney(number){return Number(number||0).toLocaleString('en-US',{maximumFractionDigits:2})+' ₪';}
 // Charts use the actual GA4 response only. Never fill missing history with sample data.
-function gaRankGraph(title,subtitle,items,{available=true,kind='meal'}={}){
+function gaRankGraph(title,subtitle,items,{available=true,kind='meal',total=null}={}){
+ const isSource=kind==='source';
  const section=node('section');section.className='analytics-report ga-chart-panel ga-rank-panel';
  const heading=node('div');heading.className='ga-chart-heading';
  heading.append(node('h2',title),node('p',subtitle));section.append(heading);
  if(!available){section.append(node('p','بيانات هذا التصنيف لم تصبح متاحة من GA4 بعد.'));return section;}
  const ranked=(items||[]).filter(i=>i&&Number(i.count)>0).slice(0,7);
- if(!ranked.length){section.append(node('p','لا توجد إحالات معالجة لهذا التصنيف خلال الفترة المحددة.'));return section;}
+ if(!ranked.length){section.append(node('p',isSource?'لا تتوفر مصادر زيارات معالجة لهذه الفترة بعد.':'لا توجد إحالات معالجة لهذا التصنيف خلال الفترة المحددة.'));return section;}
  const winner=ranked[0];
  const hero=node('div');hero.className='ga-rank-hero';
- hero.append(node('span',kind==='meal'?'الوجبة الأكثر إحالة':'تطبيق التوصيل الأكثر إحالة'));
+ hero.append(node('span',isSource?'المصدر الأول للزيارات':kind==='meal'?'الوجبة الأكثر إحالة':'تطبيق التوصيل الأكثر إحالة'));
  hero.append(node('strong',winner.name));
- hero.append(node('small',gaNumber(winner.count)+' إحالة أولى'));
+ hero.append(node('small',isSource?gaNumber(winner.count)+' زيارة'+(Number(total)>0?' · '+(100*winner.count/total).toFixed(1)+'% من إجمالي الزيارات':''):gaNumber(winner.count)+' إحالة أولى'));
  section.append(hero);
  const bars=node('div');bars.className='ga-horizontal-bars';
  const max=Math.max(...ranked.map(x=>Number(x.count)),1);
@@ -441,7 +442,7 @@ function gaRankGraph(title,subtitle,items,{available=true,kind='meal'}={}){
   const names=node('div');names.className='ga-bar-label';
   names.append(node('span',String(r.name)),node('strong',gaNumber(r.count)));
   const rail=node('div');rail.className='ga-bar-rail';rail.setAttribute('role','img');
-  rail.setAttribute('aria-label',String(r.name)+': '+gaNumber(r.count)+' إحالة');
+  rail.setAttribute('aria-label',String(r.name)+': '+gaNumber(r.count)+(isSource?' زيارة':' إحالة'));
   const fill=node('div');fill.className='ga-bar-fill'+(index===0?' ga-bar-first':'');
   fill.style.width=(100*Number(r.count)/max).toFixed(2)+'%';
   rail.append(fill);line.append(names,rail);bars.append(line);
@@ -629,13 +630,19 @@ async function renderGaOverview(days=28){
     available:data.reportStatus?.platformRankingAvailable===true,kind:'platform'
    })
   );
+  const sources=gaRankGraph('أكثر مصادر الزيارات','عدد الجلسات حسب مصدر / وسيط الزيارة في GA4؛ يوضح من أين وصل الزائر إلى المنيو',data.trafficSources,{
+   available:data.reportStatus?.trafficSourcesAvailable===true,kind:'source',total:data.summary?.sessions
+  });
+  sources.id='ga-top-traffic-sources';
+  const sourceNote=node('p','المصدر (direct) / (none) يعني أن GA4 لا يملك مصدر إحالة واضحاً لهذه الزيارة؛ وليس بالضرورة أن الزائر كتب الرابط يدوياً.');
+  sourceNote.className='ga-traffic-source-note';sources.append(sourceNote);
   const trend=gaDailyLineChart(data.daily||[]);
   const eventsGraph=gaEventsGraph(data.eventCounts||{});
   const foot=node('p','المصدر: Google Analytics 4 · آخر جلب: '+new Date(data.asOf).toLocaleString('ar')+' · لا تمثل قيمة الإحالات مبيعات فعلية.');
   foot.className='ga-footnote';
   const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
   if(notes)notes.className='ga-notice';
-  area.replaceChildren(top,live,...(pendingNote?[pendingNote]:[]),historyTitle,ranks,trend,metrics,eventsGraph,refTable,eventsTable,foot,...(notes?[notes]:[]));
+  area.replaceChildren(top,live,...(pendingNote?[pendingNote]:[]),historyTitle,sources,ranks,trend,metrics,eventsGraph,refTable,eventsTable,foot,...(notes?[notes]:[]));
  }catch(error){
   if(ticket===generation){status.textContent='حدث خطأ أثناء قراءة GA4. '+(error?.message||'');status.className='ga-notice';}
  }
