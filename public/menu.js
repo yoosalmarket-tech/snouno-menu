@@ -815,11 +815,8 @@ document.addEventListener('click',event=>{
   // interstitial frame and no second opacity fade after the menu appears.
   cancelWelcomeReveal();
   cancelBrowseFade();
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
-   $('inside').classList.add('menu-browsing-in');
-  }
+  // No opacity animation at all: reveal the ready destination directly.
   navigate();
-  browseFadeTimer=setTimeout(cancelBrowseFade,260);
   return;
  }
  cancelBrowseFade();
