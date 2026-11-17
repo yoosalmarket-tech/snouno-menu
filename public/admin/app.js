@@ -1295,12 +1295,115 @@ async function edit(key,row,inline=false){
 if(location.hash.includes('access_token='))history.replaceState(null,'',location.pathname);
 if(session)enter().catch(e=>{persist(null);loggedOut();notice(e.message);});else loggedOut();
 
+/* One shared welcome design for both device sizes. These lightweight visual
+   mock previews update instantly from dashboard fields without making GA4 hits
+   or loading a second public-menu iframe. The real menu remains the source of truth. */
+function setupWelcomeSharedPreviews(form,row,uploads,after){
+ const section=node('section');section.className='welcome-shared-previews';
+ const heading=node('h3','معاينة الترحيب — الكمبيوتر والجوال');
+ const explanation=node('p','معاينة تقريبية تتحدّث مع حقول الإعدادات. كلا التصميمين يستخدم الصور والأسماء والملصقات نفسها. اضغط اسم وجبة لعرضها في المعاينتين.');
+ section.append(heading,explanation);
+ const picker=node('div');picker.className='welcome-shared-picker';
+ const mealNames=['بوكس المشاركة','نوك أوت','ناشفيل'];
+ let current=0;
+ const hosts=[],pickers=[];
+ const devices=node('div');devices.className='welcome-shared-devices';
+ function preview(kind,title){
+  const panel=node('div');panel.className='welcome-device-panel';
+  panel.append(node('h4',title));
+  const mock=node('div');mock.className='welcome-device-mock welcome-device-'+kind;
+  mock.setAttribute('aria-label','معاينة '+title);
+  const top=node('div');top.className='welcome-device-top';
+  const logo=node('img');logo.alt='شعار سنونو';logo.className='welcome-device-logo';top.append(logo);
+  const caption=node('div','أهلاً وسهلاً');caption.className='welcome-device-caption';
+  const stage=node('div');stage.className='welcome-device-stage';
+  const food=node('img');food.alt='معاينة الوجبة';food.className='welcome-device-photo';
+  const badge=node('div');badge.className='welcome-device-badge';
+  const prefix=node('strong','من سنونو'),meal=node('span',mealNames[0]);badge.append(prefix,meal);
+  stage.append(food,badge);
+  const rail=node('div');rail.className='welcome-device-dots';
+  const dots=mealNames.map(()=>{const dot=node('span');rail.append(dot);return dot});
+  const footer=node('div');footer.className='welcome-device-footer';
+  const greeting=node('span','أهلاً بك في');greeting.className='welcome-device-greeting';
+  const brand=node('strong','مطعم سنونو');brand.className='welcome-device-brand';
+  const subtitle=node('p','جاهز تختار وجبتك المفضّلة؟');subtitle.className='welcome-device-subtitle';
+  const browse=node('span','تصفح المنيو');browse.className='welcome-device-cta';
+  footer.append(greeting,brand,subtitle,browse);
+  mock.append(top,caption,stage,rail,footer);
+  panel.append(mock);devices.append(panel);
+  hosts.push({logo,caption,food,badge,prefix,meal,greeting,brand,subtitle,browse,dots});
+ }
+ for(let i=0;i<3;i++){
+  const pick=action(mealNames[i],()=>{current=i;render();});
+  pick.className='welcome-shared-choice';pick.setAttribute('aria-pressed',String(i===0));
+  picker.append(pick);pickers.push(pick);
+ }
+ preview('desktop','شاشة الكمبيوتر');
+ preview('mobile','شاشة الجوال');
+ section.append(picker,devices);
+ after.after(section);
+ const assets=new Map();
+ const value=(field,fallback='')=>String(form.elements.namedItem(field)?.value??row[field]??fallback).trim()||fallback;
+ function src(field,fallback){
+  const file=uploads[field]?.files[0];
+  const stored=assets.get(field);
+  if(file){
+   if(!stored||stored.file!==file){
+    if(stored)URL.revokeObjectURL(stored.url);
+    const url=URL.createObjectURL(file);assets.set(field,{file,url});
+   }
+   return assets.get(field).url;
+  }
+  if(stored){URL.revokeObjectURL(stored.url);assets.delete(field);}
+  return value(field,fallback);
+ }
+ function render(){
+  pickers.forEach((button,index)=>{
+   button.textContent=value('welcome_meal_'+(index+1),mealNames[index]);
+   button.setAttribute('aria-pressed',String(index===current));
+  });
+  const n=current+1;
+  const foodSrc=src('welcome_image_'+n,'/assets/welcome/'+[2468,2465,2472][current]+'.webp');
+  const logoSrc=src('logo','/assets/logo.webp');
+  const label=value('welcome_label','من سنونو');
+  const name=value('welcome_meal_'+n,mealNames[current]);
+  const x=Math.min(95,Math.max(5,Number(value('welcome_label_x_'+n,'82'))||82));
+  const y=Math.min(95,Math.max(5,Number(value('welcome_label_y_'+n,'28'))||28));
+  for(const host of hosts){
+   if(host.logo.getAttribute('src')!==logoSrc)host.logo.src=logoSrc;
+   if(host.food.getAttribute('src')!==foodSrc)host.food.src=foodSrc;
+   host.food.alt=name;
+   host.caption.textContent=value('welcome_caption','أهلاً وسهلاً');
+   host.prefix.textContent=label;
+   host.meal.textContent=name;
+   host.badge.style.left=x+'%';host.badge.style.top=y+'%';
+   host.greeting.textContent=value('welcome','أهلاً بك في');
+   host.brand.textContent=value('name','مطعم سنونو');
+   host.subtitle.textContent=value('welcome_subtitle','جاهز تختار وجبتك المفضّلة؟');
+   host.browse.textContent=value('welcome_button','تصفح المنيو');
+   host.dots.forEach((dot,index)=>dot.classList.toggle('selected',index===current));
+  }
+ }
+ const changed=()=>render();
+ form.addEventListener('input',changed);
+ form.addEventListener('change',changed);
+ const observer=new MutationObserver(()=>{
+  if(form.isConnected)return;
+  form.removeEventListener('input',changed);
+  form.removeEventListener('change',changed);
+  for(const file of assets.values())URL.revokeObjectURL(file.url);
+  assets.clear();observer.disconnect();
+ });
+ observer.observe($('body'),{childList:true});
+ render();
+}
 /* Dedicated draggable label preview for each of the three welcome meals. */
 function setupWelcomeLabelPositionPreviews(form,row,uploads){
  const labels=['بوكس المشاركة','نوك أوت','ناشفيل'];
  const title=node('p','تُستخدم الصور الثلاث، وأسماء الوجبات، ومواضع الشارات نفسها في شاشة الترحيب على الكمبيوتر والجوال. اسحب الشارة على الصورة أو عدّل شريطي موضعها، ثم احفظ جميع الإعدادات.');
  title.className='inline-settings-help';
  form.insertBefore(title,form.querySelector('label'));
+ setupWelcomeSharedPreviews(form,row,uploads,title);
  for(let n=1;n<=3;n++){
    const x=form.elements.namedItem('welcome_label_x_'+n);
    const y=form.elements.namedItem('welcome_label_y_'+n);
