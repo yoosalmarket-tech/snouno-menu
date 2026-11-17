@@ -916,7 +916,7 @@ main:has(> #tabs:not(:empty)) #body > article:not(.ga-stat),
 main:has(> #tabs:not(:empty)) #body .dish-sort-card,
 main:has(> #tabs:not(:empty)) #body .account-card,
 main:has(> #tabs:not(:empty)) #body .inline-settings-form,
-main:has(> #tabs:not(:empty)) #body .analytics-report{
+main:has(> #tabs:not(:empty)) #body:not(.ga-overview) .analytics-report{
  background:#fff;border:1px solid var(--admin-line);
  border-radius:17px;box-shadow:0 5px 22px #28384009;
 }
@@ -928,7 +928,7 @@ main:has(> #tabs:not(:empty)) #body > article:not(.ga-stat):hover,
 main:has(> #tabs:not(:empty)) #body .dish-sort-card:hover{
  border-color:#bccdd0;box-shadow:0 10px 27px #28384012;
 }
-main:has(> #tabs:not(:empty)) #body article strong{
+main:has(> #tabs:not(:empty)) #body article:not(.ga-stat) strong{
  color:#253237;font-weight:800;
 }
 main:has(> #tabs:not(:empty)) #body .dish-sort-section>h2{
