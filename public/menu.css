@@ -1308,3 +1308,14 @@ body.rich-menu-active:not([data-preview]) #rich-menu{
 @media(prefers-reduced-motion:reduce){
  #install-snounu-promo{animation:none!important;}
 }
+
+/* Eliminate the ACTUAL browse flash. An older rule at the top of this
+   stylesheet animates #menu:not([hidden]) using page-enter, starting the
+   entire menu at opacity:0 for 320ms and exposing the light page shell.
+   No full-page fade/translation should run when Browse reveals the menu.
+   Individual food/card animations remain independent. */
+#menu:not([hidden]){
+ animation:none!important;
+ opacity:1!important;
+ transform:none!important;
+}
