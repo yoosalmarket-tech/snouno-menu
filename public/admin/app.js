@@ -173,8 +173,14 @@ function buildAdminSidebar(email){
   if(['menu_staff','account','events','overview'].includes(key)&&role!=='owner')continue;
   const group=groups[key]||'المزيد';
   if(group!==prevGroup){const groupLabel=node('span',group);groupLabel.className='admin-sidebar-group';links.append(groupLabel);prevGroup=group;}
-  const btn=action('',()=>openSection(key));btn.id='admin-tab-'+key;btn.dataset.section=key;btn.className='admin-nav-button';
-  btn.append(adminSidebarIcon(key),node('span',label));links.append(btn);
+  const btn=node('a');btn.href=adminPath(key);btn.id='admin-tab-'+key;
+  btn.dataset.section=key;btn.className='admin-nav-button';
+  btn.append(adminSidebarIcon(key),node('span',label));
+  btn.addEventListener('click',event=>{
+   if(event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+   event.preventDefault();void openSection(key).catch(error=>notice(error.message));
+  });
+  links.append(btn);
  }
  tabs.append(links);
  const profile=node('div');profile.className='admin-sidebar-profile';
@@ -194,9 +200,23 @@ async function enter(){
   if(!own.length) throw new Error('لا توجد صلاحية لهذا الحساب');
   role=own[0].role; $('login').hidden=true;
   buildAdminSidebar(user.email);
-  const saved=location.hash.slice(1);
-  await openSection(Object.hasOwn(sections,saved)&&(!['menu_staff','account','events','overview'].includes(saved)||role==='owner')?saved:(role==='owner'?'overview':'dishes'));
+  const requested=keyFromAdminLocation();
+  await openSection(authorizedAdminSection(requested)?requested:(role==='owner'?'overview':'dishes'),{initial:true});
 }
+$('admin-mobile-menu-toggle').addEventListener('click',toggleAdminMobileNav);
+$('admin-mobile-backdrop').addEventListener('click',()=>closeAdminMobileNav({restoreFocus:true}));
+window.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&document.body.classList.contains('admin-mobile-open'))closeAdminMobileNav({restoreFocus:true});
+});
+window.addEventListener('resize',()=>{
+ if(window.innerWidth>850)closeAdminMobileNav();
+});
+window.addEventListener('popstate',()=>{
+ if(!session||!role)return;
+ const requested=keyFromAdminLocation();
+ const next=authorizedAdminSection(requested)?requested:(role==='owner'?'overview':'dishes');
+ void openSection(next,{fromHistory:true}).catch(error=>notice(error.message));
+});
 $('remember-me').checked=rememberMe;
 $('access').onsubmit=async e=>{
  e.preventDefault();
