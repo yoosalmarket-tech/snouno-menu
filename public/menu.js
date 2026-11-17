@@ -345,8 +345,8 @@ let welcomeCarouselTimer=null,welcomeCarouselCleanupTimer=null;
 let welcomeCarouselActive=false,welcomeCarouselAnimating=false,welcomeCarouselSession=0;
 const welcomeAutoplayMs=3000,welcomeTransitionMs=600;
 const prefersReducedWelcomeMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
-const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&matchMedia('(max-width:980px)').matches&&document.documentElement.classList.contains('loader-complete');
-const onMobileWelcome=()=>matchMedia('(max-width:980px)').matches;
+const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&document.documentElement.classList.contains('loader-complete');
+const onSharedWelcome=()=>true;
 function welcomeMealName(index){
  const choice=welcomeMobileMeals[index];
  if(!isEnglish())return choice.name;
@@ -391,7 +391,7 @@ async function centerWelcomePhoto(img,src){
  if(!img||!src)return;
  img.style.setProperty('--welcome-visual-offset','0px');
  const {delta,ratio}=await getWelcomeVisualCenter(src);
- if(!onMobileWelcome()||img.getAttribute('src')!==src)return;
+ if(!onSharedWelcome()||img.getAttribute('src')!==src)return;
  const width=img.clientWidth,height=img.clientHeight;
  // object-fit: contain centers the bitmap inside an image box that can be taller
  // or wider than the actual image. Use the rendered bitmap width, not box width.
@@ -1220,13 +1220,12 @@ async function revealPage(){
   await Promise.allSettled(drawings.map(drawing=>drawing.finished));
  }
  if(welcome&&!reduced){
-  const mobile=matchMedia('(max-width:980px)').matches;
-  const header=document.querySelector(mobile?'.welcome-top':'.desktop-welcome-top');
-  const destination=$(mobile?'welcome-logo':'desktop-welcome-logo');
+  // Desktop and mobile now share the same welcome hero and logo geometry.
+  const header=document.querySelector('.welcome-top');
+  const destination=$('welcome-logo');
   const loader=$('page-loader');
   const drawnLogo=loader.querySelector('svg');
-  const finalWave=mobile?header?.querySelector('.welcome-top-wave'):
-    header?.querySelector('svg:not(.desktop-curve-shadow)');
+  const finalWave=header?.querySelector('.welcome-top-wave');
   if(header&&destination&&drawnLogo&&finalWave){
    const start=drawnLogo.getBoundingClientRect();
    const finish=destination.getBoundingClientRect();
