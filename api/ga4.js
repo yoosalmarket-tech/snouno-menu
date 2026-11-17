@@ -92,7 +92,7 @@ export default async function handler(req,res){
     // Independent GA4 queries let rankings work even if the newer monetary
     // custom metric has not been processed yet.
     const dims=(...names)=>names.map(name=>({name}));
-    const [summaryResult,eventsResult,referralsResult,mealRanksResult,platformRanksResult,valueResult,dailyResult,liveUsersResult,liveEventsResult]=await Promise.allSettled([
+    const [summaryResult,eventsResult,referralsResult,mealRanksResult,platformRanksResult,valueResult,dailyResult,trafficSourcesResult,liveUsersResult,liveEventsResult]=await Promise.allSettled([
       gaReport(token,{...base,metrics:dims('sessions','totalUsers','activeUsers','newUsers','screenPageViews','keyEvents','engagedSessions')}),
       gaReport(token,{...base,dimensions:dims('eventName'),metrics:dims('eventCount','keyEvents'),limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
       gaReport(token,{...base,dimensions:dims('customEvent:meal_name','customEvent:delivery_platform'),metrics:dims('eventCount'),dimensionFilter:isReferral,limit:'250',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
@@ -100,6 +100,8 @@ export default async function handler(req,res){
       gaReport(token,{...base,dimensions:dims('customEvent:delivery_platform'),metrics:dims('eventCount'),dimensionFilter:isReferral,limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
       gaReport(token,{...base,dimensions:dims('customEvent:meal_name','customEvent:delivery_platform'),metrics:dims('customEvent:referral_value'),dimensionFilter:isReferral,limit:'250'}),
       gaReport(token,{...base,dimensions:dims('date'),metrics:dims('sessions','totalUsers'),limit:'100',orderBys:[{dimension:{dimensionName:'date'}}]}),
+      // Session-scoped source+medium: each visit is attributed to its actual session source.
+      gaReport(token,{...base,dimensions:dims('sessionSourceMedium'),metrics:dims('sessions'),limit:'100',orderBys:[{metric:{metricName:'sessions'},desc:true}]}),
       gaRealtimeReport(token,{metrics:dims('activeUsers')}),
       gaRealtimeReport(token,{dimensions:dims('eventName'),metrics:dims('eventCount'),limit:'100'})
     ]);
@@ -113,6 +115,12 @@ export default async function handler(req,res){
         .map(r=>({name:r.dimensions[0],count:r.metrics[0]})).sort((a,b)=>b.count-a.count)
       :[];
     const topMeals=makeRanks(mealRanksResult), topPlatforms=makeRanks(platformRanksResult);
+    // Preserve (direct) / (none) and (not set) so source rankings stay honest.
+    const trafficSources=trafficSourcesResult.status==='fulfilled'
+      ?rows(trafficSourcesResult.value).filter(r=>r.metrics[0]>0)
+        .map(r=>({name:r.dimensions[0]||'(not set)',count:r.metrics[0]}))
+        .sort((a,b)=>b.count-a.count)
+      :[];
     const valueAvailable=valueResult.status==='fulfilled'&&rows(valueResult.value).length>0;
     const monetaryRows=valueAvailable?rows(valueResult.value):[];
     const moneyByPair=new Map(monetaryRows.map(r=>[JSON.stringify(r.dimensions),r.metrics[0]]));
@@ -129,6 +137,7 @@ export default async function handler(req,res){
     if(platformRanksResult.status==='rejected')warning.push('Delivery platform ranking is awaiting GA4 custom-dimension availability');
     if(valueResult.status==='rejected')warning.push('Referral value is awaiting GA4 custom-metric availability');
     if(dailyResult.status==='rejected')warning.push('Daily trend is temporarily unavailable');
+    if(trafficSourcesResult.status==='rejected')warning.push('Traffic source breakdown is temporarily unavailable');
     if(liveUsersResult.status==='rejected'||liveEventsResult.status==='rejected')warning.push('Realtime activity is temporarily unavailable');
     const realtimeEvents=liveEventsResult.status==='fulfilled'?Object.fromEntries(rows(liveEventsResult.value).map(r=>[r.dimensions[0],r.metrics[0]])):{};
     const realtime={
@@ -141,13 +150,14 @@ export default async function handler(req,res){
       source:'Google Analytics 4',propertyId:PROPERTY_ID,days,asOf:new Date().toISOString(),
       realtime,processedHasRows,
       summary:{sessions:metrics[0]||0,totalUsers:metrics[1]||0,activeUsers:metrics[2]||0,newUsers:metrics[3]||0,views:metrics[4]||0,keyEvents:metrics[5]||0,engagedSessions:metrics[6]||0},
-      eventCounts,referrals,topMeals,topPlatforms,
+      eventCounts,referrals,topMeals,topPlatforms,trafficSources,
       reportStatus:{
         rankingsAvailable:mealRanksResult.status==='fulfilled'||platformRanksResult.status==='fulfilled',
         mealRankingAvailable:mealRanksResult.status==='fulfilled',
         platformRankingAvailable:platformRanksResult.status==='fulfilled',
         referralDetailsAvailable:referralsResult.status==='fulfilled',
-        referralValueAvailable:valueAvailable
+        referralValueAvailable:valueAvailable,
+        trafficSourcesAvailable:trafficSourcesResult.status==='fulfilled'
       },
       totals:{
         uniqueReferrals:eventCounts.delivery_referral_unique?.count??null,
