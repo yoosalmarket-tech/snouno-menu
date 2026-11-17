@@ -730,7 +730,7 @@ function gaDeviceDonutPanel(devices,available){
  })).sort((a,b)=>b.count-a.count);
  if(!items.length){panel.append(node('p','لا تتوفر بيانات الأجهزة لهذه الفترة.'));return panel;}
  const sum=items.reduce((n,r)=>n+r.count,0);
- const colors=['#ec6937','#232c54','#6b8f9b','#c6b078','#a6a8b0'];
+ const colors=['#FDBE2D','#242424','#767676','#D1D1D1','#F1F1F1'];
  let position=0;
  const gradients=items.map((r,i)=>{
   const from=position;position+=(r.count/sum)*100;
@@ -817,15 +817,15 @@ async function renderGaOverview(days=28){
    const liveCards=[
     ['المستخدمون النشطون',realtime.activeUsers],
     ['مشاهدات الصفحة',realtime.eventCounts?.page_view],
-    ['نقرات التوصيل',realtime.eventCounts?.delivery_app_click],
-    ['الإحالات الأولى',realtime.eventCounts?.delivery_referral_unique]
+    ['النقرات على روابط التوصيل',realtime.eventCounts?.delivery_app_click],
+    ['الإحالات الأولى الجديدة',realtime.eventCounts?.delivery_referral_unique]
    ];
    for(const [label,value] of liveCards){
     const card=node('div');card.className='ga-live-metric';
     card.append(node('span',label),node('strong',gaNumber(value||0)));liveMetrics.append(card);
    }
    live.append(liveMetrics);
-   live.append(node('p','هذه أرقام آخر 30 دقيقة فقط؛ لا تمثل إجمالي الزيارات أو قيمة الإحالات للفترة المختارة.'));
+   live.append(node('p','النقرة تعني فتح رابط تطبيق التوصيل، وليس فتح نافذة اختيار التطبيقات. الإحالة الأولى تُسجل مرة واحدة في نافذة جلسة مدتها 30 دقيقة تقريباً؛ تكرار النقرات لا يزيدها. هذه بيانات آخر 30 دقيقة فقط.'));
   }else{
    live.append(node('p','تعذّر تحميل بيانات الوقت الفعلي حالياً. قد تكون خدمة GA4 Realtime غير متاحة مؤقتاً.'));
   }
@@ -835,7 +835,7 @@ async function renderGaOverview(days=28){
   const greeting=new Date().getHours()<12?'صباح الخير':'مساء الخير';
   const greetingTitle=node('h2');greetingTitle.append(node('span',greeting+'، '),node('em','مدير الموقع'));
   heroHeading.append(node('span','لوحة التحكم  /  ملخص الأداء'),greetingTitle);
-  heroHeading.append(node('p','نظرة سريعة على الزيارات والإحالات وأداء المنيو خلال الفترة المختارة.'));
+  heroHeading.append(node('p','الزيارات والإحالات وأداء المنيو خلال الفترة المختارة حسب GA4.'));
   const heroTop=node('div');heroTop.className='ga-hero-top';
   heroTop.append(heroHeading,top);
   hero.append(heroTop);
