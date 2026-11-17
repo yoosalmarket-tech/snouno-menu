@@ -1418,3 +1418,53 @@ async function chooseFirstVisitMode(initialMenu){
 }
 const initialMenu=load();
 (firstVisitModeCheck?chooseFirstVisitMode(initialMenu):initialMenu).finally(revealPage);
+/* Install Snounu menu as a standalone home-screen app on phones.
+   iOS uses Add to Home Screen; Android supports the native prompt when eligible.
+   Installation never affects visitor reporting or dashboard routes. */
+function setupMenuInstall(){
+ if(isPreview)return;
+ const button=$('install-snounu-app'),guide=$('install-guide');
+ if(!button||!guide)return;
+ let installPrompt=null;
+ const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+ const mobile=()=>window.matchMedia('(max-width: 980px)').matches;
+ const update=()=>{
+  button.hidden=standalone()||!mobile();
+  $('install-app-label').textContent=isEnglish()?'Install the menu app':'تثبيت المنيو على الهاتف';
+ };
+ window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();
+  installPrompt=event;
+  update();
+ });
+ window.addEventListener('appinstalled',()=>{installPrompt=null;update();});
+ window.addEventListener('resize',update,{passive:true});
+ window.matchMedia('(display-mode: standalone)').addEventListener?.('change',update);
+ $('install-guide-close').addEventListener('click',()=>guide.close());
+ button.addEventListener('click',async()=>{
+  if(standalone())return;
+  if(installPrompt){
+   const prompt=installPrompt;installPrompt=null;
+   prompt.prompt();
+   try{await prompt.userChoice;}catch{}
+   update();
+   return;
+  }
+  const iOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  $('install-guide-title').textContent=isEnglish()?'Install Snounu':'تثبيت منيو سنونو';
+  $('install-guide-body').textContent=iOS
+    ?(isEnglish()?'In your browser, tap Share, then Add to Home Screen.':'اضغط على زر المشاركة في المتصفح، ثم اختر «إضافة إلى الشاشة الرئيسية».')
+    :(isEnglish()?'Open the browser menu (⋮) and choose Install app or Add to Home Screen.':'افتح قائمة المتصفح (⋮)، ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».');
+  $('install-guide-close').textContent=isEnglish()?'Got it':'تمام';
+  if(typeof guide.showModal==='function')guide.showModal();
+  else alert($('install-guide-body').textContent);
+ });
+ update();
+ if('serviceWorker' in navigator&&window.isSecureContext){
+  navigator.serviceWorker.register('/sw.js',{scope:'/'})
+   .catch(error=>console.warn('Snounu install service worker:',error));
+ }
+}
+setupMenuInstall();
+
