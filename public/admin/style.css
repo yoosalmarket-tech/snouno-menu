@@ -2386,3 +2386,51 @@ main:has(#body.ga-overview) #tabs .admin-profile-logout{
 @media(prefers-reduced-motion:reduce){
  #body .welcome-shared-choice{transition:none;}
 }
+
+/* Optional PWA install action, visible only in the authenticated sidebar. */
+main:has(> #tabs:not(:empty)) #tabs .admin-install-app,
+main:has(#body.ga-overview) #tabs .admin-install-app{
+ display:flex;align-items:center;justify-content:center;
+ flex:none;gap:9px;margin:8px 12px 0;
+ padding:10px 13px;min-height:43px;width:auto;
+ border:1px solid #595959;border-radius:12px;
+ background:#262626;color:#FDBE2D;
+ font-family:inherit;font-weight:850;font-size:12px;line-height:1.5;
+ text-align:center;white-space:nowrap;cursor:pointer;
+ transition:background .17s,border-color .17s;
+}
+#tabs .admin-install-app svg{display:block;flex:none;}
+main:has(> #tabs:not(:empty)) #tabs .admin-install-app:hover,
+main:has(#body.ga-overview) #tabs .admin-install-app:hover{
+ background:#595959;border-color:#FDBE2D;color:#FDBE2D;
+}
+#tabs .admin-install-app:focus-visible{
+ outline:2px solid #FDBE2D;outline-offset:3px;
+}
+#admin-install-guide{
+ box-sizing:border-box;max-width:min(440px,calc(100vw - 26px));
+ padding:25px;border:1px solid #FDBE2D;border-radius:18px;
+ background:#262626;color:#FFFFFF;
+ box-shadow:0 20px 70px #00000077;direction:rtl;text-align:right;
+}
+#admin-install-guide::backdrop{background:#00000080;}
+#admin-install-guide h2{
+ margin:0 0 13px;font-size:22px;line-height:1.5;color:#FDBE2D;
+}
+#admin-install-guide p{
+ margin:0 0 18px;font-size:14px;line-height:1.85;color:#F2F2F2;
+}
+#admin-install-guide-close{
+ display:block;width:100%;min-height:43px;
+ border:0;border-radius:11px;
+ background:#FDBE2D;color:#000000;
+ font-family:inherit;font-weight:850;font-size:15px;
+ cursor:pointer;
+}
+@media(max-width:850px){
+ main:has(> #tabs:not(:empty)) #tabs .admin-install-app,
+ main:has(#body.ga-overview) #tabs .admin-install-app{
+  flex:none;margin:6px 12px 0;padding:12px;
+  min-height:45px;justify-content:center;
+ }
+}
