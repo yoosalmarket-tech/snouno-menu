@@ -683,7 +683,7 @@ function gaDailyLineChart(daily){
    const area=svg('path',{d:commands+' L'+x(points.length-1)+','+bottom+' L'+x(0)+','+bottom+' Z',class:'ga-line-area'});
    chart.append(area);
   }
-  chart.append(svg('path',{d:commands,fill:'none',class:'ga-line-stroke '+kind}));
+  chart.append(svg('path',{d:commands,fill:'none',pathLength:'1',class:'ga-line-stroke '+kind}));
   points.forEach((p,i)=>{
    const c=svg('circle',{cx:x(i),cy:y(p[field]),r:points.length<12?3.8:2.5,class:'ga-line-point '+kind});
    const t=svg('title');t.textContent=formatDate(p.date)+' — '+(kind==='visits'?'زيارات: ':'زوار: ')+gaNumber(p[field]);
