@@ -746,3 +746,37 @@ main:has(#body.ga-overview) nav#tabs button[aria-current=true]{
  #body.ga-overview *,
  main:has(#body.ga-overview) nav#tabs button{transition:none!important;animation:none!important;}
 }
+
+/* Average referral price is GA4-derived, display-only, never an input. */
+#body .ga-estimate-calculated{
+  background:#fff7dc;
+  border:1px solid #ead49c;
+  position:relative;
+}
+#body .ga-estimate-calculated output{
+  display:block;
+  font:900 clamp(23px,3vw,32px)/1.3 system-ui,sans-serif;
+  color:#312918;
+  direction:ltr;
+  text-align:right;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px dashed #e0c878;
+  background:#fffdf4;
+  font-variant-numeric:tabular-nums;
+}
+#body .ga-estimate-calculated small{
+  font-size:12px;
+  line-height:1.7;
+  color:#80672f;
+}
+#body.ga-overview .ga-estimate-calculated{
+  background:linear-gradient(145deg,#ffedb6,#fff9eb);
+  border-color:#e8ce83;
+}
+#body.ga-overview .ga-estimate-calculated output{
+  border:0;
+  border-radius:12px;
+  background:#ffffffc7;
+  box-shadow:0 4px 14px #70581712;
+}
