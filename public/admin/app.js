@@ -1285,7 +1285,8 @@ async function edit(key,row,inline=false){
    }catch(e){error.textContent=e.message;adminReporting.report('admin_save_error',save,{meal_id:key==='dishes'?row.id||null:null});}finally{save.disabled=false;}
  };
  if(inline){
-   setupWelcomeLabelPositionPreviews(form,row,uploads);
+   // Welcome imagery/label editors apply only to restaurant settings, not link settings.
+   if(key==='menu_settings')setupWelcomeLabelPositionPreviews(form,row,uploads);
  }else{
    if(key==='dishes')setupRichBadgePositionPreview(form,row,uploads);
    setupPreview(key,row,uploads);
