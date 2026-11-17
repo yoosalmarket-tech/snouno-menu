@@ -1962,7 +1962,7 @@ main:has(#body.ga-overview) #tabs a.admin-nav-button:focus-visible{
  display:inline-flex;align-items:center;justify-content:center;
  flex:none;min-height:44px;padding:9px 23px;
  border:1px solid #FDBE2D;border-radius:12px;
- background:#FDBE2D;color:#000000;font:850 15px/1.5 inherit;
+ background:#FDBE2D;color:#000000;font-weight:850;font-size:15px;line-height:1.5;font-family:inherit;
  box-shadow:none;white-space:nowrap;cursor:pointer;
 }
 #admin-title-row #admin-add-button:hover{background:#FDBE2D;color:#000000;}
