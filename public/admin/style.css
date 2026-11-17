@@ -1775,3 +1775,169 @@ main:has(> #tabs:not(:empty)) #body .inline-settings-form>footer button:hover{
  #body.ga-overview .ga-overview-insights-row>.analytics-report{min-height:auto;}
  #body.ga-overview .ga-live .ga-live-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
+
+/* Clean-route dashboard topbar and mobile hamburger drawer.
+   This final layer intentionally overrides old horizontal-mobile nav styles. */
+#admin-page-header.admin-page-header{
+ display:flex;align-items:center;gap:13px;
+ position:relative;min-width:0;min-height:58px;
+ padding:0 0 16px;margin:0 0 22px;
+ background:transparent;border:0;border-bottom:1px solid #D6D6D6;
+ box-shadow:none;border-radius:0;
+}
+#admin-page-header[hidden]{display:none!important;}
+#admin-page-header #admin-breadcrumb{
+ display:flex;align-items:center;flex:1;min-width:0;
+ gap:9px;margin:0;padding:0;
+ position:static;top:auto;align-self:auto;
+ width:auto;background:transparent;border:0;border-radius:0;
+ box-shadow:none;overflow:hidden;white-space:nowrap;
+ color:#595959;line-height:1.45;font-size:12px;font-weight:700;
+}
+#admin-page-header #admin-breadcrumb .admin-crumb-root{color:#595959;flex:none;}
+#admin-page-header #admin-breadcrumb .admin-crumb-divider{color:#D6D6D6;flex:none;}
+#admin-page-header #admin-breadcrumb .admin-crumb-current{
+ color:#262626;overflow:hidden;text-overflow:ellipsis;
+ font-size:13px;font-weight:850;
+}
+#admin-page-header #admin-view-menu{
+ display:inline-flex;align-items:center;justify-content:center;
+ gap:7px;flex:none;min-height:39px;
+ padding:8px 15px;border-radius:99px;
+ background:#FFFFFF;color:#000000;border:1px solid #D6D6D6;
+ text-decoration:none;white-space:nowrap;font-size:12px;font-weight:850;
+ transition:background .15s,border-color .15s;
+}
+#admin-page-header #admin-view-menu:hover{border-color:#FDBE2D;background:#F2F2F2;}
+#admin-page-header #admin-view-menu:focus-visible{
+ outline:3px solid #FDBE2D;outline-offset:3px;
+}
+#admin-page-header .admin-mobile-menu-toggle{display:none;}
+/* Real links replace the old sidebar buttons; share and open in new tab work. */
+main:has(> #tabs:not(:empty)) #tabs a.admin-nav-button,
+main:has(#body.ga-overview) #tabs a.admin-nav-button{
+ display:flex;align-items:center;justify-content:flex-start;
+ gap:11px;text-decoration:none;min-width:0;
+ border:1px solid transparent;border-radius:12px;
+ padding:10px 14px;min-height:45px;line-height:1.5;
+ width:100%;font-size:13px;font-weight:700;
+ background:transparent;color:#F2F2F2;
+}
+main:has(> #tabs:not(:empty)) #tabs a.admin-nav-button:hover,
+main:has(#body.ga-overview) #tabs a.admin-nav-button:hover{
+ background:#595959;color:#FFFFFF;
+}
+main:has(> #tabs:not(:empty)) #tabs a.admin-nav-button[aria-current=true],
+main:has(#body.ga-overview) #tabs a.admin-nav-button[aria-current=true]{
+ background:#FDBE2D;color:#000000;border-color:#FDBE2D;
+}
+main:has(> #tabs:not(:empty)) #tabs a.admin-nav-button:focus-visible,
+main:has(#body.ga-overview) #tabs a.admin-nav-button:focus-visible{
+ outline:3px solid #FDBE2D;outline-offset:-2px;
+}
+#admin-mobile-backdrop[hidden]{display:none!important;}
+@media(max-width:850px){
+ #admin-page-header.admin-page-header{
+  min-height:52px;padding:0 0 12px;
+  margin:0 0 18px;gap:10px;flex-wrap:nowrap;
+ }
+ #admin-page-header .admin-mobile-menu-toggle{
+  width:43px;min-width:43px;height:43px;min-height:43px;
+  flex:none;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:5px;border:1px solid #D6D6D6;
+  border-radius:12px;background:#FFFFFF;color:#000000;padding:9px;
+  box-shadow:none;cursor:pointer;
+ }
+ #admin-page-header .admin-mobile-menu-toggle span{
+  display:block;width:21px;height:2px;background:#000000;
+  border-radius:2px;transition:transform .16s ease,opacity .16s ease;
+ }
+ #admin-page-header .admin-mobile-menu-toggle[aria-expanded=true] span:first-child{
+  transform:translateY(7px) rotate(45deg);
+ }
+ #admin-page-header .admin-mobile-menu-toggle[aria-expanded=true] span:nth-child(2){opacity:0;}
+ #admin-page-header .admin-mobile-menu-toggle[aria-expanded=true] span:last-child{
+  transform:translateY(-7px) rotate(-45deg);
+ }
+ #admin-page-header #admin-breadcrumb{font-size:11px;gap:6px;}
+ #admin-page-header #admin-breadcrumb .admin-crumb-current{font-size:12px;}
+ #admin-page-header #admin-view-menu{
+  padding:8px 11px;min-height:41px;font-size:11px;
+ }
+ main:has(> #tabs:not(:empty)) > nav#tabs,
+ main:has(#body.ga-overview) > nav#tabs{
+  position:fixed!important;top:0!important;right:0!important;left:auto!important;
+  width:min(85vw,330px)!important;height:100dvh!important;
+  max-height:100dvh!important;min-height:0!important;
+  padding:0!important;margin:0!important;
+  display:flex!important;flex-direction:column!important;
+  align-items:stretch!important;justify-content:flex-start!important;
+  flex-wrap:nowrap!important;gap:0!important;
+  overflow:hidden!important;border:0;border-radius:0!important;
+  background:linear-gradient(180deg,#262626,#000000)!important;
+  box-shadow:-8px 0 32px #00000024;
+  transform:translateX(105%);opacity:0;visibility:hidden;
+  transition:transform .22s ease,opacity .22s ease,visibility .22s;
+  z-index:150;
+ }
+ body.admin-mobile-open main:has(> #tabs:not(:empty)) > nav#tabs,
+ body.admin-mobile-open main:has(#body.ga-overview) > nav#tabs{
+  transform:translateX(0);opacity:1;visibility:visible;
+ }
+ #tabs .admin-sidebar-brand{
+  padding:23px 18px!important;gap:12px!important;flex:none;
+  border-bottom:1px solid #595959;
+ }
+ #tabs .admin-sidebar-brand img{width:44px;height:44px;padding:4px;}
+ #tabs .admin-brand-text strong{font-size:23px;}
+ #tabs .admin-brand-text small{display:block;color:#D6D6D6;}
+ #tabs .admin-sidebar-links{
+  flex:1;min-width:0;min-height:0;
+  display:flex;flex-direction:column;align-items:stretch;
+  gap:5px;padding:13px 12px 18px;
+  overflow-y:auto;overflow-x:hidden;white-space:normal;
+ }
+ #tabs .admin-sidebar-group{
+  display:block;padding:15px 13px 5px;
+  color:#D6D6D6;font-size:10px;
+ }
+ main:has(> #tabs:not(:empty)) #tabs a.admin-nav-button,
+ main:has(#body.ga-overview) #tabs a.admin-nav-button{
+  display:flex;flex:none;width:100%;min-height:44px;
+  align-items:center;justify-content:flex-start;
+  padding:10px 14px;gap:12px;
+  white-space:normal;font-size:13px;
+  border-radius:11px;text-align:right;
+ }
+ #tabs .admin-nav-icon{width:19px;height:19px;}
+ #tabs .admin-sidebar-profile{
+  flex:none;width:auto;margin:11px 12px 16px;
+  padding:12px 10px;gap:10px;
+  border:1px solid #595959;border-radius:15px;
+ }
+ #tabs .admin-profile-avatar{width:40px;height:40px;font-size:19px;}
+ #tabs .admin-profile-info{display:flex;flex-direction:column;}
+ main:has(> #tabs:not(:empty)) #tabs .admin-profile-logout,
+ main:has(#body.ga-overview) #tabs .admin-profile-logout{
+  width:34px;min-width:34px;height:35px;min-height:35px;font-size:23px;
+ }
+ #admin-mobile-backdrop:not([hidden]){
+  display:block;position:fixed;inset:0;
+  width:100%;height:100dvh;margin:0;padding:0;
+  border:0;border-radius:0;cursor:pointer;
+  background:#00000085;z-index:145;
+ }
+ body.admin-mobile-open{overflow:hidden;}
+}
+@media(max-width:400px){
+ #admin-page-header #admin-breadcrumb .admin-crumb-root{display:none;}
+ #admin-page-header #admin-breadcrumb .admin-crumb-divider{display:none;}
+ #admin-page-header #admin-breadcrumb .admin-crumb-current{
+  font-size:12px;white-space:normal;line-height:1.4;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ main:has(> #tabs:not(:empty)) > nav#tabs,
+ main:has(#body.ga-overview) > nav#tabs,
+ #admin-page-header .admin-mobile-menu-toggle span{transition:none!important;}
+}
