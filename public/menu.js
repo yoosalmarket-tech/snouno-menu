@@ -110,7 +110,7 @@ function newestFavorites(meals){
  return Array.from(favorites).reverse().map(id=>byId.get(id)).filter(Boolean);
 }
 function richData(){
- return {categories:[{...featuredCategory,items:dishes.filter(hasMealLabel)},...categories],dishes,favorites,favoriteMeals:newestFavorites(dishes),settings,links,lang:currentLanguage,categoryEnglish,
+ return {categories:[{...featuredCategory,items:newestLabeledMeals(dishes)},...categories],dishes,favorites,favoriteMeals:newestFavorites(dishes),settings,links,lang:currentLanguage,categoryEnglish,
   displayName,displayDescription};
 }
 async function syncRichMode(){
@@ -768,7 +768,11 @@ $('theme').onclick=()=>{
 };
 let activeCategory=null,categoryFrame=0;
 const featuredCategory={id:'featured',name:'الأطباق المميزة'};
-const hasMealLabel=meal=>Boolean(meal.badge?.trim());
+function newestLabeledMeals(meals){
+ // Undated labels keep their existing menu order behind dated labels.
+ const changedAt=meal=>Date.parse(meal.badge_changed_at)||0;
+ return meals.filter(meal=>meal.badge?.trim()).sort((a,b)=>changedAt(b)-changedAt(a));
+}
 const favoritesCategory={id:'favorites',name:'المفضلة',icon:'★'};
 let menuSections=[];
 const categoryButtons=new Map();
@@ -891,7 +895,7 @@ function renderCards(){
  // Favorites is a genuine scrollable category, not a filter.
  // Favorite dishes remain visible in their original categories too.
  byCategory.set(favoritesCategory.id,newestFavorites(visible));
- byCategory.set(featuredCategory.id,visible.filter(hasMealLabel));
+ byCategory.set(featuredCategory.id,newestLabeledMeals(visible));
  for(const category of [favoritesCategory,featuredCategory,...categories]){
    const matches=byCategory.get(category.id)||[];
    if(!matches.length&&category!==favoritesCategory)continue;
