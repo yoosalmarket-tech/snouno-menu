@@ -421,13 +421,82 @@ const gaEventLabels={
 function gaNumber(number){return Number(number||0).toLocaleString('en-US',{maximumFractionDigits:0});}
 function gaMoney(number){return Number(number||0).toLocaleString('en-US',{maximumFractionDigits:2})+' ₪';}
 // Charts use the actual GA4 response only. Never fill missing history with sample data.
+// Friendly acquisition labels based only on the source/medium recorded by GA4.
+// Do NOT infer QR scans from (direct)/(none), nor infer Instagram placement from a referrer.
+function gaFriendlyTrafficSource(raw){
+ const name=String(raw||'').trim();
+ const pieces=name.split(/\s+\/\s+/);
+ const source=(pieces[0]||name).toLowerCase().trim();
+ const medium=(pieces[1]||'').toLowerCase().trim();
+ const both=(source+' / '+medium).toLowerCase();
+ const qr=/(?:^|[^a-z0-9])(?:qr|qrcode|qr-code|qr_code|qrmenu|menu-qr|menu_qr)(?:$|[^a-z0-9])/.test(both);
+ if(qr)return 'QR scans';
+ if(/instagram|instagr\.am/.test(both) || /^social\s*\/\s*(?:ig|instagram)\b/i.test(name) ||
+    /^(ig|ig\.me)$/.test(source))return 'Instagram Feeds';
+ if(/(^|[^a-z])facebook|(^|[^a-z])fb(?:\.|\b)|m\.facebook/.test(source))return 'Facebook';
+ if(/whatsapp|wa\.me/.test(source))return 'WhatsApp';
+ if(/tiktok/.test(source))return 'TikTok';
+ if(/youtube|youtu\.be/.test(source))return 'YouTube';
+ if(/snapchat/.test(source))return 'Snapchat';
+ if(/^(?:www\.)?google(?:\.[a-z.]+)?$/.test(source)){
+  return /^(cpc|ppc|paid|paid search)$/.test(medium)?'Google Ads':'Google Search';
+ }
+ if(/bing\.com|^bing$/.test(source))return 'Bing Search';
+ if(/^(direct|\(direct\))$/.test(source))return 'Direct / Unknown';
+ if(/^(not set|\(not set\))$/.test(source)||!source)return 'Unknown Source';
+ if(/^social$/.test(source))return 'Social Media';
+ const cleaned=source.replace(/^https?:\/\//,'').replace(/^www\./,'')
+  .split(/[?#]/)[0].split('/')[0].replace(/^l\./,'').trim();
+ if(/^(?:referral|other|unassigned)$/.test(cleaned))return 'Other Sources';
+ if(/^[-_a-z0-9.]{1,80}$/i.test(cleaned)){
+  if(cleaned==='sonbol.ps')return 'Sonbol';
+  if(cleaned==='makook.app')return 'Makook';
+  return cleaned.replace(/\.(com|net|org|ps|me|io|co|app)$/i,'').replace(/[-_.]+/g,' ')
+   .replace(/\b\w/g,c=>c.toUpperCase()).slice(0,42);
+ }
+ return 'Other Sources';
+}
+function gaGroupedTrafficSources(raw){
+ const counts=new Map();
+ for(const entry of raw||[]){
+  const count=Number(entry?.count)||0;
+  if(!(count>0))continue;
+  const name=gaFriendlyTrafficSource(entry.name);
+  counts.set(name,(counts.get(name)||0)+count);
+ }
+ return [...counts].map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name));
+}
+function gaTopThreeSources(items,available,total){
+ const box=node('section');box.id='ga-top-three-sources';box.className='ga-top-three';
+ const heading=node('div');heading.className='ga-top-three-heading';
+ const meta=node('div');meta.className='ga-top-three-text';
+ meta.append(node('span','ACQUISITION HIGHLIGHTS'),node('h2','أقوى 3 مصادر للزيارات'));
+ const details=action('كل المصادر',()=>document.getElementById('ga-top-traffic-sources')?.scrollIntoView({behavior:'smooth',block:'start'}));
+ details.className='ga-view-sources';details.id='ga-view-sources';
+ heading.append(meta,details);box.append(heading);
+ if(!available){box.append(node('p','ترتيب المصادر لم يتوفر من GA4 بعد.'));return box;}
+ const top=(items||[]).filter(i=>Number(i.count)>0).slice(0,3);
+ if(!top.length){box.append(node('p','لا توجد زيارات معالجة لإظهار المصادر الأعلى بعد.'));return box;}
+ const strip=node('div');strip.className='ga-top-three-grid';
+ top.forEach((entry,index)=>{
+  const card=node('div');card.className='ga-top-source-card';
+  card.append(node('span',String(index+1).padStart(2,'0')));
+  const label=node('strong',entry.name);label.title=entry.name;card.append(label);
+  const volume=node('div');volume.className='ga-top-source-volume';
+  volume.append(node('b',gaNumber(entry.count)),node('small','زيارة'));
+  if(Number(total)>0)volume.append(node('em',(entry.count/total*100).toFixed(1)+'%'));
+  card.append(volume);strip.append(card);
+ });
+ box.append(strip);return box;
+}
+
 function gaRankGraph(title,subtitle,items,{available=true,kind='meal',total=null}={}){
  const isSource=kind==='source';
  const section=node('section');section.className='analytics-report ga-chart-panel ga-rank-panel';
  const heading=node('div');heading.className='ga-chart-heading';
  heading.append(node('h2',title),node('p',subtitle));section.append(heading);
  if(!available){section.append(node('p','بيانات هذا التصنيف لم تصبح متاحة من GA4 بعد.'));return section;}
- const ranked=(items||[]).filter(i=>i&&Number(i.count)>0).slice(0,7);
+ const ranked=(items||[]).filter(i=>i&&Number(i.count)>0).slice(0,isSource?30:7);
  if(!ranked.length){section.append(node('p',isSource?'لا تتوفر مصادر زيارات معالجة لهذه الفترة بعد.':'لا توجد إحالات معالجة لهذا التصنيف خلال الفترة المحددة.'));return section;}
  const winner=ranked[0];
  const hero=node('div');hero.className='ga-rank-hero';
