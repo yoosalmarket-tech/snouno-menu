@@ -10,7 +10,7 @@
     gtag('config', 'G-V9S0D0J0RX', config);
   }
 </script>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#FDBE2D"><link rel="icon" type="image/png" sizes="180x180" href="/assets/snounu-icon.png"><link rel="apple-touch-icon" href="/assets/snounu-icon.png"><link rel="preload" as="font" href="/assets/qatar-bold.woff" type="font/woff" crossorigin><style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#FDBE2D"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="سنونو"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" sizes="180x180" href="/assets/snounu-icon.png"><link rel="apple-touch-icon" href="/assets/snounu-icon.png"><link rel="preload" as="font" href="/assets/qatar-bold.woff" type="font/woff" crossorigin><style>
 #page-loader{
  position:fixed;inset:0 0 auto;width:100vw;height:100svh;z-index:100;
  display:grid;place-items:center;overflow:hidden;background:#FDBE2D;
@@ -93,7 +93,7 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   <span id="greeting" class="welcome-greeting">أهلاً بك في</span>
   <h1 id="brand">مطعم سنونو</h1>
   <p class="welcome-subtitle" id="welcome-subtitle">جاهز تختار وجبتك المفضّلة؟</p>
-  <div class="welcome-controls"><a class="browse" href="/menu" data-page="menu" id="browse"><span>تصفح المنيو</span><span class="welcome-browse-icon" aria-hidden="true">←</span></a><span id="quick"></span></div>
+  <div class="welcome-controls"><a class="browse" href="/menu" data-page="menu" id="browse"><span>تصفح المنيو</span><span class="welcome-browse-icon" aria-hidden="true">←</span></a><span id="quick"></span><button type="button" id="install-snounu-app" class="welcome-install-button" hidden><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span id="install-app-label">تثبيت المنيو على الهاتف</span></button></div>
  </div>
 
 <div class="desktop-welcome" dir="rtl" aria-label="واجهة سنونو للكمبيوتر">
@@ -171,4 +171,4 @@ if(window.parent===window || new URLSearchParams(location.search).get('preview')
   </div>
 </section>
 <div id="social-links" hidden aria-label="حسابات المطعم"></div><footer id="credit"><button type="button" id="credit-link"></button><span id="credit-hint" role="status" aria-live="polite"></span></footer><nav id="dock"><a href="/menu" data-page="menu"><svg viewBox="0 0 24 24"><path d="M5 3v7c0 2 5 2 5 0V3m-2.5 0v18M18 3c-3 2-4 7-4 10h4m0-10v18"/></svg>القائمة</a><a href="/contact" data-page="contact"><svg viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z"/><path d="M8 11h.1m4 0h.1m4 0h.1"/></svg>تواصل معنا</a></nav></div><div id="network" role="status" hidden></div>
-</main><dialog id="dish"><button id="close" aria-label="إغلاق">×</button><div id="details"></div></dialog></body></html>
+</main><dialog id="dish"><button id="close" aria-label="إغلاق">×</button><div id="details"></div></dialog><dialog id="install-guide" class="install-guide" aria-labelledby="install-guide-title"><h2 id="install-guide-title">تثبيت منيو سنونو</h2><p id="install-guide-body">من قائمة المتصفح اختر «إضافة إلى الشاشة الرئيسية».</p><button type="button" id="install-guide-close">تمام</button></dialog></body></html>
