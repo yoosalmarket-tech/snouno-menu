@@ -32,6 +32,17 @@
   ],
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "snouno.vercel.app"
+        }
+      ],
+      "destination": "https://snounu-restaurant.vercel.app/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
