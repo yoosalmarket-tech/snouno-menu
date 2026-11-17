@@ -6,7 +6,7 @@ const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 const validImage=value=>{if(!value)return '';try{const u=new URL(value,location.origin);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
 const categoryWords=name=>{const a=String(name||'SNOUNU').trim().split(/\s+/);return [a.slice(0,Math.ceil(a.length/2)).join(' '),a.slice(Math.ceil(a.length/2)).join(' ')]};
-export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelection,onShare}){
+export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelection,onShare,onMealView}){
  const root=mk('div','rm-app');root.dir='ltr';root.id='rich-interactive-stage';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
@@ -153,7 +153,19 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    u.labels.append(name);
   }
  }
+ let viewTimer,viewCandidate=null;
+ function trackVisibleMeal(){
+  const meal=active?dish():null;
+  if(viewCandidate===meal?.id)return;
+  clearTimeout(viewTimer);
+  viewCandidate=meal?.id;
+  if(meal)viewTimer=setTimeout(()=>{
+   if(active&&!document.hidden&&dish()?.id===meal.id)onMealView?.(meal);
+   else viewCandidate=null;
+  },500);
+ }
  function info(){
+  trackVisibleMeal();
   const m=dish();if(!m)return;
   u.title.textContent=getName(m);
   u.fav.dataset.mealId=String(m.id);u.share.dataset.mealId=String(m.id);
@@ -528,6 +540,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  }
  function setActive(on){
   active=!!on&&!destroyed;
+  trackVisibleMeal();
   if(active){lastTime=0;if(!frame)frame=requestAnimationFrame(tick);}
   else{
    cancelAnimationFrame(frame);frame=0;

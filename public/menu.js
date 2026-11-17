@@ -1,5 +1,5 @@
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js';
-import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=meal-native-share-20261117';
+import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
@@ -21,8 +21,33 @@ const explicitMode=new URLSearchParams(location.search).get('mode');
 const reporting=installActionReporting({
  route:()=>currentPage(),
  mode:()=>document.body.classList.contains('rich-menu-active')?'interactive':'standard',
- preview:()=>isPreview
+ preview:()=>isPreview,
+ onAction:trackMenuAction
 });
+function trackMealEvent(name,meal,params={}){
+ if(isPreview||typeof window.gtag!=='function')return;
+ const event={send_to:'G-V9S0D0J0RX',menu_mode:document.body.classList.contains('rich-menu-active')?'interactive':'standard',...params};
+ if(meal?.id){
+  const item={item_id:String(meal.id),item_name:meal.name,item_category:categories.find(c=>c.id===meal.category_id)?.name};
+  if(meal.price!=null)item.price=Number(meal.price);
+  event.items=[item];
+  event.meal_name=meal.name;
+  event.currency='ILS';
+ }
+ window.gtag('event',name,event);
+}
+function trackMenuAction(action,target,mealId){
+ const meal=dishes.find(d=>d.id===mealId);
+ if(action==='order_platform_click'){
+  const platform=target?.dataset.platform||target?.dataset.channel;
+  if(['utlob','sonbol','makook'].includes(platform))
+   trackMealEvent('delivery_app_click',meal,{delivery_platform:platform});
+ }else if(action==='favorite_toggle'&&meal){
+  if(!favorites.has(meal.id))trackMealEvent('add_to_wishlist',meal);
+ }else if(action==='share_meal_click'&&meal){
+  trackMealEvent('meal_share_click',meal);
+ }
+}
 let appliedDeepLink='';
 function applyDeepLink(){
  if(isPreview||currentPage()!=='menu'||!dishes.length||!firstVisitDecisionComplete)return;
@@ -100,7 +125,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=utlob-products-1')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=ga4-order-intent-1')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -142,6 +167,7 @@ async function syncRichMode(){
   if(version!==richRevision||!richDesired||currentPage()!=='menu')return;
   richController=module.createRichMenu({
    host:target,getData:richData,onOpen:detail,
+   onMealView:meal=>trackMealEvent('view_item',meal),
    onSelection:selection=>{
     if(selection?.mealId)noteSelection('meal',selection.mealId);
     else if(selection?.categoryId)noteSelection('category',selection.categoryId);
@@ -965,6 +991,7 @@ function ingredientGroups(text=''){
  return groups;
 }
 function detail(d){
+ if(d.id)trackMealEvent('view_item',d);
  const box=$('details');box.replaceChildren();
  // The dialog persists between dishes: clear its previous floating share action.
  $('dish').querySelector('.share-meal-link')?.remove();

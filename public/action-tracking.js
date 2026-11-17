@@ -69,7 +69,7 @@ export async function shareMeal(meal, mode=''){
  return {shared:false,optionsShown:true};
 }
 
-export function installActionReporting({route=()=> 'menu',mode=()=> 'standard',preview=()=>false,token=()=>null}={}){
+export function installActionReporting({route=()=> 'menu',mode=()=> 'standard',preview=()=>false,token=()=>null,onAction}={}){
  const generated=new WeakMap();
  function idFor(element){
   if(element.id)return element.id;
@@ -117,6 +117,7 @@ export function installActionReporting({route=()=> 'menu',mode=()=> 'standard',p
   window.dataLayer=window.dataLayer||[];
   window.dataLayer.push({event:'snounu_action',action,element_id:elementId,route:payload.p_route,mode:payload.p_mode,meal_id:mealId,category_id:categoryId});
   document.dispatchEvent(new CustomEvent('snounu:action',{detail:{action,element_id:elementId,route:payload.p_route,mode:payload.p_mode,meal_id:mealId,category_id:categoryId}}));
+  onAction?.(action,target,mealId);
   // Server-side append-only log, with no cookies or personal identifiers.
   const auth=token();
   fetch(BASE+'/rest/v1/rpc/record_menu_action',{
