@@ -414,3 +414,24 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
 #body #ga-top-traffic-sources .ga-rank-hero{max-width:none;min-height:100px;}
 #body #ga-top-traffic-sources .ga-horizontal-bars{gap:13px;}
 #body .ga-traffic-source-note{color:#766f61;font-size:12px;line-height:1.7;margin:15px 0 0;}
+
+/* Scenario-based potential sales, never presented as verified order revenue. */
+#body .ga-sales-estimate{background:linear-gradient(145deg,#fffdf3,#ffffff 50%);border:1px solid #e4c46d;border-radius:20px;padding:20px;margin-bottom:18px;}
+#body .ga-sales-estimate .ga-chart-heading{margin-bottom:18px;}
+#body .ga-estimate-controls{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:15px;}
+#body .ga-estimate-control{display:flex;flex-direction:column;gap:9px;background:#f9f7ef;border:1px solid #eee6d7;border-radius:13px;padding:13px;min-width:0;font-size:13px;font-weight:500;}
+#body .ga-estimate-control span{color:#5c5446;}
+#body .ga-estimate-control strong{font-size:21px;line-height:1.3;}
+#body .ga-estimate-control input[type=range]{accent-color:#b88714;cursor:pointer;height:20px;padding:0;border:0;background:transparent;}
+#body .ga-estimate-control input[type=number]{max-width:220px;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;}
+#body .ga-estimate-control small{color:#746d5d;font-size:11px;font-weight:400;}
+#body .ga-estimate-range{display:flex;justify-content:space-between;direction:ltr;}
+#body .ga-estimate-referrals{font-size:13px;color:#60594c;margin:10px 2px 14px;}
+#body .ga-estimate-scenarios{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+#body .ga-estimate-scenario{display:flex;flex-direction:column;gap:8px;border:1px solid #e7e1d5;border-radius:14px;background:#fff;padding:15px 12px;min-width:0;}
+#body .ga-estimate-scenario span{color:#746d60;font-size:12px;}
+#body .ga-estimate-scenario strong{font-size:clamp(18px,2.7vw,27px);direction:ltr;text-align:right;line-height:1.35;overflow-wrap:anywhere;}
+#body .ga-estimate-scenario small{color:#7d776a;font-size:11px;line-height:1.6;}
+#body .ga-estimate-selected{background:#fff0c2;border-color:#efc954;}
+#body .ga-estimate-disclaimer{font-size:12px;color:#756d5d;line-height:1.8;margin:15px 0 0;}
+@media(max-width:620px){#body .ga-estimate-controls{grid-template-columns:1fr;}#body .ga-estimate-scenarios{grid-template-columns:1fr;}#body .ga-estimate-scenario{gap:4px;}#body .ga-sales-estimate{padding:15px;}}
