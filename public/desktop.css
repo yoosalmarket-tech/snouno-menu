@@ -1634,3 +1634,18 @@
 @media(min-width:981px) and (prefers-reduced-motion:reduce){
  html body #welcome .welcome-stage-rail button{transition:none;}
 }
+
+/* The desktop loading mark is black ink on yellow. The final logo must
+   keep that treatment rather than turning into a yellow mark on a plaque.
+   brightness(0) recolors the transparent logo pixels without a new asset. */
+@media(min-width:981px){
+ html body:not([data-preview]) #welcome .welcome-top .welcome-logo{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  padding:0!important;
+  box-shadow:none!important;
+  filter:brightness(0)!important;
+  object-fit:contain!important;
+ }
+}
