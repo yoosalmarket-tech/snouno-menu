@@ -833,7 +833,8 @@ async function renderGaOverview(days=28){
   const hero=node('section');hero.id='ga-overview-hero';hero.className='ga-overview-hero';
   const heroHeading=node('div');heroHeading.className='ga-hero-heading';
   const greeting=new Date().getHours()<12?'صباح الخير':'مساء الخير';
-  heroHeading.append(node('span','لوحة التحكم  /  ملخص الأداء'),node('h2',greeting+'، مدير الموقع'));
+  const greetingTitle=node('h2');greetingTitle.append(node('span',greeting+'، '),node('em','مدير الموقع'));
+  heroHeading.append(node('span','لوحة التحكم  /  ملخص الأداء'),greetingTitle);
   heroHeading.append(node('p','نظرة سريعة على الزيارات والإحالات وأداء المنيو خلال الفترة المختارة.'));
   const heroTop=node('div');heroTop.className='ga-hero-top';
   heroTop.append(heroHeading,top);
@@ -860,17 +861,21 @@ async function renderGaOverview(days=28){
    card[2]='التقرير التاريخي لم يُعالج بعد';
   }
   const primaryMetrics=node('section');primaryMetrics.id='ga-primary-metrics';primaryMetrics.className='ga-primary-metrics';
-  const emphasized=new Set([3,1,7,6]);
-  cards.forEach(([name,value,detail],i)=>{
+  const topOrder=[3,1,7,6];
+  const emphasized=new Set(topOrder);
+  const renderStat=(index,isPrimary)=>{
+   const [name,value,detail]=cards[index];
    const card=node('article');card.className='ga-stat';
    card.append(node('span',name),node('strong',value),node('small',detail));
-   if(emphasized.has(i)){
+   if(isPrimary){
     card.classList.add('ga-primary-stat');
-    const icon=node('span',[ '◴','◎','▣','◈','◈','◇','↗','✦','₪'][i]);
-    icon.className='ga-primary-icon';card.prepend(icon);
-    primaryMetrics.append(card);
-   }else metrics.append(card);
-  });
+    const symbol=['◴','◎','▣','◈','◈','◇','↗','✦','₪'][index];
+    const icon=node('span',symbol);icon.className='ga-primary-icon';card.prepend(icon);
+   }
+   return card;
+  };
+  topOrder.forEach(i=>primaryMetrics.append(renderStat(i,true)));
+  cards.forEach((entry,i)=>{if(!emphasized.has(i))metrics.append(renderStat(i,false));});
   const makeTable=(heading,headers,rows)=>{
    const block=node('section');block.className='analytics-report ga-table';
    block.append(node('h2',heading));
