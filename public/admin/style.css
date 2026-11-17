@@ -2017,3 +2017,184 @@ main:has(> #tabs:empty) #admin-title-row #title{text-align:center;}
 
 /* Greeting role accent, Snounu brand yellow. */
 #body.ga-overview .ga-hero-heading h2 em{color:#FDBE2D!important;}
+
+/* ================================================================
+   SNOUNU ADMIN / MOTION v1
+   Purposeful microinteractions, 100% existing Snounu brand colors.
+   Visual only: no data, routing, layout, or drag behavior changes.
+   ================================================================ */
+@keyframes sn-admin-enter{
+ from{opacity:0;transform:translate3d(0,12px,0);}
+ to{opacity:1;transform:translate3d(0,0,0);}
+}
+@keyframes sn-admin-header-enter{
+ from{opacity:0;transform:translate3d(0,-7px,0);}
+ to{opacity:1;transform:translate3d(0,0,0);}
+}
+@keyframes sn-admin-dialog-enter{
+ from{opacity:0;transform:translate3d(0,16px,0) scale(.975);}
+ to{opacity:1;transform:translate3d(0,0,0) scale(1);}
+}
+@keyframes sn-admin-backdrop-enter{
+ from{opacity:0;}to{opacity:1;}
+}
+@keyframes sn-admin-chart-draw{
+ from{stroke-dashoffset:1;}to{stroke-dashoffset:0;}
+}
+@keyframes sn-admin-chart-reveal{
+ from{opacity:0;}to{opacity:1;}
+}
+@keyframes sn-admin-bar-grow{
+ from{transform:scaleX(0);}to{transform:scaleX(1);}
+}
+@keyframes sn-admin-donut-appear{
+ from{opacity:0;transform:scale(.87) rotate(-14deg);}
+ to{opacity:1;transform:scale(1) rotate(0deg);}
+}
+@keyframes sn-admin-active-nav{
+ from{background:#595959;}to{background:#FDBE2D;}
+}
+
+/* Header and page titles float into place after route changes. */
+#admin-page-header:not([hidden]){
+ animation:sn-admin-header-enter .35s cubic-bezier(.2,.75,.2,1) both;
+}
+#admin-breadcrumb .admin-crumb-current{
+ animation:sn-admin-enter .3s cubic-bezier(.2,.7,.2,1) both;
+}
+#admin-title-row:not(:has(#title[hidden])) #title{
+ animation:sn-admin-header-enter .38s cubic-bezier(.2,.75,.2,1) both;
+}
+#admin-page-note:not([hidden]){
+ animation:sn-admin-enter .32s cubic-bezier(.2,.75,.2,1) both;
+}
+#admin-title-row #admin-add-button{
+ animation:sn-admin-enter .32s cubic-bezier(.2,.75,.2,1) .06s both;
+}
+
+/* Overview: stagger the four headline cards instead of moving the layout. */
+#body.ga-overview>.ga-overview-hero{
+ animation:sn-admin-header-enter .42s cubic-bezier(.2,.75,.2,1) both;
+}
+#body.ga-overview .ga-primary-metrics>.ga-primary-stat{
+ animation:sn-admin-enter .45s cubic-bezier(.2,.7,.2,1) both;
+}
+#body.ga-overview .ga-primary-metrics>.ga-primary-stat:nth-child(1){animation-delay:.04s;}
+#body.ga-overview .ga-primary-metrics>.ga-primary-stat:nth-child(2){animation-delay:.10s;}
+#body.ga-overview .ga-primary-metrics>.ga-primary-stat:nth-child(3){animation-delay:.16s;}
+#body.ga-overview .ga-primary-metrics>.ga-primary-stat:nth-child(4){animation-delay:.22s;}
+#body.ga-overview .ga-overview-chart-row>.analytics-report{
+ animation:sn-admin-enter .52s cubic-bezier(.2,.7,.2,1) .16s both;
+}
+#body.ga-overview .ga-overview-chart-row>.analytics-report:nth-child(2){animation-delay:.24s;}
+#body.ga-overview .ga-overview-insights-row>section{
+ animation:sn-admin-enter .48s cubic-bezier(.2,.7,.2,1) .21s both;
+}
+#body.ga-overview .ga-overview-insights-row>section:nth-child(2){animation-delay:.28s;}
+#body.ga-overview .ga-overview-insights-row>section:nth-child(3){animation-delay:.35s;}
+
+/* Charts animate the actual recorded data, not artificial sample numbers. */
+#body.ga-overview .ga-traffic-svg .ga-line-stroke{
+ stroke-dasharray:1;
+ stroke-dashoffset:1;
+ animation:sn-admin-chart-draw .95s cubic-bezier(.23,.7,.12,1) .32s both;
+}
+#body.ga-overview .ga-traffic-svg .ga-line-stroke.users{
+ animation-delay:.47s;
+}
+#body.ga-overview .ga-traffic-svg .ga-line-point{
+ animation:sn-admin-chart-reveal .4s ease .92s both;
+}
+#body.ga-overview .ga-device-ring{
+ animation:sn-admin-donut-appear .72s cubic-bezier(.16,.8,.22,1) .27s both;
+}
+#body.ga-overview :is(.ga-horizontal-bars,.ga-mini-bars) :is(.ga-bar-fill,.ga-mini-bar-fill){
+ transform-origin:left center;
+ animation:sn-admin-bar-grow .73s cubic-bezier(.18,.72,.15,1) .25s both;
+}
+#body.ga-overview .ga-top-three-grid>.ga-top-source-card{
+ animation:sn-admin-enter .42s cubic-bezier(.2,.75,.2,1) .18s both;
+}
+#body.ga-overview .ga-top-three-grid>.ga-top-source-card:nth-child(2){animation-delay:.24s;}
+#body.ga-overview .ga-top-three-grid>.ga-top-source-card:nth-child(3){animation-delay:.30s;}
+
+/* Remaining overview panels and lists appear gently on each refresh. */
+#body.ga-overview> :is(.ga-sales-estimate,.ga-charts-grid,.ga-live,.ga-history-title,.ga-stats-grid,.ga-table,#ga-top-traffic-sources){
+ animation:sn-admin-enter .42s cubic-bezier(.2,.7,.2,1) .12s both;
+}
+#body.ga-overview .ga-stats-grid>.ga-stat{
+ animation:sn-admin-enter .38s cubic-bezier(.2,.7,.2,1) both;
+}
+#body.ga-overview .ga-stats-grid>.ga-stat:nth-child(2n){animation-delay:.06s;}
+
+/* Content-editing pages get the same understated entrance. No dragging
+   transforms are attached to draggable meal cards. */
+#body:not(.ga-overview) > :is(section,article,form,.inline-settings-form,.account-card,.analytics-report){
+ animation:sn-admin-enter .4s cubic-bezier(.2,.75,.2,1) both;
+}
+#body:not(.ga-overview) > :is(section,article,form,.inline-settings-form,.account-card,.analytics-report):nth-child(2){animation-delay:.05s;}
+#body:not(.ga-overview) > :is(section,article,form,.inline-settings-form,.account-card,.analytics-report):nth-child(3){animation-delay:.10s;}
+#body:not(.ga-overview) > :is(section,article,form,.inline-settings-form,.account-card,.analytics-report):nth-child(4){animation-delay:.15s;}
+#body:not(.ga-overview) .dish-sort-section>.dish-sort-list>article{
+ animation:sn-admin-chart-reveal .3s ease both;
+}
+#body:not(.ga-overview) .dish-sort-section>.dish-sort-list>article:nth-child(2n){animation-delay:.035s;}
+
+/* Mouse/touch responses and navigation states. */
+main:has(> #tabs:not(:empty)) #tabs a.admin-nav-button,
+main:has(#body.ga-overview) #tabs a.admin-nav-button{
+ transition:background-color .2s ease,color .2s ease,border-color .2s ease;
+}
+main:has(> #tabs:not(:empty)) #tabs a.admin-nav-button[aria-current=true],
+main:has(#body.ga-overview) #tabs a.admin-nav-button[aria-current=true]{
+ animation:sn-admin-active-nav .24s ease both;
+}
+#admin-title-row #admin-add-button,
+#admin-page-header #admin-view-menu,
+#body.ga-overview #ga-refresh{
+ transition:filter .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+#admin-title-row #admin-add-button:hover,
+#admin-page-header #admin-view-menu:hover,
+#body.ga-overview #ga-refresh:hover{
+ filter:brightness(.98);box-shadow:0 5px 17px #00000012;
+}
+#admin-title-row #admin-add-button:active,
+#admin-page-header #admin-view-menu:active,
+#body.ga-overview #ga-refresh:active{
+ transform:scale(.97);
+}
+/* Preserve existing drag, touch scrolling and input focus behavior. */
+#body:not(.ga-overview) .dish-sort-card{
+ transition:border-color .2s ease,box-shadow .2s ease;
+}
+#body :is(input:not([type=range]),select,textarea):focus-visible{
+ transition:border-color .16s ease,box-shadow .16s ease;
+}
+dialog[open]{
+ animation:sn-admin-dialog-enter .29s cubic-bezier(.2,.8,.2,1) both;
+}
+dialog[open]::backdrop{
+ animation:sn-admin-backdrop-enter .24s ease both;
+}
+#ga-loading{animation:sn-admin-chart-reveal .55s ease both;}
+
+/* Respect visitor accessibility preferences and avoid hidden-in-motion UI. */
+@media(prefers-reduced-motion:reduce){
+ #admin-page-header,#admin-page-header *,
+ #admin-title-row,#admin-title-row *,
+ #admin-page-note,#admin-page-note *,
+ #tabs,#tabs *,
+ #body,#body *,dialog,dialog::backdrop,dialog *{
+  animation:none!important;
+  transition:none!important;
+  transform:none;
+ }
+ /* Mobile drawer has its own stateful transform and should still open. */
+ @media(max-width:850px){
+  main:has(> #tabs:not(:empty)) > nav#tabs,
+  main:has(#body.ga-overview) > nav#tabs{transform:translateX(105%)!important;}
+  body.admin-mobile-open main:has(> #tabs:not(:empty)) > nav#tabs,
+  body.admin-mobile-open main:has(#body.ga-overview) > nav#tabs{transform:translateX(0)!important;}
+ }
+}
