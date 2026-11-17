@@ -733,6 +733,28 @@ $('credit-link').onclick=()=>{
  setText('credit-hint','اضغط مرة ثانية لزيارة موقع يوصل');
  creditTimeout=setTimeout(resetCredit,5000);
 };
+// Stop the welcome loader as soon as a user leaves the welcome route.
+ // Without this cancellation, its 2.1s animated yellow canvas can continue
+ // over the menu after the shorter Browse transition has finished.
+let welcomeRevealCancelled=false;
+let activeWelcomeRevealCleanup=null;
+function cancelWelcomeReveal(){
+ welcomeRevealCancelled=true;
+ if(activeWelcomeRevealCleanup){
+  activeWelcomeRevealCleanup();
+  activeWelcomeRevealCleanup=null;
+ }
+ const root=document.documentElement,loader=$('page-loader');
+ root.classList.remove('loading','loader-morphing','loader-finishing');
+ root.classList.add('loader-complete');
+ root.style.removeProperty('--loader-header-height');
+ $('welcome-logo').style.removeProperty('visibility');
+ $('desktop-welcome-logo').style.removeProperty('visibility');
+ loader.getAnimations({subtree:true}).forEach(animation=>animation.cancel());
+ loader.style.display='none';
+ loader.style.visibility='hidden';
+ loader.style.pointerEvents='none';
+}
 const pages=['welcome','menu','contact'];
 function currentPage(){
  const path=location.pathname.replace(/^\/|\/$/g,'');
@@ -780,6 +802,7 @@ document.addEventListener('click',event=>{
  event.preventDefault();
  const destination=link.dataset.page;
  const navigate=()=>{
+  if(destination!=='welcome')cancelWelcomeReveal();
   const url=pageUrl(destination);
   if(location.pathname+location.search!==url)history.pushState(null,'',url);
   route();
@@ -787,6 +810,8 @@ document.addEventListener('click',event=>{
  if(destination==='menu'&&currentPage()==='welcome'&&!isPreview&&
     (link.id==='browse'||link.id==='desktop-welcome-browse')){
   if(browseFadeTimer)return;
+  // Prevent the morphing loader/logo from outliving the welcome page.
+  cancelWelcomeReveal();
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){navigate();return;}
   // The visual fade starts now. Navigation follows its 220ms exit.
   $('welcome').classList.add('welcome-browsing-out');
@@ -1204,13 +1229,14 @@ async function load(){
 }
 async function revealPage(){
  const root=document.documentElement;
- if(!root.classList.contains('loading'))return;
+ if(welcomeRevealCancelled||!root.classList.contains('loading'))return;
  const welcome=currentPage()==='welcome';
  await Promise.allSettled([
   $('welcome-logo').decode(),$('desktop-welcome-logo').decode(),
   $('cover-photo').decode()
  ]);
  await document.fonts.ready;
+ if(welcomeRevealCancelled)return;
  if(!root.classList.contains('loading'))return;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  if(!reduced){
@@ -1218,6 +1244,7 @@ async function revealPage(){
   for(const drawing of drawings)drawing.playbackRate=2;
   await Promise.allSettled(drawings.map(drawing=>drawing.finished));
  }
+ if(welcomeRevealCancelled)return;
  if(welcome&&!reduced){
   // Desktop and mobile now share the same welcome hero and logo geometry.
   const header=document.querySelector('.welcome-top');
@@ -1335,7 +1362,14 @@ async function revealPage(){
     if(t<1)pathFrame=requestAnimationFrame(adjustPath);
    };
    pathFrame=requestAnimationFrame(adjustPath);
+   activeWelcomeRevealCleanup=()=>{
+    cancelAnimationFrame(pathFrame);
+    fly.cancel();fold.cancel();
+   };
    await Promise.allSettled([fly.finished,fold.finished]);
+   // Cancelling Browse must never revive the yellow overlay above the menu.
+   if(welcomeRevealCancelled||currentPage()!=='welcome')return;
+   activeWelcomeRevealCleanup=null;
    cancelAnimationFrame(pathFrame);
    shape.setAttribute('d',finalPath);
    // Same position and scale at the cut; only the EN/AR button may fade in.
@@ -1349,6 +1383,7 @@ async function revealPage(){
    return;
   }
  }
+ if(welcomeRevealCancelled)return;
  root.classList.remove('loading');
  root.classList.add('loader-complete');
  $('page-loader').style.display='none';
