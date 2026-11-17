@@ -40,7 +40,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<button type="button" class="rm-sheet-close" aria-label="إغلاق">×</button></header>',
  '<div class="rm-sheet-body"></div></dialog>',
  '<footer class="rm-interactive-credit" aria-label="حقوق تصميم المنيو">',
- '<button type="button" class="rm-interactive-credit-link" aria-label="انقر مرتين لزيارة موقع وكالة يوصل">تصميم <strong>وكالة يوصل</strong> لتصوير المطاعم</button>',
+ '<button type="button" class="rm-interactive-credit-link" aria-label="انقر مرتين لزيارة موقع وكالة يوصل">تصميم <strong>وكالة يوصل</strong> لتسويق المطاعم</button>',
  '<small class="rm-interactive-credit-hint" role="status" aria-live="polite"></small></footer>'
  ].join('');
  const share=mk('button','rm-share');
