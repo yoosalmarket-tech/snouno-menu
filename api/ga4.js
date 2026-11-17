@@ -144,6 +144,8 @@ export default async function handler(req,res){
       eventCounts,referrals,topMeals,topPlatforms,
       reportStatus:{
         rankingsAvailable:mealRanksResult.status==='fulfilled'||platformRanksResult.status==='fulfilled',
+        mealRankingAvailable:mealRanksResult.status==='fulfilled',
+        platformRankingAvailable:platformRanksResult.status==='fulfilled',
         referralDetailsAvailable:referralsResult.status==='fulfilled',
         referralValueAvailable:valueAvailable
       },
