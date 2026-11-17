@@ -1456,8 +1456,8 @@ function setupMenuInstall(){
   }
   updateLanguage();
   promo.hidden=false;
-  // It is informational: never trap focus, cover the screen or require a response.
-  hideTimer=setTimeout(()=>hide({remember:true}),11000);
+  // This optional card never traps focus; dismiss automatically after 20 seconds.
+  hideTimer=setTimeout(()=>hide({remember:true}),20000);
  };
  // Show once per browser tab, after the welcome animation. Ignore or close it freely.
  showTimer=setTimeout(()=>showWhenReady(),2100);
