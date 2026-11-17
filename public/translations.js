@@ -130,7 +130,7 @@ export const englishUI={
  'استفسار':'Question','اقتراح':'Suggestion',
  'إرسال الرسالة الآن':'Send message',
  'اسمك الكامل':'Your full name','اكتب رسالتك هنا...':'Write your message here...',
- 'اطلب من مكوك':'Order on Makook','اطلب من سنبل':'Order on Sonbol',
+ 'اطلب عبر تطبيق اطلب':'Order on Utlob','اطلب من مكوك':'Order on Makook','اطلب من سنبل':'Order on Sonbol',
  'تواصل واتس اب':'WhatsApp','إنستغرام':'Instagram','فيسبوك':'Facebook',
  'من وين أطلب؟':'Where can I order?',
  'أرسل لنا استفسارك أو اقتراحك':'Send a question or suggestion'

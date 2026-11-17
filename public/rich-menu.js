@@ -373,7 +373,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  const platformInfo={
   sonbol:{ar:'سنبل',en:'Sonbol',icon:'/assets/sonbol.svg'},
   makook:{ar:'مكوك',en:'Makook',icon:'/assets/makook.svg'},
-  utlob:{ar:'اطلب',en:'Utlob',url:'https://utlob.co/stores/172'},
+  utlob:{ar:'اطلب',en:'Utlob',icon:'/assets/utlob.svg',url:'https://utlob.co/stores/172'},
   whatsapp:{ar:'واتساب',en:'WhatsApp',icon:'/assets/whatsapp.svg'}
  };
  const restaurantLink=channel=>snapshot.links?.find(item=>item.channel===channel)?.url||'';
@@ -395,7 +395,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  };
  const linkCard=(channel,meal)=>{
    const info=platformInfo[channel];
-   const direct=meal&&(channel==='sonbol'?meal.sonbol_url:channel==='makook'?meal.makook_url:null);
+   const direct=meal?.[channel+'_url'];
    const href=safeLink(direct)||safeLink(restaurantLink(channel))||info.url;
    if(!href)return null;
    const isDirect=!!safeLink(direct);
@@ -405,9 +405,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    if(meal?.id)el.dataset.mealId=String(meal.id);
    el.dataset.platform=channel;
    const mark=mk('span','rm-sheet-link-mark');
-   if(info.icon){
-    const img=mk('img');img.src=info.icon;img.alt='';img.loading='lazy';mark.append(img);
-   }else{mark.textContent=info.en[0];mark.setAttribute('aria-hidden','true');}
+   const img=mk('img');img.src=info.icon;img.alt='';img.loading='lazy';mark.append(img);
    const copy=mk('span','rm-sheet-link-copy');
    copy.append(mk('strong',null,isEnglish()?info.en:info.ar));
    const detail=channel==='whatsapp'

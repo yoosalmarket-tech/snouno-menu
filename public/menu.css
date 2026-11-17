@@ -88,8 +88,8 @@ body:has(#dish[open]){overflow:hidden}
 .ingredients span{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border:1px solid var(--line);border-radius:20px;font-size:12px}
 .ingredients span::before{content:"";width:7px;height:7px;border-radius:50%;background:#efbb26}
 .ingredients [data-color=red]::before{background:#e9222b}.ingredients [data-color=green]::before{background:#57ca38}.ingredients [data-color=white]::before{background:#fafafa;box-shadow:0 0 0 1px #aaa}
-.meal-order{display:flex;justify-content:center;margin:22px 0;gap:12px}
-.meal-order a{min-width:40%;padding-inline:10px!important}
+.meal-order{display:flex;flex-wrap:wrap;justify-content:center;margin:22px 0;gap:12px}
+.meal-order a{flex:1 1 105px;min-width:0;padding-inline:10px!important}
 #details form{position:relative}#details form h3,#details form>label{color:#dda000}
 #details .stars legend{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
 #details .stars{justify-content:center}

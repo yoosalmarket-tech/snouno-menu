@@ -100,7 +100,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=latest-favorites-1')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=utlob-products-1')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -238,12 +238,13 @@ for(const switcher of document.querySelectorAll('.language-switch')){
 function asset(src){if(!src)return '';if(isPreview&&src.startsWith('blob:'+location.origin+'/'))return src;try{const u=new URL(src,location.origin);return /^(https?:)$/.test(u.protocol)?u.href:'';}catch{return '';}}
 function setText(id,text){$(id).textContent=text||'';}
 function image(src,alt){const img=make('img');img.src=asset(src);img.alt=alt;return img;}
-const ordering=['makook','sonbol'];
+const ordering=['makook','sonbol','utlob'];
 function contactLinks(container,channels,meal) {
  container.replaceChildren();
  for(const channel of channels){
    const link=links.find(row=>row.channel===channel);
-   const url=channel==='sonbol'&&meal?.id?meal.sonbol_url:link?.url;
+   const url=channel==='sonbol'&&meal?.id?meal.sonbol_url:
+     channel==='utlob'&&meal?.utlob_url?meal.utlob_url:link?.url;
    if(!link||!url||!/^https?:\/\//i.test(url))continue;
    const a=make('a');a.href=url;a.dataset.channel=channel;
    a.setAttribute('aria-label',tr(link.name));
