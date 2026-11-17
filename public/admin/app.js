@@ -782,7 +782,7 @@ function gaLanguagePanel(languages,available){
 async function renderGaOverview(days=28){
  const area=$('body'),ticket=generation;
  const top=node('div');top.className='ga-heading';
- const description=node('p','إحصائيات مباشرة من تقارير Google Analytics 4 (قد يتأخر تحديث البيانات).');
+ const description=node('p','');description.hidden=true;
  const interval=node('select');interval.id='ga-date-range';interval.setAttribute('aria-label','الفترة الزمنية');
  for(const [count,label] of [[7,'آخر 7 أيام'],[28,'آخر 28 يوماً'],[90,'آخر 90 يوماً']]){
   const option=node('option',label);option.value=String(count);interval.append(option);
@@ -791,7 +791,8 @@ async function renderGaOverview(days=28){
  interval.onchange=()=>renderGaOverview(Number(interval.value));
  const refresh=action('تحديث',()=>renderGaOverview(Number(interval.value)));
  refresh.id='ga-refresh';refresh.dataset.trackAction='ga_overview_refresh';
- top.append(description,interval,refresh);
+ const siteLink=node('a','عرض المنيو ↗');siteLink.className='ga-open-site';siteLink.href='/menu';siteLink.target='_blank';siteLink.rel='noopener noreferrer';
+ top.append(interval,refresh,siteLink);
  const status=node('p','جارٍ تحميل الإحصائيات من GA4…');status.id='ga-loading';
  area.replaceChildren(top,status);
  try{
@@ -831,24 +832,15 @@ async function renderGaOverview(days=28){
   const pending=data.processedHasRows===false;
   const hero=node('section');hero.id='ga-overview-hero';hero.className='ga-overview-hero';
   const heroHeading=node('div');heroHeading.className='ga-hero-heading';
-  heroHeading.append(node('span','SNOUNU  /  MENU INTELLIGENCE'),node('h2','المنيو بالأرقام.'));
-  heroHeading.append(node('p','من الزيارة الأولى حتى إحالة الطلب — صورة أوضح عن أداء منيو سنونو.'));
-  const heroSnapshot=node('div');heroSnapshot.className='ga-hero-snapshot';
-  const snapshot=[
-   ['الزيارات',pending?'—':gaNumber(data.summary?.sessions)],
-   ['الزوار',pending?'—':gaNumber(data.summary?.totalUsers)],
-   ['نشطون الآن',realtime.available?gaNumber(realtime.activeUsers||0):'—']
-  ];
-  for(const [label,value] of snapshot){
-   const item=node('div');item.className='ga-hero-snapshot-item';
-   item.append(node('span',label),node('strong',value));heroSnapshot.append(item);
-  }
+  const greeting=new Date().getHours()<12?'صباح الخير':'مساء الخير';
+  heroHeading.append(node('span','لوحة التحكم  /  ملخص الأداء'),node('h2',greeting+'، مدير الموقع'));
+  heroHeading.append(node('p','نظرة سريعة على الزيارات والإحالات وأداء المنيو خلال الفترة المختارة.'));
   const heroTop=node('div');heroTop.className='ga-hero-top';
-  heroTop.append(heroHeading,heroSnapshot);
-  hero.append(heroTop,top);
+  heroTop.append(heroHeading,top);
+  hero.append(heroTop);
   const pendingNote=pending?node('p','لم تتوفر بيانات مُعالجة للفترة المحددة بعد. الأحداث التي تصل إلى Realtime قد تحتاج 24–48 ساعة لتظهر في تقارير الزيارات والإحالات وقيمتها. الرموز (—) أدناه تعني أن البيانات لم تصل، وليست صفراً مؤكداً.'):null;
   if(pendingNote)pendingNote.className='ga-notice';
-  const historyTitle=node('h2','التقارير التاريخية — آخر '+String(days)+' يوماً');
+  const historyTitle=node('h2','تفاصيل الأداء — آخر '+String(days)+' يوماً');
   historyTitle.className='ga-history-title';
   const estimate=gaEstimatedSalesPanel(data,pending);
   const metrics=node('section');metrics.id='ga-summary-cards';metrics.className='ga-stats-grid';
@@ -867,10 +859,18 @@ async function renderGaOverview(days=28){
    card[1]='—';
    card[2]='التقرير التاريخي لم يُعالج بعد';
   }
-  for(const [name,value,detail] of cards){
+  const primaryMetrics=node('section');primaryMetrics.id='ga-primary-metrics';primaryMetrics.className='ga-primary-metrics';
+  const emphasized=new Set([3,1,7,6]);
+  cards.forEach(([name,value,detail],i)=>{
    const card=node('article');card.className='ga-stat';
-   card.append(node('span',name),node('strong',value),node('small',detail));metrics.append(card);
-  }
+   card.append(node('span',name),node('strong',value),node('small',detail));
+   if(emphasized.has(i)){
+    card.classList.add('ga-primary-stat');
+    const icon=node('span',[ '◴','◎','▣','◈','◈','◇','↗','✦','₪'][i]);
+    icon.className='ga-primary-icon';card.prepend(icon);
+    primaryMetrics.append(card);
+   }else metrics.append(card);
+  });
   const makeTable=(heading,headers,rows)=>{
    const block=node('section');block.className='analytics-report ga-table';
    block.append(node('h2',heading));
