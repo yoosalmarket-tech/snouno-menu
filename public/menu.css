@@ -993,22 +993,20 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
  }
 }
 
-/* Welcome Browse Menu: begin fading on the actual tap/click on either layout.
-   The menu fades in only after the short welcome exit; no loader replay. */
+/* The destination menu replaces the welcome in the same click frame.
+   Never fade either entire page to zero: that revealed the pale shell and
+   created the unwanted white-screen interstitial. */
 #welcome.welcome-browsing-out{
- opacity:0!important;
- transition:opacity 220ms ease-out!important;
- pointer-events:none!important;
+ opacity:1!important;transition:none!important;pointer-events:none!important;
 }
 #inside.menu-browsing-in{
- animation:snounu-menu-browse-appear 220ms ease-out both!important;
+ animation:snounu-menu-browse-appear 240ms ease-out both!important;
 }
 @keyframes snounu-menu-browse-appear{
- from{opacity:0;}
+ from{opacity:.96;}
  to{opacity:1;}
 }
 @media(prefers-reduced-motion:reduce){
- #welcome.welcome-browsing-out{transition:none!important;}
  #inside.menu-browsing-in{animation:none!important;}
 }
 
