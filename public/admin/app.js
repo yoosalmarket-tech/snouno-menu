@@ -191,7 +191,7 @@ function buildAdminSidebar(email){
  logout.id='logout';logout.className='admin-profile-logout';logout.title='تسجيل الخروج';logout.setAttribute('aria-label','تسجيل الخروج');
  const logoutIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');
  logoutIcon.setAttribute('viewBox','0 0 24 24');
- logoutIcon.setAttribute('width','21');logoutIcon.setAttribute('height','21');
+ logoutIcon.setAttribute('width','17');logoutIcon.setAttribute('height','17');
  logoutIcon.setAttribute('fill','none');logoutIcon.setAttribute('stroke','currentColor');
  logoutIcon.setAttribute('stroke-width','1.9');logoutIcon.setAttribute('stroke-linecap','round');
  logoutIcon.setAttribute('stroke-linejoin','round');logoutIcon.setAttribute('aria-hidden','true');
@@ -828,21 +828,25 @@ function gaDeviceDonutPanel(devices,available){
  });
  panel.append(legend);return panel;
 }
-function gaLanguagePanel(languages,available){
- const panel=node('section');panel.id='ga-languages';panel.className='analytics-report ga-language-panel';
- panel.append(node('h2','اللغة والمتصفح'),node('p','لغة المستخدم حسب تقارير GA4'));
- if(!available){panel.append(node('p','لم تتوفر بيانات اللغة بعد.'));return panel;}
- const mapping={ar:'العربية',en:'English',he:'עברית',fr:'Français',tr:'Türkçe',es:'Español',de:'Deutsch'};
+function gaBrowserPanel(browsers,available){
+ const panel=node('section');panel.id='ga-browsers';panel.className='analytics-report ga-language-panel ga-browser-panel';
+ panel.append(node('h2','المتصفحات'),node('p','المتصفح المستخدم لفتح المنيو حسب بيانات GA4'));
+ if(!available){panel.append(node('p','لم تتوفر بيانات المتصفحات بعد.'));return panel;}
+ const names={
+  chrome:'Chrome',safari:'Safari',firefox:'Firefox',edge:'Edge',
+  'samsung internet':'Samsung Internet',opera:'Opera','android webview':'Android WebView',
+  '(not set)':'غير معروف'
+ };
  const totals=new Map();
- for(const r of languages||[]){
+ for(const r of browsers||[]){
   const count=Number(r.count)||0;
   if(count<=0)continue;
-  const code=String(r.name||'').toLowerCase().split(/[-_]/)[0];
-  const name=mapping[code]||code.toUpperCase();
+  const raw=String(r.name||'').trim();
+  const name=names[raw.toLowerCase()]||raw||'غير معروف';
   totals.set(name,(totals.get(name)||0)+count);
  }
  const items=[...totals].sort((a,b)=>b[1]-a[1]).slice(0,6);
- if(!items.length){panel.append(node('p','لا تتوفر لغات معالجة لهذه الفترة.'));return panel;}
+ if(!items.length){panel.append(node('p','لا تتوفر بيانات المتصفحات لهذه الفترة.'));return panel;}
  const maximum=Math.max(...items.map(r=>r[1]),1);
  const body=node('div');body.className='ga-mini-bars';
  for(const [name,value] of items){
@@ -1007,10 +1011,10 @@ async function renderGaOverview(days=28){
   sourceNote.className='ga-traffic-source-note';sources.append(sourceNote);
   const trend=gaDailyLineChart(data.daily||[]);
   const devices=gaDeviceDonutPanel(data.devices||[],data.reportStatus?.devicesAvailable===true);
-  const languages=gaLanguagePanel(data.languages||[],data.reportStatus?.languagesAvailable===true);
+  const browsers=gaBrowserPanel(data.browsers||[],data.reportStatus?.browsersAvailable===true);
   const eventsGraph=gaEventsGraph(data.eventCounts||{});
   const chartsRow=node('div');chartsRow.className='ga-overview-chart-row';chartsRow.append(trend,devices);
-  const insightsRow=node('div');insightsRow.className='ga-overview-insights-row';insightsRow.append(eventsGraph,topSources,languages);
+  const insightsRow=node('div');insightsRow.className='ga-overview-insights-row';insightsRow.append(eventsGraph,topSources,browsers);
   const foot=node('p','المصدر: Google Analytics 4 · آخر جلب: '+new Date(data.asOf).toLocaleString('ar')+' · لا تمثل قيمة الإحالات مبيعات فعلية.');
   foot.className='ga-footnote';
   const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
