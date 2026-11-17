@@ -82,7 +82,7 @@ async function api(path, options={}) {
   }
   return request(path,{...options,token:session.access_token});
 }
-function loggedOut(){ generation++; role=null; $('login').hidden=false; $('logout').hidden=true; $('tabs').replaceChildren(); $('body').replaceChildren(); $('title').textContent='تسجيل الدخول'; }
+function loggedOut(){ generation++; role=null; $('body').classList.remove('ga-overview'); $('login').hidden=false; $('logout').hidden=true; $('tabs').replaceChildren(); $('body').replaceChildren(); $('title').textContent='تسجيل الدخول'; }
 async function enter(){
   const user=await api('/auth/v1/user');
   if(!user?.email)throw new Error('تعذّر التحقق من الحساب');
@@ -447,7 +447,7 @@ function gaFriendlyTrafficSource(raw){
  if(/^social$/.test(source))return 'Social Media';
  const cleaned=source.replace(/^https?:\/\//,'').replace(/^www\./,'')
   .split(/[?#]/)[0].split('/')[0].replace(/^l\./,'').trim();
- if(/^(?:referral|other|unassigned)$/.test(cleaned))return 'Other Sources';
+ if(/^(?:referral|other|unassigned)$/.test(cleaned)||/^[a-f0-9]{12,}$/.test(cleaned)||/^[a-z0-9_-]{28,}$/.test(cleaned))return 'Other Sources';
  if(/^[-_a-z0-9.]{1,80}$/i.test(cleaned)){
   if(cleaned==='sonbol.ps')return 'Sonbol';
   if(cleaned==='makook.app')return 'Makook';
@@ -496,7 +496,7 @@ function gaRankGraph(title,subtitle,items,{available=true,kind='meal',total=null
  const heading=node('div');heading.className='ga-chart-heading';
  heading.append(node('h2',title),node('p',subtitle));section.append(heading);
  if(!available){section.append(node('p','بيانات هذا التصنيف لم تصبح متاحة من GA4 بعد.'));return section;}
- const ranked=(items||[]).filter(i=>i&&Number(i.count)>0).slice(0,isSource?30:7);
+ const ranked=(items||[]).filter(i=>i&&Number(i.count)>0).slice(0,isSource?100:7);
  if(!ranked.length){section.append(node('p',isSource?'لا تتوفر مصادر زيارات معالجة لهذه الفترة بعد.':'لا توجد إحالات معالجة لهذا التصنيف خلال الفترة المحددة.'));return section;}
  const winner=ranked[0];
  const hero=node('div');hero.className='ga-rank-hero';
