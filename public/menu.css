@@ -1239,3 +1239,72 @@ body.rich-menu-active:not([data-preview]) #menu,
 body.rich-menu-active:not([data-preview]) #rich-menu{
  background-color:#242329!important;
 }
+
+/* Optional installation promotion: a small, non-modal floating card.
+   It never blocks navigation or requires dismissal; closes itself after 11s. */
+#install-snounu-promo[hidden]{display:none!important;}
+#install-snounu-promo{
+ box-sizing:border-box;position:fixed;z-index:70;
+ top:calc(118px + env(safe-area-inset-top,0px));right:12px;
+ left:auto;bottom:auto;
+ width:min(292px,calc(100vw - 24px));max-width:100%;
+ display:flex;flex-direction:column;gap:11px;
+ padding:13px;border-radius:17px;
+ background:#242424;color:#FFFFFF;
+ border:1px solid #FDBE2D;
+ box-shadow:0 12px 30px #00000078;
+ direction:rtl;text-align:right;
+ animation:sn-install-offer-in .36s cubic-bezier(.17,.8,.24,1) both;
+}
+#install-snounu-promo .install-promo-top{
+ display:flex;align-items:center;gap:10px;
+ padding-inline-end:21px;min-width:0;
+}
+#install-snounu-promo .install-promo-logo{
+ display:block;flex:none;width:43px;height:43px;
+ border-radius:11px;object-fit:contain;
+ background:#FDBE2D;padding:3px;
+}
+#install-snounu-promo .install-promo-copy{flex:1;min-width:0;}
+#install-snounu-promo .install-promo-copy strong{
+ display:block;color:#FDBE2D;font-size:13px;font-weight:900;line-height:1.45;
+}
+#install-snounu-promo .install-promo-copy p{
+ color:#F2F2F2;font-size:11px;line-height:1.5;
+ margin:3px 0 0;overflow-wrap:anywhere;
+}
+#install-snounu-promo .install-promo-close{
+ position:absolute;top:7px;inset-inline-start:7px;
+ width:27px;height:27px;border:0;border-radius:50%;
+ background:#595959;color:#FFFFFF;
+ padding:0;display:grid;place-items:center;
+ font:500 20px/1 system-ui,Arial,sans-serif;
+ cursor:pointer;box-shadow:none;
+}
+#install-snounu-promo .install-promo-close:hover{
+ background:#FDBE2D;color:#000000;
+}
+#install-snounu-promo .install-promo-action{
+ display:inline-flex;align-items:center;justify-content:center;gap:9px;
+ min-height:40px;width:100%;
+ background:#FDBE2D;color:#000000;
+ border:0;border-radius:12px;
+ font-family:inherit;font-size:13px;font-weight:900;
+ cursor:pointer;
+}
+#install-snounu-promo .install-promo-action svg{display:block;flex:none;}
+#install-snounu-promo :is(button):focus-visible{
+ outline:2px solid #FDBE2D;outline-offset:2px;
+}
+@keyframes sn-install-offer-in{
+ from{opacity:0;transform:translateY(-10px) scale(.98);}
+ to{opacity:1;transform:none;}
+}
+@media(min-width:981px){#install-snounu-promo{display:none!important;}}
+@media(max-width:360px){
+ #install-snounu-promo{top:calc(105px + env(safe-area-inset-top,0px));padding:10px;}
+ #install-snounu-promo .install-promo-logo{width:37px;height:37px;}
+}
+@media(prefers-reduced-motion:reduce){
+ #install-snounu-promo{animation:none!important;}
+}
