@@ -420,6 +420,111 @@ const gaEventLabels={
 };
 function gaNumber(number){return Number(number||0).toLocaleString('en-US',{maximumFractionDigits:0});}
 function gaMoney(number){return Number(number||0).toLocaleString('en-US',{maximumFractionDigits:2})+' ₪';}
+// Charts use the actual GA4 response only. Never fill missing history with sample data.
+function gaRankGraph(title,subtitle,items,{available=true,kind='meal'}={}){
+ const section=node('section');section.className='analytics-report ga-chart-panel ga-rank-panel';
+ const heading=node('div');heading.className='ga-chart-heading';
+ heading.append(node('h2',title),node('p',subtitle));section.append(heading);
+ if(!available){section.append(node('p','بيانات هذا التصنيف لم تصبح متاحة من GA4 بعد.'));return section;}
+ const ranked=(items||[]).filter(i=>i&&Number(i.count)>0).slice(0,7);
+ if(!ranked.length){section.append(node('p','لا توجد إحالات معالجة لهذا التصنيف خلال الفترة المحددة.'));return section;}
+ const winner=ranked[0];
+ const hero=node('div');hero.className='ga-rank-hero';
+ hero.append(node('span',kind==='meal'?'الوجبة الأكثر إحالة':'تطبيق التوصيل الأكثر إحالة'));
+ hero.append(node('strong',winner.name));
+ hero.append(node('small',gaNumber(winner.count)+' إحالة أولى'));
+ section.append(hero);
+ const bars=node('div');bars.className='ga-horizontal-bars';
+ const max=Math.max(...ranked.map(x=>Number(x.count)),1);
+ for(const [index,r] of ranked.entries()){
+  const line=node('div');line.className='ga-bar-line';
+  const names=node('div');names.className='ga-bar-label';
+  names.append(node('span',String(r.name)),node('strong',gaNumber(r.count)));
+  const rail=node('div');rail.className='ga-bar-rail';rail.setAttribute('role','img');
+  rail.setAttribute('aria-label',String(r.name)+': '+gaNumber(r.count)+' إحالة');
+  const fill=node('div');fill.className='ga-bar-fill'+(index===0?' ga-bar-first':'');
+  fill.style.width=(100*Number(r.count)/max).toFixed(2)+'%';
+  rail.append(fill);line.append(names,rail);bars.append(line);
+ }
+ section.append(bars);
+ return section;
+}
+function gaDailyLineChart(daily){
+ const section=node('section');section.id='ga-daily-trend';section.className='analytics-report ga-chart-panel ga-line-panel';
+ const heading=node('div');heading.className='ga-chart-heading';
+ heading.append(node('h2','اتجاه الزيارات والزوار'),
+  node('p','جلسات الزيارة والزوار في كل يوم — حسب بيانات GA4 المعالجة'));
+ section.append(heading);
+ const points=(daily||[]).filter(x=>/^\d{8}$/.test(String(x.date))&&Number.isFinite(Number(x.sessions))&&Number.isFinite(Number(x.users)));
+ if(!points.length){section.append(node('p','لا توجد بيانات يومية معالجة بعد لهذه الفترة.'));return section;}
+ const legend=node('div');legend.className='ga-line-legend';
+ for(const [type,label] of [['visits','زيارات (Sessions)'],['users','زوار في اليوم']]){
+  const item=node('span',label);item.className='ga-line-key '+type;legend.append(item);
+ }
+ section.append(legend);
+ const NS='http://www.w3.org/2000/svg';
+ const svg=(tag,attrs={})=>{
+  const el=document.createElementNS(NS,tag);
+  for(const [key,value] of Object.entries(attrs))el.setAttribute(key,String(value));
+  return el;
+ };
+ const chart=svg('svg',{viewBox:'0 0 760 255',preserveAspectRatio:'xMidYMid meet',role:'img','aria-label':'رسم بياني للزيارات والزوار حسب اليوم'});
+ chart.classList.add('ga-traffic-svg');
+ const left=43,right=744,top=15,bottom=208;
+ const max=Math.max(1,...points.flatMap(p=>[Number(p.sessions),Number(p.users)]));
+ const x=i=>points.length===1?(left+right)/2:left+i*(right-left)/(points.length-1);
+ const y=v=>bottom-(Number(v)/max)*(bottom-top);
+ for(let i=0;i<=4;i++){
+  const val=max*i/4,yy=y(val);
+  chart.append(svg('line',{x1:left,y1:yy,x2:right,y2:yy,class:'ga-grid-line'}));
+  const label=svg('text',{x:left-8,y:yy+4,'text-anchor':'end',class:'ga-axis-label'});
+  label.textContent=gaNumber(Math.round(val));chart.append(label);
+ }
+ const formatDate=raw=>raw.slice(6,8)+'/'+raw.slice(4,6);
+ const labelEvery=Math.max(1,Math.ceil(points.length/6));
+ for(let i=0;i<points.length;i++){
+  if(i%labelEvery!==0&&i!==points.length-1)continue;
+  const label=svg('text',{x:x(i),y:237,'text-anchor':'middle',class:'ga-axis-label'});
+  label.textContent=formatDate(points[i].date);chart.append(label);
+ }
+ const draw=(field,kind)=>{
+  const commands=points.map((p,i)=>(i===0?'M':'L')+x(i).toFixed(1)+','+y(p[field]).toFixed(1)).join(' ');
+  if(points.length>1&&kind==='visits'){
+   const area=svg('path',{d:commands+' L'+x(points.length-1)+','+bottom+' L'+x(0)+','+bottom+' Z',class:'ga-line-area'});
+   chart.append(area);
+  }
+  chart.append(svg('path',{d:commands,fill:'none',class:'ga-line-stroke '+kind}));
+  points.forEach((p,i)=>{
+   const c=svg('circle',{cx:x(i),cy:y(p[field]),r:points.length<12?3.8:2.5,class:'ga-line-point '+kind});
+   const t=svg('title');t.textContent=formatDate(p.date)+' — '+(kind==='visits'?'زيارات: ':'زوار: ')+gaNumber(p[field]);
+   c.append(t);chart.append(c);
+  });
+ };
+ draw('sessions','visits');draw('users','users');
+ section.append(chart);return section;
+}
+function gaEventsGraph(events){
+ const ranked=Object.entries(events||{}).filter(([key,e])=>e&&Number(e.count)>0)
+  .map(([key,e])=>({name:gaEventLabels[key]||key,count:e.count}))
+  .sort((a,b)=>b.count-a.count).slice(0,6);
+ const section=node('section');section.className='analytics-report ga-chart-panel ga-event-panel';
+ const heading=node('div');heading.className='ga-chart-heading';
+ heading.append(node('h2','أهم التفاعلات'),node('p','مقارنة عدد الأحداث المسجلة في الفترة'));
+ section.append(heading);
+ if(!ranked.length){section.append(node('p','لا توجد أحداث معالجة لعرض الرسم بعد.'));return section;}
+ const max=Math.max(...ranked.map(x=>x.count),1);
+ const bars=node('div');bars.className='ga-horizontal-bars';
+ for(const r of ranked){
+  const line=node('div');line.className='ga-bar-line';
+  const names=node('div');names.className='ga-bar-label';
+  names.append(node('span',r.name),node('strong',gaNumber(r.count)));
+  const rail=node('div');rail.className='ga-bar-rail';
+  const fill=node('div');fill.className='ga-bar-fill ga-event-fill';fill.style.width=(r.count/max*100).toFixed(2)+'%';
+  rail.append(fill);line.append(names,rail);bars.append(line);
+ }
+ section.append(bars);return section;
+}
+
 async function renderGaOverview(days=28){
  const area=$('body'),ticket=generation;
  const top=node('div');top.className='ga-heading';
