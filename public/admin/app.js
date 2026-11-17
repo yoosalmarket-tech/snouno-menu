@@ -580,7 +580,7 @@ function gaEstimatedSalesPanel(data,pending){
   for(const [box,pct] of values){
    const value=box.querySelector('strong'),caption=box.querySelector('small');
    value.textContent=count===null?'—':gaMoney(count*pct/100*average);
-   caption.textContent=count===null?'بانتظار معالجة بيانات الإحالات':gaNumber(count*pct/100)+' طلب متوقع عند '+pct+'%';
+   caption.textContent=count===null?'بانتظار معالجة بيانات الإحالات':(count*pct/100).toLocaleString('en-US',{maximumFractionDigits:2})+' طلب متوقع عند '+pct+'%';
   }
   selected.querySelector('span').textContent='السيناريو المختار ('+rate+'%)';
  }
