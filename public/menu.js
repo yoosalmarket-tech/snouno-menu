@@ -100,13 +100,17 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=featured-utlob-1')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=latest-favorites-1')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
 }
+function newestFavorites(meals){
+ const byId=new Map(meals.map(meal=>[meal.id,meal]));
+ return Array.from(favorites).reverse().map(id=>byId.get(id)).filter(Boolean);
+}
 function richData(){
- return {categories:[{...featuredCategory,items:dishes.filter(hasMealLabel)},...categories],dishes,favorites,settings,links,lang:currentLanguage,categoryEnglish,
+ return {categories:[{...featuredCategory,items:dishes.filter(hasMealLabel)},...categories],dishes,favorites,favoriteMeals:newestFavorites(dishes),settings,links,lang:currentLanguage,categoryEnglish,
   displayName,displayDescription};
 }
 async function syncRichMode(){
@@ -886,7 +890,7 @@ function renderCards(){
  }
  // Favorites is a genuine scrollable category, not a filter.
  // Favorite dishes remain visible in their original categories too.
- byCategory.set(favoritesCategory.id,visible.filter(d=>favorites.has(d.id)));
+ byCategory.set(favoritesCategory.id,newestFavorites(visible));
  byCategory.set(featuredCategory.id,visible.filter(hasMealLabel));
  for(const category of [favoritesCategory,featuredCategory,...categories]){
    const matches=byCategory.get(category.id)||[];

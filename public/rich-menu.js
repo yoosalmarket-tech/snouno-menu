@@ -504,7 +504,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    ...cat,english:snapshot.categoryEnglish?.[cat.name]||cat.name,
    items:cat.items||all.filter(d=>String(d.category_id)===String(cat.id))
   })).filter(c=>c.items.length);
-  const favorites=all.filter(d=>snapshot.favorites?.has(d.id));
+  const favorites=snapshot.favoriteMeals;
   if(favorites.length)groups.unshift({id:'favorites',name:'المفضلة',english:'FAVORITES',items:favorites});
   const retained=groups.findIndex(c=>String(c.id)===String(oldGroup));
   groupIndex=retained>=0?retained:0;
