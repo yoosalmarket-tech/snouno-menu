@@ -152,7 +152,7 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=rich-logo-welcome-20261117';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=rich-order-centered-20261117';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
@@ -284,6 +284,8 @@ function applyLanguage(){
    updateWelcomeLabels(mobileWelcomeIndex);
  }
  translateStaticContent();
+ const installLabel=$('install-app-label');
+ if(installLabel)installLabel.textContent=isEnglish()?'Install the menu app':'تثبيت المنيو على الهاتف';
  updateRichToggle();
  if(richController)richController.refresh();
 }
