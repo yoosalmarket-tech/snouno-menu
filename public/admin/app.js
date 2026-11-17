@@ -152,6 +152,44 @@ function adminSidebarIcon(key){
  svg.innerHTML=icons[key]||icons.overview;
  return svg;
 }
+// Independent install flow for the authenticated admin dashboard.
+// Its service worker cannot cache admin responses or influence public-menu GA4.
+let dashboardInstallPrompt=null;
+const adminStandalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+async function installAdminDashboard(){
+ if(adminStandalone())return;
+ if(dashboardInstallPrompt){
+  const prompt=dashboardInstallPrompt;dashboardInstallPrompt=null;
+  prompt.prompt();
+  try{await prompt.userChoice;}catch{}
+  return;
+ }
+ const guide=$('admin-install-guide');
+ if(!guide)return;
+ const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+  (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ $('admin-install-guide-message').textContent=ios
+  ?'افتح لوحة التحكم من Safari، واضغط مشاركة، ثم اختر «إضافة إلى الشاشة الرئيسية».'
+  :'افتح قائمة المتصفح (⋮)، ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».';
+ if(typeof guide.showModal==='function')guide.showModal();
+ else alert($('admin-install-guide-message').textContent);
+}
+function setupDashboardInstall(){
+ window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();
+  dashboardInstallPrompt=event;
+ });
+ window.addEventListener('appinstalled',()=>{
+  dashboardInstallPrompt=null;
+  $('admin-install-app')?.remove();
+ });
+ $('admin-install-guide-close')?.addEventListener('click',()=>$('admin-install-guide').close());
+ if('serviceWorker' in navigator&&window.isSecureContext){
+  navigator.serviceWorker.register('/admin/sw.js',{scope:'/admin/'})
+   .catch(error=>console.warn('Snounu admin install worker:',error));
+ }
+}
+setupDashboardInstall();
 function buildAdminSidebar(email){
  const tabs=$('tabs');tabs.replaceChildren();
  const brand=node('a');brand.className='admin-sidebar-brand';brand.href='/welcome';brand.target='_blank';brand.rel='noopener noreferrer';
@@ -181,6 +219,19 @@ function buildAdminSidebar(email){
   links.append(btn);
  }
  tabs.append(links);
+ if(!adminStandalone()){
+  const install=action('تثبيت لوحة التحكم',()=>void installAdminDashboard());
+  install.id='admin-install-app';install.className='admin-install-app';
+  install.setAttribute('aria-label','تثبيت لوحة تحكم سنونو على الجهاز');
+  const symbol=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  symbol.setAttribute('viewBox','0 0 24 24');
+  symbol.setAttribute('width','18');symbol.setAttribute('height','18');
+  symbol.setAttribute('fill','none');symbol.setAttribute('stroke','currentColor');
+  symbol.setAttribute('stroke-width','1.9');symbol.setAttribute('stroke-linecap','round');
+  symbol.setAttribute('stroke-linejoin','round');symbol.setAttribute('aria-hidden','true');
+  symbol.innerHTML='<path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/>';
+  install.prepend(symbol);tabs.append(install);
+ }
  const profile=node('div');profile.className='admin-sidebar-profile';
  const avatar=node('span',role==='owner'?'م':'ف');avatar.className='admin-profile-avatar';
  const info=node('span');info.className='admin-profile-info';
