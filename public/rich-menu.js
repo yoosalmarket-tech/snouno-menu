@@ -38,7 +38,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<header class="rm-sheet-head"><div class="rm-sheet-heading"><span class="rm-sheet-overline" lang="en">SNOUNU / RESTAURANT</span>',
  '<h2 id="rm-sheet-title" class="rm-sheet-title"></h2><p class="rm-sheet-subtitle"></p></div>',
  '<button type="button" class="rm-sheet-close" aria-label="إغلاق">×</button></header>',
- '<div class="rm-sheet-body"></div></dialog>'
+ '<div class="rm-sheet-body"></div></dialog>',
+ '<footer class="rm-interactive-credit" aria-label="حقوق تصميم المنيو">',
+ '<button type="button" class="rm-interactive-credit-link" aria-label="انقر مرتين لزيارة موقع وكالة يوصل">تصميم <strong>وكالة يوصل</strong> لتصوير المطاعم</button>',
+ '<small class="rm-interactive-credit-hint" role="status" aria-live="polite"></small></footer>'
  ].join('');
  const share=mk('button','rm-share');
  share.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 13.5 6.6 4M15.3 6.5l-6.6 4"/></svg>';
@@ -62,6 +65,25 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   sheetTitle:at(root,'.rm-sheet-title'),sheetSubtitle:at(root,'.rm-sheet-subtitle'),
   sheetBody:at(root,'.rm-sheet-body')
  };
+ // Reuse the existing site's two-click agency-credit behavior on the interactive screen.
+ // Two taps also work on phones; the first tap never leaves the menu.
+ const creditButton=at(root,'.rm-interactive-credit-link');
+ const creditHint=at(root,'.rm-interactive-credit-hint');
+ let creditTimer=0;
+ const resetInteractiveCredit=()=>{
+  if(creditTimer)clearTimeout(creditTimer);
+  creditTimer=0;
+  creditHint.textContent='';
+ };
+ creditButton.addEventListener('click',()=>{
+  if(creditTimer){
+   resetInteractiveCredit();
+   window.location.assign('https://www.yoosal.net/');
+   return;
+  }
+  creditHint.textContent='اضغط مرة ثانية لزيارة موقع يوصل';
+  creditTimer=setTimeout(resetInteractiveCredit,5000);
+ });
  let groups=[],groupIndex=0,front=0,k=2.2,target=0,velocity=-.02;
  let active=false,frame=0,lastTime=0,pointer=null,lastWheel=0,swapping=false,swapToken=0;
  let dishesEls=[],thumbEls=[],categoryEls=[],snapshot={},destroyed=false;
@@ -550,7 +572,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    if(pendingMealOpen){clearTimeout(pendingMealOpen);pendingMealOpen=0;}
   }
  }
- function destroy(){destroyed=true;setActive(false);closeSheet();++swapToken;root.remove();}
+ function destroy(){destroyed=true;resetInteractiveCredit();setActive(false);closeSheet();++swapToken;root.remove();}
  refresh();
  return {refresh,setActive,destroy,focusLink,get selected(){return dish();}};
 }
