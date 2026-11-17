@@ -131,7 +131,7 @@ async function api(path, options={}) {
   }
   return request(path,{...options,token:session.access_token});
 }
-function loggedOut(){ generation++;role=null;closeAdminMobileNav();$('admin-page-header').hidden=true;$('body').classList.remove('ga-overview');$('login').hidden=false;$('tabs').replaceChildren();$('body').replaceChildren();$('admin-title-action').replaceChildren();$('title').textContent='تسجيل الدخول'; }
+function loggedOut(){ generation++;role=null;closeAdminMobileNav();$('admin-page-header').hidden=true;$('admin-page-note').replaceChildren();$('admin-page-note').hidden=true;$('body').classList.remove('ga-overview');$('login').hidden=false;$('tabs').replaceChildren();$('body').replaceChildren();$('admin-title-action').replaceChildren();$('title').textContent='تسجيل الدخول'; }
 function adminSidebarIcon(key){
  const icons={
   overview:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
@@ -900,8 +900,9 @@ async function renderGaOverview(days=28){
   const pending=data.processedHasRows===false;
   const hero=node('section');hero.id='ga-overview-hero';hero.className='ga-overview-hero';
   const heroHeading=node('div');heroHeading.className='ga-hero-heading';
-  const greeting=new Date().getHours()<12?'صباح الخير':'مساء الخير';
-  const greetingTitle=node('h2');greetingTitle.append(node('span',greeting+'، '),node('em','مدير الموقع'));
+  const palestineHour=Number(new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:'Asia/Hebron'}).format(new Date()));
+  const greeting=palestineHour<12?'صباح الخير':'مساء الخير';
+  const greetingTitle=node('h2');greetingTitle.append(node('span',greeting+'، '),node('em',role==='owner'?'مدير الموقع':'محرر الموقع'));
   heroHeading.append(greetingTitle);
   heroHeading.append(node('p','الزيارات والإحالات وأداء المنيو خلال الفترة المختارة حسب GA4.'));
   const heroTop=node('div');heroTop.className='ga-hero-top';
@@ -1059,7 +1060,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  updateAdminHeader(key);
  $('body').classList.toggle('ga-overview',key==='overview');
  const sameSection=section===key;
- const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren();
+ const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='account'){await renderOwnerAccount();return;}
  if(key==='overview'){await renderGaOverview();return;}
@@ -1092,7 +1093,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  }
  if(key==='dishes'){
    const hint=node('p','اسحب الطبق من المقبض ⋮⋮ وضعه فوق أو تحت طبق آخر داخل نفس الصنف. يتم حفظ الترتيب تلقائياً.');
-   hint.className='dish-sort-hint';area.append(hint);
+   hint.className='dish-sort-hint';$('admin-page-note').replaceChildren(hint);$('admin-page-note').hidden=false;
    for(const category of categoryRows){
      const section=node('section');section.className='dish-sort-section';
      section.append(node('h2',category.name));
