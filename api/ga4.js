@@ -92,7 +92,7 @@ export default async function handler(req,res){
     // Independent GA4 queries let rankings work even if the newer monetary
     // custom metric has not been processed yet.
     const dims=(...names)=>names.map(name=>({name}));
-    const [summaryResult,eventsResult,referralsResult,mealRanksResult,platformRanksResult,valueResult,dailyResult,trafficSourcesResult,devicesResult,languagesResult,liveUsersResult,liveEventsResult]=await Promise.allSettled([
+    const [summaryResult,eventsResult,referralsResult,mealRanksResult,platformRanksResult,valueResult,dailyResult,trafficSourcesResult,devicesResult,browsersResult,liveUsersResult,liveEventsResult]=await Promise.allSettled([
       gaReport(token,{...base,metrics:dims('sessions','totalUsers','activeUsers','newUsers','screenPageViews','keyEvents','engagedSessions')}),
       gaReport(token,{...base,dimensions:dims('eventName'),metrics:dims('eventCount','keyEvents'),limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
       gaReport(token,{...base,dimensions:dims('customEvent:meal_name','customEvent:delivery_platform'),metrics:dims('eventCount'),dimensionFilter:isReferral,limit:'250',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
@@ -103,7 +103,7 @@ export default async function handler(req,res){
       // Session-scoped source+medium: each visit is attributed to its actual session source.
       gaReport(token,{...base,dimensions:dims('sessionSourceMedium'),metrics:dims('sessions'),limit:'100',orderBys:[{metric:{metricName:'sessions'},desc:true}]}),
       gaReport(token,{...base,dimensions:dims('deviceCategory'),metrics:dims('activeUsers'),limit:'20'}),
-      gaReport(token,{...base,dimensions:dims('language'),metrics:dims('activeUsers'),limit:'30',orderBys:[{metric:{metricName:'activeUsers'},desc:true}]}),
+      gaReport(token,{...base,dimensions:dims('browser'),metrics:dims('activeUsers'),limit:'30',orderBys:[{metric:{metricName:'activeUsers'},desc:true}]}),
       gaRealtimeReport(token,{metrics:dims('activeUsers')}),
       gaRealtimeReport(token,{dimensions:dims('eventName'),metrics:dims('eventCount'),limit:'100'})
     ]);
@@ -124,7 +124,7 @@ export default async function handler(req,res){
         .sort((a,b)=>b.count-a.count)
       :[];
     const deviceDistribution=devicesResult.status==='fulfilled'?rows(devicesResult.value).map(r=>({name:r.dimensions[0]||'unknown',count:r.metrics[0]})).filter(r=>r.count>0):[];
-    const languageDistribution=languagesResult.status==='fulfilled'?rows(languagesResult.value).map(r=>({name:r.dimensions[0]||'unknown',count:r.metrics[0]})).filter(r=>r.count>0):[];
+    const browserDistribution=browsersResult.status==='fulfilled'?rows(browsersResult.value).map(r=>({name:r.dimensions[0]||'unknown',count:r.metrics[0]})).filter(r=>r.count>0):[];
     const valueAvailable=valueResult.status==='fulfilled'&&rows(valueResult.value).length>0;
     const monetaryRows=valueAvailable?rows(valueResult.value):[];
     const moneyByPair=new Map(monetaryRows.map(r=>[JSON.stringify(r.dimensions),r.metrics[0]]));
@@ -143,7 +143,7 @@ export default async function handler(req,res){
     if(dailyResult.status==='rejected')warning.push('Daily trend is temporarily unavailable');
     if(trafficSourcesResult.status==='rejected')warning.push('Traffic source breakdown is temporarily unavailable');
     if(devicesResult.status==='rejected')warning.push('Device distribution is temporarily unavailable');
-    if(languagesResult.status==='rejected')warning.push('Language breakdown is temporarily unavailable');
+    if(browsersResult.status==='rejected')warning.push('Browser breakdown is temporarily unavailable');
     if(liveUsersResult.status==='rejected'||liveEventsResult.status==='rejected')warning.push('Realtime activity is temporarily unavailable');
     const realtimeEvents=liveEventsResult.status==='fulfilled'?Object.fromEntries(rows(liveEventsResult.value).map(r=>[r.dimensions[0],r.metrics[0]])):{};
     const realtime={
@@ -163,7 +163,7 @@ export default async function handler(req,res){
       source:'Google Analytics 4',propertyId:PROPERTY_ID,days,asOf:new Date().toISOString(),
       realtime,processedHasRows,
       summary:{sessions:metrics[0]||0,totalUsers:metrics[1]||0,activeUsers:metrics[2]||0,newUsers:metrics[3]||0,views:metrics[4]||0,keyEvents:metrics[5]||0,engagedSessions:metrics[6]||0},
-      eventCounts,referrals,topMeals,topPlatforms,trafficSources,devices:deviceDistribution,languages:languageDistribution,
+      eventCounts,referrals,topMeals,topPlatforms,trafficSources,devices:deviceDistribution,browsers:browserDistribution,
       reportStatus:{
         eventsAvailable:eventsResult.status==='fulfilled',
         rankingsAvailable:mealRanksResult.status==='fulfilled'||platformRanksResult.status==='fulfilled',
@@ -173,7 +173,7 @@ export default async function handler(req,res){
         referralValueAvailable:valueAvailable,
         trafficSourcesAvailable:trafficSourcesResult.status==='fulfilled',
         devicesAvailable:devicesResult.status==='fulfilled',
-        languagesAvailable:languagesResult.status==='fulfilled'
+        browsersAvailable:browsersResult.status==='fulfilled'
       },
       totals:{uniqueReferrals,referralValue,averageReferralPrice},
       daily:dailyResult.status==='fulfilled'?rows(dailyResult.value).map(r=>({date:r.dimensions[0],sessions:r.metrics[0],users:r.metrics[1]})):[],
