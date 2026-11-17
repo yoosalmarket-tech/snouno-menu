@@ -730,7 +730,7 @@ function gaDeviceDonutPanel(devices,available){
  })).sort((a,b)=>b.count-a.count);
  if(!items.length){panel.append(node('p','لا تتوفر بيانات الأجهزة لهذه الفترة.'));return panel;}
  const sum=items.reduce((n,r)=>n+r.count,0);
- const colors=['#FDBE2D','#242424','#767676','#D1D1D1','#F1F1F1'];
+ const colors=['#FDBE2D','#262626','#595959','#D6D6D6','#F2F2F2'];
  let position=0;
  const gradients=items.map((r,i)=>{
   const from=position;position+=(r.count/sum)*100;
