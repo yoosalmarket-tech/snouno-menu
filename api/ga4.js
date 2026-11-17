@@ -58,6 +58,16 @@ async function gaReport(token,body){
   }
   return response.json();
 }
+// Realtime data is independent of the processed 7/28/90-day history.
+async function gaRealtimeReport(token,body){
+ const response=await fetch('https://analyticsdata.googleapis.com/v1beta/properties/'+PROPERTY_ID+':runRealtimeReport',{
+  method:'POST',
+  headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+  body:JSON.stringify(body)
+ });
+ if(!response.ok)throw new Error('Realtime query failed ('+response.status+')');
+ return response.json();
+}
 function rows(report){
   return (report?.rows||[]).map(row=>({
     dimensions:(row.dimensionValues||[]).map(v=>v.value),
@@ -79,11 +89,13 @@ export default async function handler(req,res){
     const token=await googleToken(account);
     const base={dateRanges:[range]};
     const isReferral={filter:{fieldName:'eventName',stringFilter:{matchType:'EXACT',value:'delivery_referral_unique'}}};
-    const [summaryResult,eventsResult,referralsResult,dailyResult]=await Promise.allSettled([
+    const [summaryResult,eventsResult,referralsResult,dailyResult,liveUsersResult,liveEventsResult]=await Promise.allSettled([
       gaReport(token,{...base,metrics:['sessions','totalUsers','activeUsers','newUsers','screenPageViews','keyEvents','engagedSessions'].map(name=>({name}))}),
       gaReport(token,{...base,dimensions:[{name:'eventName'}],metrics:[{name:'eventCount'},{name:'keyEvents'}],limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
       gaReport(token,{...base,dimensions:[{name:'customEvent:meal_name'},{name:'customEvent:delivery_platform'}],metrics:[{name:'eventCount'},{name:'customEvent:referral_value'}],dimensionFilter:isReferral,limit:'200',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
-      gaReport(token,{...base,dimensions:[{name:'date'}],metrics:[{name:'sessions'},{name:'totalUsers'}],limit:'100',orderBys:[{dimension:{dimensionName:'date'}}]})
+      gaReport(token,{...base,dimensions:[{name:'date'}],metrics:[{name:'sessions'},{name:'totalUsers'}],limit:'100',orderBys:[{dimension:{dimensionName:'date'}}]}),
+      gaRealtimeReport(token,{metrics:[{name:'activeUsers'}]}),
+      gaRealtimeReport(token,{dimensions:[{name:'eventName'}],metrics:[{name:'eventCount'}],limit:'100'})
     ]);
     if(summaryResult.status!=='fulfilled')throw summaryResult.reason;
     const metrics=rows(summaryResult.value)[0]?.metrics||[];
@@ -94,9 +106,17 @@ export default async function handler(req,res){
     if(eventsResult.status==='rejected')warning.push('Event breakdown is temporarily unavailable');
     if(referralsResult.status==='rejected')warning.push('Referral breakdown is awaiting GA4 custom-dimension/metric availability or access');
     if(dailyResult.status==='rejected')warning.push('Daily trend is temporarily unavailable');
+    if(liveUsersResult.status==='rejected'||liveEventsResult.status==='rejected')warning.push('Realtime activity is temporarily unavailable');
+    const realtimeEvents=liveEventsResult.status==='fulfilled'?Object.fromEntries(rows(liveEventsResult.value).map(r=>[r.dimensions[0],r.metrics[0]])):{};
+    const realtime={
+      available:liveUsersResult.status==='fulfilled'&&liveEventsResult.status==='fulfilled',
+      activeUsers:liveUsersResult.status==='fulfilled'?(rows(liveUsersResult.value)[0]?.metrics[0]||0):null,
+      eventCounts:realtimeEvents
+    };
     const referrals=referralRows.map(r=>({meal:r.dimensions[0]||'—',platform:r.dimensions[1]||'—',count:r.metrics[0],value:r.metrics[1]}));
     return json(res,200,{
       source:'Google Analytics 4',propertyId:PROPERTY_ID,days,asOf:new Date().toISOString(),
+      realtime,processedHasRows:(summaryResult.value?.rows||[]).length>0,
       summary:{sessions:metrics[0]||0,totalUsers:metrics[1]||0,activeUsers:metrics[2]||0,newUsers:metrics[3]||0,views:metrics[4]||0,keyEvents:metrics[5]||0,engagedSessions:metrics[6]||0},
       eventCounts,referrals,
       totals:{uniqueReferrals:referrals.reduce((n,r)=>n+r.count,0),referralValue:referrals.reduce((n,r)=>n+r.value,0)},
