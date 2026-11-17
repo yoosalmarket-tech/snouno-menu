@@ -1191,7 +1191,7 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
 @media(max-width:980px){
  #welcome #cover-photo,
  #welcome #cover-next{
-  left:50%;
+  left:calc(50% + var(--welcome-visual-offset, 0px));
   top:calc(50% + clamp(16px,3svh,26px));
   object-position:center center;
   scale:1.2;

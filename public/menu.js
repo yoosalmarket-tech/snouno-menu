@@ -291,14 +291,64 @@ function welcomeMealName(index){
  const d=dishes.find(item=>Number(item.sonbol_listing_id)===choice.listing);
  return d?displayName(d):({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville'}[choice.listing]);
 }
+
+/* Optical centering for dashboard-uploaded transparent welcome photos.
+   CSS centers the full image rectangle, which can contain asymmetric blank
+   alpha padding. Read its opaque bounds and offset only the visible food.
+   The horizontal translate/scale used by the swipe animation is unchanged. */
+const welcomeVisualCenters=new Map();
+function getWelcomeVisualCenter(src){
+ if(!welcomeVisualCenters.has(src)){
+  const result=(async()=>{
+   const probe=new Image();
+   probe.crossOrigin='anonymous';
+   probe.src=src;
+   await probe.decode();
+   const canvas=document.createElement('canvas');
+   canvas.width=256;canvas.height=256;
+   const context=canvas.getContext('2d',{willReadFrequently:true});
+   if(!context)return {delta:0,ratio:1};
+   context.drawImage(probe,0,0,256,256);
+   const data=context.getImageData(0,0,256,256).data;
+   let left=256,right=-1;
+   for(let y=0;y<256;y++){
+    for(let x=0;x<256;x++){
+     if(data[(y*256+x)*4+3]>64){
+      if(x<left)left=x;
+      if(x>right)right=x;
+     }
+    }
+   }
+   const delta=right<left?0:Math.max(-.25,Math.min(.25,(127.5-(left+right)/2)/256));
+   return {delta,ratio:(probe.naturalWidth||1)/(probe.naturalHeight||1)};
+  })().catch(()=>({delta:0,ratio:1}));
+  welcomeVisualCenters.set(src,result);
+ }
+ return welcomeVisualCenters.get(src);
+}
+async function centerWelcomePhoto(img,src){
+ if(!img||!src)return;
+ img.style.setProperty('--welcome-visual-offset','0px');
+ const {delta,ratio}=await getWelcomeVisualCenter(src);
+ if(!onMobileWelcome()||img.getAttribute('src')!==src)return;
+ const width=img.clientWidth,height=img.clientHeight;
+ // object-fit: contain centers the bitmap inside an image box that can be taller
+ // or wider than the actual image. Use the rendered bitmap width, not box width.
+ const drawnWidth=Math.min(width,height*ratio);
+ img.style.setProperty('--welcome-visual-offset',
+  Math.round(delta*drawnWidth*1.2*10)/10+'px');
+}
+
 function setWelcomeImage(img,index){
  const choice=welcomeMobileMeals[index];
  img.onerror=()=>{
   if(img.dataset.fallbackFor!==choice.src){
    img.dataset.fallbackFor=choice.src;img.src=choice.fallback;
+   void centerWelcomePhoto(img,choice.fallback);
   }
  };
  img.src=choice.src;
+ void centerWelcomePhoto(img,choice.src);
 }
 function updateWelcomeLabels(index){
  const label=tr(settings?.welcome_label||'من سنونو');
@@ -371,6 +421,7 @@ async function goToWelcomeMeal(index,direction='right'){
   }
   incoming.src=src;incoming.alt='';
   await incoming.decode();
+  await centerWelcomePhoto(incoming,src);
   if(session!==welcomeCarouselSession||!welcomeVisible())return;
   const leaveX=forward>0?-155:55;
   const arriveX=forward>0?55:-155;
@@ -394,6 +445,7 @@ async function goToWelcomeMeal(index,direction='right'){
   // Keep the incoming image fully visible while the background layer catches up.
   current.src=src;
   await current.decode();
+  await centerWelcomePhoto(current,src);
   if(session!==welcomeCarouselSession||!welcomeVisible())return;
   mobileWelcomeIndex=index;
   updateWelcomeLabels(index);
@@ -480,6 +532,10 @@ window.addEventListener('pagechange',startWelcomeCarousel);
 window.addEventListener('resize',()=>{
  if(welcomeCarouselAnimating)stopWelcomeCarousel();
  startWelcomeCarousel();
+ if(onMobileWelcome())for(const id of ['cover-photo','cover-next']){
+  const img=$(id),src=img?.getAttribute('src');
+  if(src)void centerWelcomePhoto(img,src);
+ }
 });
 document.addEventListener('visibilitychange',startWelcomeCarousel);
 
