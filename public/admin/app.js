@@ -156,7 +156,7 @@ function adminSidebarIcon(key){
 }
 function buildAdminSidebar(email){
  const tabs=$('tabs');tabs.replaceChildren();
- const brand=node('a');brand.className='admin-sidebar-brand';brand.href='/menu';brand.target='_blank';brand.rel='noopener noreferrer';
+ const brand=node('a');brand.className='admin-sidebar-brand';brand.href='/welcome';brand.target='_blank';brand.rel='noopener noreferrer';
  const brandLogo=node('img');brandLogo.src='/assets/snounu-icon.png';brandLogo.alt='';brandLogo.width=43;brandLogo.height=43;
  const brandText=node('span');brandText.className='admin-brand-text';
  brandText.append(node('strong','سنونو'),node('small','لوحة تحكم المنيو'));
