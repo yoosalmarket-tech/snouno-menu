@@ -1555,3 +1555,223 @@ main:has(> #tabs:not(:empty)) > .workspace>h1{
  #tabs .admin-brand-text{display:none;}
  #body.ga-overview .ga-stats-grid{grid-template-columns:1fr;}
 }
+
+/* SNOUNU STRICT PALETTE & ALIGNMENT / visual finishing pass
+   Yellow #FDBE2D · black · dark gray · white · light gray only.
+   All Arabic copy remains right-aligned, amounts stay legible in LTR. */
+:root{
+ --gold:#FDBE2D;--ink:#000000;--stroke:#D6D6D6;
+ --admin-sidebar:#262626;--admin-sidebar-dark:#000000;
+ --admin-surface:#FFFFFF;--admin-canvas:#F2F2F2;
+ --admin-line:#D6D6D6;--admin-muted:#595959;
+ --admin-text:#262626;--admin-accent:#FDBE2D;
+}
+html{background:#F2F2F2;}
+body{background:#F2F2F2;color:#262626;}
+main:has(> #tabs:not(:empty))>nav#tabs,
+main:has(#body.ga-overview)>nav#tabs{
+ background:linear-gradient(180deg,#262626,#000000);
+ border-inline-start:1px solid #595959;
+}
+#tabs .admin-sidebar-brand{color:#FFFFFF;border-bottom-color:#FFFFFF18;}
+#tabs .admin-brand-text strong,#tabs .admin-profile-info strong{color:#FFFFFF;}
+#tabs .admin-brand-text small,#tabs .admin-sidebar-group{color:#D6D6D6;}
+#tabs .admin-sidebar-links{direction:rtl;}
+main:has(> #tabs:not(:empty)) #tabs .admin-nav-button,
+main:has(#body.ga-overview) #tabs .admin-nav-button{
+ color:#F2F2F2;background:transparent;
+ text-align:right;justify-content:flex-start;align-items:center;min-width:0;
+}
+main:has(> #tabs:not(:empty)) #tabs .admin-nav-button span,
+main:has(#body.ga-overview) #tabs .admin-nav-button span{
+ min-width:0;line-height:1.5;overflow-wrap:anywhere;
+}
+main:has(> #tabs:not(:empty)) #tabs .admin-nav-button[aria-current=true],
+main:has(#body.ga-overview) #tabs .admin-nav-button[aria-current=true]{
+ background:#FDBE2D;color:#000000;border-color:#FDBE2D;
+}
+#tabs .admin-sidebar-profile{background:#262626;border:1px solid #595959;}
+#tabs .admin-profile-avatar{background:#FDBE2D;color:#000000;}
+#tabs .admin-profile-info small{color:#D6D6D6;}
+main:has(> #tabs:not(:empty)) #tabs .admin-profile-logout,
+main:has(#body.ga-overview) #tabs .admin-profile-logout{
+ color:#FFFFFF;background:#595959;
+}
+main:has(> #tabs:not(:empty)) #tabs .admin-profile-logout:hover,
+main:has(#body.ga-overview) #tabs .admin-profile-logout:hover{
+ background:#FDBE2D;color:#000000;
+}
+
+/* Greeting and toolbar: no displaced title or overlapping controls. */
+#body.ga-overview .ga-overview-hero{min-width:0;}
+#body.ga-overview .ga-hero-top{min-width:0;flex-wrap:wrap;align-items:center;}
+#body.ga-overview .ga-hero-heading{
+ min-width:0;flex:1 1 300px;text-align:right;
+}
+#body.ga-overview .ga-hero-heading>span,
+#body.ga-overview .ga-hero-heading h2,
+#body.ga-overview .ga-hero-heading p{text-align:right;}
+#body.ga-overview .ga-hero-heading h2{
+ display:block;white-space:normal;overflow-wrap:break-word;
+ line-height:1.5;letter-spacing:0;color:#262626;
+}
+#body.ga-overview .ga-hero-heading h2 span{color:#000000;}
+#body.ga-overview .ga-hero-heading h2 em{color:#000000;text-decoration-color:#FDBE2D;}
+#body.ga-overview .ga-hero-heading p{color:#595959;line-height:1.75;}
+#body.ga-overview .ga-heading{
+ min-width:0;flex:0 1 auto;justify-content:flex-start;
+ gap:8px;align-items:center;
+}
+#body.ga-overview .ga-heading select{color:#262626;background:#FFFFFF;border-color:#D6D6D6;}
+#body.ga-overview .ga-heading button{
+ background:#FDBE2D;color:#000000;border-color:#FDBE2D;
+}
+#body.ga-overview .ga-heading button:hover{background:#FDBE2D;color:#000000;}
+#body.ga-overview .ga-open-site{
+ background:#FFFFFF;color:#262626;border-color:#D6D6D6;
+}
+
+/* Overview: all typography stays in its intended box. */
+#body.ga-overview .ga-primary-metrics,
+#body.ga-overview .ga-overview-chart-row,
+#body.ga-overview .ga-overview-insights-row,
+#body.ga-overview .ga-stats-grid{min-width:0;}
+#body.ga-overview .ga-primary-stat{
+ display:flex;flex-direction:column;align-items:stretch;min-width:0;
+ overflow:hidden;text-align:right;gap:4px;
+}
+#body.ga-overview .ga-primary-stat .ga-primary-icon{
+ background:#F2F2F2;color:#262626;
+ order:0;align-self:flex-start;margin-bottom:7px;flex:none;
+}
+#body.ga-overview .ga-primary-stat:first-child .ga-primary-icon{
+ background:#FDBE2D;color:#000000;
+}
+#body.ga-overview .ga-primary-stat>span:not(.ga-primary-icon){
+ text-align:right;color:#595959;line-height:1.55;
+ overflow-wrap:anywhere;
+}
+#body.ga-overview .ga-primary-stat:first-child>span:not(.ga-primary-icon){color:#F2F2F2;}
+#body.ga-overview .ga-primary-stat strong{
+ display:block;width:100%;min-width:0;color:#262626;
+ text-align:right;direction:ltr;unicode-bidi:plaintext;
+ overflow-wrap:anywhere;line-height:1.22;
+}
+#body.ga-overview .ga-primary-stat:first-child strong{color:#FFFFFF;}
+#body.ga-overview .ga-primary-stat small{
+ display:block;text-align:right;line-height:1.6;overflow-wrap:anywhere;
+ color:#595959;
+}
+#body.ga-overview .ga-primary-stat:first-child small{color:#F2F2F2;}
+#body.ga-overview .ga-primary-metrics .ga-primary-stat:first-child{
+ background:#262626;background-image:none;border-color:#262626;
+}
+#body.ga-overview .ga-stat:not(.ga-primary-stat){
+ min-width:0;align-items:stretch;text-align:right;overflow:hidden;
+}
+#body.ga-overview .ga-stat:not(.ga-primary-stat)>:is(span,strong,small){
+ max-width:100%;overflow-wrap:anywhere;text-align:right;
+}
+#body.ga-overview .ga-live{background:#F2F2F2!important;color:#262626!important;border-color:#D6D6D6!important;}
+#body.ga-overview .ga-live h2{color:#262626;text-align:right;}
+#body.ga-overview .ga-live .ga-live-metric{
+ min-width:0;align-items:stretch;background:#FFFFFF;border-color:#D6D6D6;
+}
+#body.ga-overview .ga-live .ga-live-metric span{
+ font-size:11px;line-height:1.6;text-align:right;color:#595959;
+ overflow-wrap:anywhere;
+}
+#body.ga-overview .ga-live .ga-live-metric strong{
+ text-align:right;color:#000000;direction:ltr;
+}
+#body.ga-overview .ga-live>p{color:#595959;text-align:right;line-height:1.8;}
+#body.ga-overview .ga-traffic-svg{max-width:100%;height:auto;}
+#body.ga-overview .ga-line-area{fill:#FDBE2D;fill-opacity:.18;}
+#body.ga-overview .ga-line-stroke.visits{stroke:#FDBE2D;}
+#body.ga-overview .ga-line-point.visits{fill:#FDBE2D;}
+#body.ga-overview .ga-line-stroke.users{stroke:#262626;}
+#body.ga-overview .ga-line-point.users{fill:#262626;}
+#body.ga-overview .ga-line-key.visits::before{background:#FDBE2D;}
+#body.ga-overview .ga-line-key.users::before{background:#262626;}
+#body.ga-overview .ga-primary-sources strong{color:#000000;}
+#body.ga-overview .ga-device-center{background:#FFFFFF;}
+#body.ga-overview .ga-device-center strong{color:#000000;}
+#body.ga-overview .ga-device-center span{color:#595959;}
+#body.ga-overview .ga-device-legend-row span,
+#body.ga-overview .ga-device-legend-row strong{color:#262626;}
+#body.ga-overview .ga-mini-bar-fill{background:#FDBE2D;}
+#body.ga-overview .ga-event-fill{background:#262626;}
+#body.ga-overview .ga-bar-first{background:#FDBE2D;}
+#body.ga-overview .ga-rank-hero{background:#F2F2F2;}
+#body.ga-overview .ga-top-source-card:first-child{background:#F2F2F2;}
+#body.ga-overview .ga-top-source-card>span{color:#262626;}
+#body.ga-overview .ga-top-source-volume em{color:#262626;background:transparent;}
+#body.ga-overview .ga-estimate-selected{background:#262626!important;border-color:#262626!important;}
+#body.ga-overview .ga-estimate-selected strong{color:#FDBE2D!important;}
+#body.ga-overview .ga-estimate-selected span,
+#body.ga-overview .ga-estimate-selected small{color:#F2F2F2!important;}
+#body.ga-overview .ga-estimate-calculated{
+ background:#F2F2F2;border-color:#D6D6D6;
+}
+#body.ga-overview .ga-estimate-calculated output{
+ background:#FFFFFF;color:#000000;border-color:#D6D6D6;
+}
+#body.ga-overview :is(.ga-chart-panel,.ga-top-three,.ga-stat,.ga-estimate-scenario) :is(h2,p,span,strong,small){
+ overflow-wrap:anywhere;
+}
+#body.ga-overview .ga-charts-grid>.ga-chart-panel{min-width:0;overflow:hidden;}
+#body.ga-overview .ga-overview-insights-row>.analytics-report{min-width:0;overflow:hidden;}
+#body.ga-overview .ga-bar-label,
+#body.ga-overview .ga-mini-bar-top{
+ display:flex;justify-content:space-between;align-items:center;
+ gap:9px;min-width:0;line-height:1.5;text-align:right;
+}
+#body.ga-overview .ga-bar-label span,
+#body.ga-overview .ga-mini-bar-top span{min-width:0;overflow-wrap:anywhere;}
+#body.ga-overview .ga-bar-label strong,
+#body.ga-overview .ga-mini-bar-top strong{
+ flex:none;white-space:nowrap;text-align:left;direction:ltr;
+}
+#body.ga-overview .ga-top-source-card{
+ display:grid;align-items:center;min-width:0;
+}
+#body.ga-overview .ga-top-source-card>strong{min-width:0;overflow-wrap:anywhere;}
+#body.ga-overview .ga-traffic-source-note{
+ color:#595959;line-height:1.8;text-align:right;
+}
+main:has(> #tabs:not(:empty)) #body .action-report-table{
+ width:100%;min-width:440px;table-layout:auto;
+}
+main:has(> #tabs:not(:empty)) #body .action-report-table :is(td,th){
+ text-align:right;vertical-align:middle;line-height:1.6;
+}
+main:has(> #tabs:not(:empty)) #body .account-card,
+main:has(> #tabs:not(:empty)) #body .inline-settings-form{
+ color:#262626;min-width:0;
+}
+main:has(> #tabs:not(:empty)) #body :is(.inline-settings-form,.account-card) label{
+ min-width:0;line-height:1.65;overflow-wrap:anywhere;
+}
+main:has(> #tabs:not(:empty)) #body .inline-settings-form :is(input,textarea,select){
+ min-width:0;max-width:100%;
+}
+main:has(> #tabs:not(:empty)) #body .account-card button,
+main:has(> #tabs:not(:empty)) #body .inline-settings-form>footer button{
+ background:#FDBE2D;color:#000000;
+}
+main:has(> #tabs:not(:empty)) #body .account-card button:hover,
+main:has(> #tabs:not(:empty)) #body .inline-settings-form>footer button:hover{
+ background:#FDBE2D;color:#000000;
+}
+@media(max-width:850px){
+ #tabs .admin-sidebar-profile{margin:0 0 0 5px;flex:none;}
+ #body.ga-overview .ga-hero-top{align-items:flex-start;}
+ #body.ga-overview .ga-primary-stat strong{font-size:clamp(22px,4.5vw,33px)!important;}
+}
+@media(max-width:520px){
+ #body.ga-overview .ga-hero-heading{width:100%;}
+ #body.ga-overview .ga-heading{width:100%;justify-content:flex-start;}
+ #body.ga-overview .ga-primary-stat{padding:13px!important;}
+ #body.ga-overview .ga-overview-insights-row>.analytics-report{min-height:auto;}
+ #body.ga-overview .ga-live .ga-live-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
