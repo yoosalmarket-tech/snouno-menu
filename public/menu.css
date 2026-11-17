@@ -1197,3 +1197,35 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
   transform-origin:left center;
  }
 }
+
+/* App installation affordance: subtle link underneath Browse, mobile only. */
+#install-snounu-app[hidden]{display:none!important;}
+#install-snounu-app{
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ min-height:25px;padding:2px 9px;margin:1px auto 0;
+ border:0;background:transparent;color:#201b10;
+ box-shadow:none;text-decoration:underline;text-underline-offset:3px;
+ font:750 12px/1.3 inherit;cursor:pointer;
+}
+#install-snounu-app svg{display:block;flex:none;width:15px;height:15px;}
+#install-snounu-app:focus-visible{outline:2px solid #000;outline-offset:2px;}
+#install-guide{
+ box-sizing:border-box;max-width:min(390px,calc(100vw - 28px));width:100%;
+ margin:auto;padding:25px 22px;
+ border:1px solid #FDBE2D;border-radius:20px;
+ background:#242424;color:#FFF;box-shadow:0 25px 70px #0009;
+ text-align:right;
+}
+#install-guide::backdrop{background:#0009;backdrop-filter:blur(3px);}
+#install-guide h2{margin:0 0 12px;font-size:22px;color:#FDBE2D;}
+#install-guide p{margin:0 0 22px;line-height:1.8;color:#F2F2F2;font-size:15px;}
+#install-guide-close{
+ display:block;width:100%;min-height:43px;padding:9px 16px;
+ background:#FDBE2D;color:#000;border:0;border-radius:12px;
+ font:850 15px/1.3 inherit;
+}
+@media(min-width:981px){#install-snounu-app{display:none!important;}}
+/* Completely disable the old whole-menu opacity transition: even 4%
+   transparency can expose the white shell as a visible flash. */
+#inside.menu-browsing-in{animation:none!important;opacity:1!important;}
+@keyframes snounu-menu-browse-appear{from{opacity:1;}to{opacity:1;}}
