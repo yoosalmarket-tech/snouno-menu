@@ -26,7 +26,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<span class="rm-rail-count" dir="ltr">1 / 1</span></aside>',
  '<section class="rm-info" aria-live="polite">',
  // Keep ORDER NOW anchored above the meal rating, outside swipe animation.
- '<button type="button" class="rm-customize" dir="rtl" aria-label="اطلب الآن"><span class="rm-order-ar" dir="rtl">اطلب الآن</span><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><strong class="rm-order-en" lang="en" dir="ltr">ORDER NOW</strong></button>',
+ '<div class="rm-order-wrap"><button type="button" class="rm-customize" dir="rtl" aria-label="اطلب الآن"><span class="rm-order-ar" dir="rtl">اطلب الآن</span><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><strong class="rm-order-en" lang="en" dir="ltr">ORDER NOW</strong></button></div>',
  '<span class="rm-info-rating" dir="ltr" hidden></span><h2 class="rm-info-name"></h2><p class="rm-info-desc"></p>',
  '<span class="rm-info-price" dir="ltr"></span><div class="rm-info-actions">',
  '<button type="button" class="rm-info-details">＋ عرض تفاصيل الوجبة</button>',
@@ -53,7 +53,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   thumbWindow:at(root,'.rm-rail-window'),thumbTrack:at(root,'.rm-rail-track'),
   labels:at(root,'.rm-rail-labels'),railCount:at(root,'.rm-rail-count'),
   railUp:at(root,'.rm-rail-up'),railDown:at(root,'.rm-rail-down'),
-  info:at(root,'.rm-info'),rating:at(root,'.rm-info-rating'),title:at(root,'.rm-info-name'),
+  info:at(root,'.rm-info'),orderWrap:at(root,'.rm-order-wrap'),rating:at(root,'.rm-info-rating'),title:at(root,'.rm-info-name'),
   desc:at(root,'.rm-info-desc'),price:at(root,'.rm-info-price'),
   details:at(root,'.rm-info-details'),share:at(root,'.rm-share'),fav:at(root,'.rm-info-fav'),
   customize:at(root,'.rm-customize'),sheet:at(root,'.rm-sheet'),
@@ -206,9 +206,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const next=clamp(index,0,g.items.length-1);
   if(next===front)return;
   front=next;info();
-  // Only the changing meal copy animates. Keep the contact and favorite
-  // buttons completely steady as users swipe between dishes.
-  for(const el of [u.rating,u.title,u.desc,u.price]){
+  // The order action follows the selected meal, rating, name and price.
+  // Contact and favorite controls stay steady during dish swipes.
+  for(const el of [u.orderWrap,u.rating,u.title,u.desc,u.price]){
    el.animate?.([{opacity:.75,transform:'translateY(10px)'},{opacity:1,transform:'none'}],{duration:230,easing:'cubic-bezier(.28,.8,.2,1)'});
   }
  }
@@ -265,7 +265,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   // Keep the name, rating and price steady while food bounces at an edge.
   const infoPosition=clamp(k,0,len-1);
   const fade=Math.min(1,Math.abs(infoPosition-Math.round(infoPosition))*2.6);
-  for(const el of [u.rating,u.title,u.desc,u.price]){
+  for(const el of [u.orderWrap,u.rating,u.title,u.desc,u.price]){
    el.style.opacity=(1-fade).toFixed(3);
    el.style.transform='translateY('+(fade*12).toFixed(1)+'px)';
   }
