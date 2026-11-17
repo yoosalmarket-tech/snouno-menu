@@ -717,6 +717,23 @@ async function renderGaOverview(days=28){
    live.append(node('p','تعذّر تحميل بيانات الوقت الفعلي حالياً. قد تكون خدمة GA4 Realtime غير متاحة مؤقتاً.'));
   }
   const pending=data.processedHasRows===false;
+  const hero=node('section');hero.id='ga-overview-hero';hero.className='ga-overview-hero';
+  const heroHeading=node('div');heroHeading.className='ga-hero-heading';
+  heroHeading.append(node('span','SNOUNU  /  MENU INTELLIGENCE'),node('h2','المنيو بالأرقام.'));
+  heroHeading.append(node('p','من الزيارة الأولى حتى إحالة الطلب — صورة أوضح عن أداء منيو سنونو.'));
+  const heroSnapshot=node('div');heroSnapshot.className='ga-hero-snapshot';
+  const snapshot=[
+   ['الزيارات',pending?'—':gaNumber(data.summary?.sessions)],
+   ['الزوار',pending?'—':gaNumber(data.summary?.totalUsers)],
+   ['نشطون الآن',realtime.available?gaNumber(realtime.activeUsers||0):'—']
+  ];
+  for(const [label,value] of snapshot){
+   const item=node('div');item.className='ga-hero-snapshot-item';
+   item.append(node('span',label),node('strong',value));heroSnapshot.append(item);
+  }
+  const heroTop=node('div');heroTop.className='ga-hero-top';
+  heroTop.append(heroHeading,heroSnapshot);
+  hero.append(heroTop,top);
   const pendingNote=pending?node('p','لم تتوفر بيانات مُعالجة للفترة المحددة بعد. الأحداث التي تصل إلى Realtime قد تحتاج 24–48 ساعة لتظهر في تقارير الزيارات والإحالات وقيمتها. الرموز (—) أدناه تعني أن البيانات لم تصل، وليست صفراً مؤكداً.'):null;
   if(pendingNote)pendingNote.className='ga-notice';
   const historyTitle=node('h2','التقارير التاريخية — آخر '+String(days)+' يوماً');
@@ -772,11 +789,13 @@ async function renderGaOverview(days=28){
     available:data.reportStatus?.platformRankingAvailable===true,kind:'platform'
    })
   );
-  const sources=gaRankGraph('أكثر مصادر الزيارات','عدد الجلسات حسب مصدر / وسيط الزيارة في GA4؛ يوضح من أين وصل الزائر إلى المنيو',data.trafficSources,{
+  const friendlySources=gaGroupedTrafficSources(data.trafficSources||[]);
+  const topSources=gaTopThreeSources(friendlySources,data.reportStatus?.trafficSourcesAvailable===true,data.summary?.sessions);
+  const sources=gaRankGraph('مصادر الزيارات بالتفصيل','المصادر المسجلة في GA4، بعد جمع الزيارات المتشابهة وتبسيط أسمائها',friendlySources,{
    available:data.reportStatus?.trafficSourcesAvailable===true,kind:'source',total:data.summary?.sessions
   });
   sources.id='ga-top-traffic-sources';
-  const sourceNote=node('p','المصدر (direct) / (none) يعني أن GA4 لا يملك مصدر إحالة واضحاً لهذه الزيارة؛ وليس بالضرورة أن الزائر كتب الرابط يدوياً.');
+  const sourceNote=node('p','QR scans لا تُحتسب إلا لروابط QR الموسومة في GA4. وDirect / Unknown تعني أن مصدر الزيارة غير معروف. تسمية Instagram Feeds للتبسيط ولا تثبت مكان ظهور الرابط داخل إنستغرام.');
   sourceNote.className='ga-traffic-source-note';sources.append(sourceNote);
   const trend=gaDailyLineChart(data.daily||[]);
   const eventsGraph=gaEventsGraph(data.eventCounts||{});
@@ -784,7 +803,8 @@ async function renderGaOverview(days=28){
   foot.className='ga-footnote';
   const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
   if(notes)notes.className='ga-notice';
-  area.replaceChildren(top,live,...(pendingNote?[pendingNote]:[]),historyTitle,estimate,sources,ranks,trend,metrics,eventsGraph,refTable,eventsTable,foot,...(notes?[notes]:[]));
+  area.classList.add('ga-overview');
+  area.replaceChildren(hero,topSources,live,...(pendingNote?[pendingNote]:[]),historyTitle,estimate,ranks,trend,metrics,eventsGraph,refTable,eventsTable,sources,foot,...(notes?[notes]:[]));
  }catch(error){
   if(ticket===generation){status.textContent='حدث خطأ أثناء قراءة GA4. '+(error?.message||'');status.className='ga-notice';}
  }
@@ -840,6 +860,7 @@ async function openSection(key){
  if(['menu_staff','account','events','overview'].includes(key)&&role!=='owner'){
   notice('هذه الصفحة متاحة للمالك فقط');return;
  }
+ $('body').classList.toggle('ga-overview',key==='overview');
  const sameSection=section===key;
  const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0];
  for(const b of $('tabs').children)b.setAttribute('aria-current',String(b.dataset.section===key));
