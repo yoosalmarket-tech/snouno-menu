@@ -57,6 +57,7 @@ function registerReferralSession(firstReferral=false){
 }
 function trackMenuAction(action,target,mealId){
  const meal=dishes.find(d=>d.id===mealId);
+ if(action!=='order_platform_click')registerReferralSession();
  if(action==='order_platform_click'){
   const platform=target?.dataset.platform||target?.dataset.channel;
   if(['utlob','sonbol','makook'].includes(platform)){
@@ -75,7 +76,6 @@ function trackMenuAction(action,target,mealId){
    }
   }
  }else if(action==='favorite_toggle'&&meal){
-  registerReferralSession();
   if(!favorites.has(meal.id))trackMealEvent('add_to_wishlist',meal);
  }else if(action==='share_meal_click'&&meal){
   trackMealEvent('meal_share_click',meal);
