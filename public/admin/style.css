@@ -2188,13 +2188,14 @@ dialog[open]::backdrop{
  #body,#body *,dialog,dialog::backdrop,dialog *{
   animation:none!important;
   transition:none!important;
-  transform:none;
  }
- /* Mobile drawer has its own stateful transform and should still open. */
- @media(max-width:850px){
-  main:has(> #tabs:not(:empty)) > nav#tabs,
-  main:has(#body.ga-overview) > nav#tabs{transform:translateX(105%)!important;}
-  body.admin-mobile-open main:has(> #tabs:not(:empty)) > nav#tabs,
-  body.admin-mobile-open main:has(#body.ga-overview) > nav#tabs{transform:translateX(0)!important;}
- }
+ /* The chart line must stay visible when the draw animation is disabled. */
+ #body.ga-overview .ga-traffic-svg .ga-line-stroke{stroke-dashoffset:0!important;}
+}
+@media(max-width:850px) and (prefers-reduced-motion:reduce){
+ /* Preserve hamburger open/closed state without an animated slide. */
+ main:has(> #tabs:not(:empty)) > nav#tabs,
+ main:has(#body.ga-overview) > nav#tabs{transform:translateX(105%)!important;}
+ body.admin-mobile-open main:has(> #tabs:not(:empty)) > nav#tabs,
+ body.admin-mobile-open main:has(#body.ga-overview) > nav#tabs{transform:translateX(0)!important;}
 }
