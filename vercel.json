@@ -18,6 +18,50 @@
   ],
   "rewrites": [
     {
+      "source": "/admin/overview",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/dishes",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/categories",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/restaurant",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/links",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/ads",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/ratings",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/analytics",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/messages",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/staff",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/account",
+      "destination": "/admin/index.html"
+    },
+    {
       "source": "/welcome",
       "destination": "/index.html"
     },
