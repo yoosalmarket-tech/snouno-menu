@@ -902,7 +902,7 @@ async function renderGaOverview(days=28){
   const heroHeading=node('div');heroHeading.className='ga-hero-heading';
   const greeting=new Date().getHours()<12?'صباح الخير':'مساء الخير';
   const greetingTitle=node('h2');greetingTitle.append(node('span',greeting+'، '),node('em','مدير الموقع'));
-  heroHeading.append(node('span','لوحة التحكم  /  ملخص الأداء'),greetingTitle);
+  heroHeading.append(greetingTitle);
   heroHeading.append(node('p','الزيارات والإحالات وأداء المنيو خلال الفترة المختارة حسب GA4.'));
   const heroTop=node('div');heroTop.className='ga-hero-top';
   heroTop.append(heroHeading,top);
