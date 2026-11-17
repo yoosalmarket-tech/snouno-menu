@@ -408,3 +408,9 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
 #body .ga-line-point.users{fill:#777f83;stroke:#fff;stroke-width:1;}
 @media(max-width:800px){#body .ga-charts-grid{grid-template-columns:1fr;}}
 @media(max-width:460px){#body .ga-chart-panel{padding:14px;}#body .ga-chart-heading h2{font-size:17px;}#body .ga-traffic-svg{min-height:150px;}#body .ga-charts-grid{gap:10px;}}
+
+/* Acquisition: most-visited sources by GA4 session source/medium. */
+#body #ga-top-traffic-sources{margin:0 0 16px;border:1px solid #e4decf;background:#fff;}
+#body #ga-top-traffic-sources .ga-rank-hero{max-width:none;min-height:100px;}
+#body #ga-top-traffic-sources .ga-horizontal-bars{gap:13px;}
+#body .ga-traffic-source-note{color:#766f61;font-size:12px;line-height:1.7;margin:15px 0 0;}
