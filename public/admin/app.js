@@ -449,6 +449,31 @@ async function renderGaOverview(days=28){
     :'تعذر جلب بيانات GA4. تأكد من صلاحية حساب الخدمة، رقم الخاصية، وإعدادات الاتصال.';
    status.textContent=msg;status.className='ga-notice';return;
   }
+  const realtime=data.realtime||{};
+  const live=node('section');live.id='ga-realtime';live.className='analytics-report ga-live';
+  live.append(node('h2','نشاط آخر 30 دقيقة (مباشر)'));
+  if(realtime.available){
+   const liveMetrics=node('div');liveMetrics.className='ga-live-metrics';
+   const liveCards=[
+    ['المستخدمون النشطون',realtime.activeUsers],
+    ['مشاهدات الصفحة',realtime.eventCounts?.page_view],
+    ['نقرات التوصيل',realtime.eventCounts?.delivery_app_click],
+    ['الإحالات الأولى',realtime.eventCounts?.delivery_referral_unique]
+   ];
+   for(const [label,value] of liveCards){
+    const card=node('div');card.className='ga-live-metric';
+    card.append(node('span',label),node('strong',gaNumber(value||0)));liveMetrics.append(card);
+   }
+   live.append(liveMetrics);
+   live.append(node('p','هذه أرقام آخر 30 دقيقة فقط؛ لا تمثل إجمالي الزيارات أو قيمة الإحالات للفترة المختارة.'));
+  }else{
+   live.append(node('p','تعذّر تحميل بيانات الوقت الفعلي حالياً. قد تكون خدمة GA4 Realtime غير متاحة مؤقتاً.'));
+  }
+  const pending=data.processedHasRows===false;
+  const pendingNote=pending?node('p','لم تتوفر بيانات مُعالجة للفترة المحددة بعد. الأحداث التي تصل إلى Realtime قد تحتاج 24–48 ساعة لتظهر في تقارير الزيارات والإحالات وقيمتها. الرموز (—) أدناه تعني أن البيانات لم تصل، وليست صفراً مؤكداً.'):null;
+  if(pendingNote)pendingNote.className='ga-notice';
+  const historyTitle=node('h2','التقارير التاريخية — آخر '+String(days)+' يوماً');
+  historyTitle.className='ga-history-title';
   const metrics=node('section');metrics.id='ga-summary-cards';metrics.className='ga-stats-grid';
   const cards=[
    ['الزيارات (Sessions)',gaNumber(data.summary.sessions),'عدد الجلسات، وليس عدد الأشخاص'],
@@ -461,6 +486,10 @@ async function renderGaOverview(days=28){
    ['إحالات التوصيل الفريدة',gaNumber(data.eventCounts?.delivery_referral_unique?.count),'أول إحالة من كل نافذة جلسة في المنيو'],
    ['قيمة الإحالات',data.warning?.some(t=>t.includes('Referral breakdown'))?'—':gaMoney(data.totals?.referralValue),'قيمة سعر الطبق، وليست إيرادات مبيعات مثبتة']
   ];
+  if(pending)for(const card of cards){
+   card[1]='—';
+   card[2]='التقرير التاريخي لم يُعالج بعد';
+  }
   for(const [name,value,detail] of cards){
    const card=node('article');card.className='ga-stat';
    card.append(node('span',name),node('strong',value),node('small',detail));metrics.append(card);
@@ -503,7 +532,7 @@ async function renderGaOverview(days=28){
   foot.className='ga-footnote';
   const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
   if(notes)notes.className='ga-notice';
-  area.replaceChildren(top,metrics,trend,refTable,eventsTable,foot,...(notes?[notes]:[]));
+  area.replaceChildren(top,live,...(pendingNote?[pendingNote]:[]),historyTitle,metrics,trend,refTable,eventsTable,foot,...(notes?[notes]:[]));
  }catch(error){
   if(ticket===generation){status.textContent='حدث خطأ أثناء قراءة GA4. '+(error?.message||'');status.className='ga-notice';}
  }
