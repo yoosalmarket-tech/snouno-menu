@@ -89,22 +89,45 @@ export default async function handler(req,res){
     const token=await googleToken(account);
     const base={dateRanges:[range]};
     const isReferral={filter:{fieldName:'eventName',stringFilter:{matchType:'EXACT',value:'delivery_referral_unique'}}};
-    const [summaryResult,eventsResult,referralsResult,dailyResult,liveUsersResult,liveEventsResult]=await Promise.allSettled([
-      gaReport(token,{...base,metrics:['sessions','totalUsers','activeUsers','newUsers','screenPageViews','keyEvents','engagedSessions'].map(name=>({name}))}),
-      gaReport(token,{...base,dimensions:[{name:'eventName'}],metrics:[{name:'eventCount'},{name:'keyEvents'}],limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
-      gaReport(token,{...base,dimensions:[{name:'customEvent:meal_name'},{name:'customEvent:delivery_platform'}],metrics:[{name:'eventCount'},{name:'customEvent:referral_value'}],dimensionFilter:isReferral,limit:'200',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
-      gaReport(token,{...base,dimensions:[{name:'date'}],metrics:[{name:'sessions'},{name:'totalUsers'}],limit:'100',orderBys:[{dimension:{dimensionName:'date'}}]}),
-      gaRealtimeReport(token,{metrics:[{name:'activeUsers'}]}),
-      gaRealtimeReport(token,{dimensions:[{name:'eventName'}],metrics:[{name:'eventCount'}],limit:'100'})
+    // Independent GA4 queries let rankings work even if the newer monetary
+    // custom metric has not been processed yet.
+    const dims=(...names)=>names.map(name=>({name}));
+    const [summaryResult,eventsResult,referralsResult,mealRanksResult,platformRanksResult,valueResult,dailyResult,liveUsersResult,liveEventsResult]=await Promise.allSettled([
+      gaReport(token,{...base,metrics:dims('sessions','totalUsers','activeUsers','newUsers','screenPageViews','keyEvents','engagedSessions')}),
+      gaReport(token,{...base,dimensions:dims('eventName'),metrics:dims('eventCount','keyEvents'),limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
+      gaReport(token,{...base,dimensions:dims('customEvent:meal_name','customEvent:delivery_platform'),metrics:dims('eventCount'),dimensionFilter:isReferral,limit:'250',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
+      gaReport(token,{...base,dimensions:dims('customEvent:meal_name'),metrics:dims('eventCount'),dimensionFilter:isReferral,limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
+      gaReport(token,{...base,dimensions:dims('customEvent:delivery_platform'),metrics:dims('eventCount'),dimensionFilter:isReferral,limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
+      gaReport(token,{...base,dimensions:dims('customEvent:meal_name','customEvent:delivery_platform'),metrics:dims('customEvent:referral_value'),dimensionFilter:isReferral,limit:'250'}),
+      gaReport(token,{...base,dimensions:dims('date'),metrics:dims('sessions','totalUsers'),limit:'100',orderBys:[{dimension:{dimensionName:'date'}}]}),
+      gaRealtimeReport(token,{metrics:dims('activeUsers')}),
+      gaRealtimeReport(token,{dimensions:dims('eventName'),metrics:dims('eventCount'),limit:'100'})
     ]);
     if(summaryResult.status!=='fulfilled')throw summaryResult.reason;
     const metrics=rows(summaryResult.value)[0]?.metrics||[];
     const eventRows=eventsResult.status==='fulfilled'?rows(eventsResult.value):[];
-    const referralRows=referralsResult.status==='fulfilled'?rows(referralsResult.value):[];
     const eventCounts=Object.fromEntries(eventRows.filter(r=>EVENTS.includes(r.dimensions[0])).map(r=>[r.dimensions[0],{count:r.metrics[0],keyEvents:r.metrics[1]}]));
+    const validName=s=>s&&!['(not set)','(other)','—',''].includes(s);
+    const makeRanks=result=>result.status==='fulfilled'
+      ?rows(result.value).filter(r=>validName(r.dimensions[0])&&r.metrics[0]>0)
+        .map(r=>({name:r.dimensions[0],count:r.metrics[0]})).sort((a,b)=>b.count-a.count)
+      :[];
+    const topMeals=makeRanks(mealRanksResult), topPlatforms=makeRanks(platformRanksResult);
+    const valueAvailable=valueResult.status==='fulfilled'&&rows(valueResult.value).length>0;
+    const monetaryRows=valueAvailable?rows(valueResult.value):[];
+    const moneyByPair=new Map(monetaryRows.map(r=>[JSON.stringify(r.dimensions),r.metrics[0]]));
+    const referrals=referralsResult.status==='fulfilled'
+      ?rows(referralsResult.value).filter(r=>r.metrics[0]>0).map(r=>({
+        meal:r.dimensions[0]||'—',platform:r.dimensions[1]||'—',count:r.metrics[0],
+        value:valueAvailable?(moneyByPair.get(JSON.stringify(r.dimensions))??null):null
+      }))
+      :[];
     const warning=[];
     if(eventsResult.status==='rejected')warning.push('Event breakdown is temporarily unavailable');
-    if(referralsResult.status==='rejected')warning.push('Referral breakdown is awaiting GA4 custom-dimension/metric availability or access');
+    if(referralsResult.status==='rejected')warning.push('Referral pair breakdown is awaiting GA4 custom-dimension availability');
+    if(mealRanksResult.status==='rejected')warning.push('Meal ranking is awaiting GA4 custom-dimension availability');
+    if(platformRanksResult.status==='rejected')warning.push('Delivery platform ranking is awaiting GA4 custom-dimension availability');
+    if(valueResult.status==='rejected')warning.push('Referral value is awaiting GA4 custom-metric availability');
     if(dailyResult.status==='rejected')warning.push('Daily trend is temporarily unavailable');
     if(liveUsersResult.status==='rejected'||liveEventsResult.status==='rejected')warning.push('Realtime activity is temporarily unavailable');
     const realtimeEvents=liveEventsResult.status==='fulfilled'?Object.fromEntries(rows(liveEventsResult.value).map(r=>[r.dimensions[0],r.metrics[0]])):{};
@@ -113,13 +136,21 @@ export default async function handler(req,res){
       activeUsers:liveUsersResult.status==='fulfilled'?(rows(liveUsersResult.value)[0]?.metrics[0]||0):null,
       eventCounts:realtimeEvents
     };
-    const referrals=referralRows.map(r=>({meal:r.dimensions[0]||'—',platform:r.dimensions[1]||'—',count:r.metrics[0],value:r.metrics[1]}));
+    const processedHasRows=(summaryResult.value?.rows||[]).length>0;
     return json(res,200,{
       source:'Google Analytics 4',propertyId:PROPERTY_ID,days,asOf:new Date().toISOString(),
-      realtime,processedHasRows:(summaryResult.value?.rows||[]).length>0,
+      realtime,processedHasRows,
       summary:{sessions:metrics[0]||0,totalUsers:metrics[1]||0,activeUsers:metrics[2]||0,newUsers:metrics[3]||0,views:metrics[4]||0,keyEvents:metrics[5]||0,engagedSessions:metrics[6]||0},
-      eventCounts,referrals,
-      totals:{uniqueReferrals:referrals.reduce((n,r)=>n+r.count,0),referralValue:referrals.reduce((n,r)=>n+r.value,0)},
+      eventCounts,referrals,topMeals,topPlatforms,
+      reportStatus:{
+        rankingsAvailable:mealRanksResult.status==='fulfilled'||platformRanksResult.status==='fulfilled',
+        referralDetailsAvailable:referralsResult.status==='fulfilled',
+        referralValueAvailable:valueAvailable
+      },
+      totals:{
+        uniqueReferrals:eventCounts.delivery_referral_unique?.count??null,
+        referralValue:valueAvailable?monetaryRows.reduce((n,r)=>n+r.metrics[0],0):null
+      },
       daily:dailyResult.status==='fulfilled'?rows(dailyResult.value).map(r=>({date:r.dimensions[0],sessions:r.metrics[0],users:r.metrics[1]})):[],
       warning
     });
