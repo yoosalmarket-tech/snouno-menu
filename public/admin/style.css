@@ -341,3 +341,23 @@ label small{color:#676454;font-size:12px;font-weight:400}input[readonly]{backgro
 #body .action-report-table th{background:#f8e8ba;color:#302713;white-space:nowrap;}
 #body .action-report-table tbody tr:last-child td{border-bottom:0;}
 #body .action-report-table a{color:#816012;text-decoration:underline;font-weight:800;}
+
+/* Owner-only GA4 overview. All numbers come from the authenticated API response. */
+#body .ga-heading{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 16px;}
+#body .ga-heading p{flex:1 1 270px;margin:0;color:#615b4f;font-size:14px;}
+#body .ga-heading select{width:auto;min-width:145px;}
+#body .ga-heading button{white-space:nowrap;}
+#body .ga-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;}
+#body .ga-stat{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-height:138px;margin:0;background:#fff;border:1px solid #e4decf;border-radius:17px;padding:18px;}
+#body .ga-stat span{font-size:14px;color:#605a50;}
+#body .ga-stat strong{font:800 clamp(23px,3vw,34px)/1.2 system-ui,sans-serif;direction:ltr;text-align:right;color:#26221b;}
+#body .ga-stat small{color:#726c60;font-size:12px;line-height:1.5;}
+#body .ga-table{overflow-x:auto;}
+#body .ga-table .action-report-table{width:100%;min-width:430px;}
+#body .ga-notice{background:#fff5d8;color:#5f4815;border:1px solid #f4d98c;border-radius:12px;padding:13px 16px;font-size:14px;line-height:1.7;}
+#body .ga-footnote{font-size:12px;color:#6e675a;margin:9px 3px 20px;}
+#body .ga-trend-bars{height:142px;display:flex;gap:4px;align-items:stretch;direction:ltr;border-bottom:1px solid #d8ceba;margin:24px 0 12px;}
+#body .ga-trend-day{flex:1;display:flex;min-width:4px;flex-direction:column;justify-content:flex-end;}
+#body .ga-trend-bar{width:100%;min-height:3px;background:#FDBE2D;border-radius:5px 5px 0 0;}
+@media(max-width:700px){#body .ga-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}#body .ga-stat{min-height:125px;padding:13px;}#body .ga-stat strong{font-size:23px;}#body .ga-trend-bars{gap:2px;}}
+@media(max-width:400px){#body .ga-stats-grid{grid-template-columns:1fr;}#body .ga-heading select{flex:1;}}
