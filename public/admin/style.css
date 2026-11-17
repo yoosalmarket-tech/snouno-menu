@@ -1353,7 +1353,7 @@ main:has(> #tabs:not(:empty)) > .workspace>h1{
  margin:16px auto 10px;
 }
 #body.ga-overview .ga-device-center{
- position:absolute;inset:23%;
+ position:absolute;inset:14%;
  background:#FFFFFF;border-radius:50%;display:flex;
  flex-direction:column;align-items:center;justify-content:center;
  gap:2px;text-align:center;
