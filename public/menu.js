@@ -786,13 +786,14 @@ let previousY=0;
    }
    previousY=y;
  },{passive:true});
-// Start the welcome's fade as soon as Browse Menu is clicked, instead of
-// switching routes first. All other navigation keeps its original behavior.
+// Welcome -> menu is immediate. Never hide welcome before its destination
+// exists: sequential opacity fades previously exposed a blank pale background.
 let browseFadeTimer=0;
 const cancelBrowseFade=()=>{
  if(browseFadeTimer)clearTimeout(browseFadeTimer);
  browseFadeTimer=0;
  $('welcome').classList.remove('welcome-browsing-out');
+ $('inside').classList.remove('menu-browsing-in');
 };
 window.addEventListener('popstate',()=>{cancelBrowseFade();route();});
 window.addEventListener('hashchange',()=>{cancelBrowseFade();route();});
@@ -810,20 +811,15 @@ document.addEventListener('click',event=>{
  if(destination==='menu'&&currentPage()==='welcome'&&!isPreview&&
     (link.id==='browse'||link.id==='desktop-welcome-browse')){
   if(browseFadeTimer)return;
-  // Prevent the morphing loader/logo from outliving the welcome page.
+  // Cancel the logo morph and switch routes in the SAME event. No white
+  // interstitial frame and no second opacity fade after the menu appears.
   cancelWelcomeReveal();
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches){navigate();return;}
-  // The visual fade starts now. Navigation follows its 220ms exit.
-  $('welcome').classList.add('welcome-browsing-out');
-  browseFadeTimer=setTimeout(()=>{
-   browseFadeTimer=0;
-   if(currentPage()==='welcome'){
-    $('inside').classList.add('menu-browsing-in');
-    navigate();
-    setTimeout(()=>$('inside').classList.remove('menu-browsing-in'),230);
-   }
-   $('welcome').classList.remove('welcome-browsing-out');
-  },220);
+  cancelBrowseFade();
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+   $('inside').classList.add('menu-browsing-in');
+  }
+  navigate();
+  browseFadeTimer=setTimeout(cancelBrowseFade,260);
   return;
  }
  cancelBrowseFade();
