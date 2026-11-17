@@ -1,6 +1,6 @@
 /* Snounu installable menu. Network-first shell, no caching user actions,
    authentication, delivery referral tracking, or API responses. */
-const CACHE='snounu-menu-shell-v1';
+const CACHE='snounu-menu-shell-v2';
 const CORE=['/welcome','/assets/snounu-icon.png','/assets/logo.webp'];
 const PUBLIC_ROUTES=new Set(['/','/welcome','/menu','/contact']);
 const ASSET_PATHS=new Set([
@@ -32,7 +32,10 @@ self.addEventListener('fetch',event=>{
   const cache=await caches.open(CACHE);
   try{
    const response=await fetch(request);
-   if(response.ok&&response.type==='basic')await cache.put(request,response.clone());
+   if(response.ok&&response.type==='basic'){
+    // Do not hold a live menu request while writing its offline cache.
+    event.waitUntil(cache.put(request,response.clone()).catch(()=>{}));
+   }
    return response;
   }catch(error){
    // Offline is best-effort; live menu data and ordering still need internet.
