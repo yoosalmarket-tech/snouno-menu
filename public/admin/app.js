@@ -82,18 +82,69 @@ async function api(path, options={}) {
   }
   return request(path,{...options,token:session.access_token});
 }
-function loggedOut(){ generation++; role=null; $('body').classList.remove('ga-overview'); $('login').hidden=false; $('logout').hidden=true; $('tabs').replaceChildren(); $('body').replaceChildren(); $('title').textContent='تسجيل الدخول'; }
+function loggedOut(){ generation++; role=null; $('body').classList.remove('ga-overview'); $('login').hidden=false; $('tabs').replaceChildren(); $('body').replaceChildren(); $('title').textContent='تسجيل الدخول'; }
+function adminSidebarIcon(key){
+ const icons={
+  overview:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  dishes:'<path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="1"/><circle cx="7" cy="12" r="1"/><circle cx="7" cy="18" r="1"/>',
+  categories:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  menu_settings:'<path d="M4 7h16M7 7V4m0 6V7M4 17h16m-5-3v6"/><circle cx="7" cy="7" r="2"/><circle cx="15" cy="17" r="2"/>',
+  menu_links:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-2 2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l2-2"/>',
+  menu_ads:'<path d="M3 11h5l10-5v12L8 13H3zM8 13l2 7h4M20 9v6"/>',
+  rankings:'<path d="M4 21V11m6 10V5m6 16v-8m5 8H2"/><path d="m3 7 4-4 4 3 4-3"/>',
+  events:'<path d="M3 4h18v16H3zM3 9h18"/><path d="M7 13h4m-4 4h8"/>',
+  submissions:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  menu_staff:'<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M2 20c0-5 3-7 6-7s6 2 6 7M15 14c3 0 6 2 6 6"/>',
+  account:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'
+ };
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('width','19');svg.setAttribute('height','19');
+ svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.7');
+ svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');
+ svg.classList.add('admin-nav-icon');
+ svg.innerHTML=icons[key]||icons.overview;
+ return svg;
+}
+function buildAdminSidebar(email){
+ const tabs=$('tabs');tabs.replaceChildren();
+ const brand=node('a');brand.className='admin-sidebar-brand';brand.href='/menu';brand.target='_blank';brand.rel='noopener noreferrer';
+ const brandLogo=node('img');brandLogo.src='/assets/snounu-icon.png';brandLogo.alt='';brandLogo.width=43;brandLogo.height=43;
+ const brandText=node('span');brandText.className='admin-brand-text';
+ brandText.append(node('strong','سنونو'),node('small','لوحة تحكم المنيو'));
+ brand.append(brandLogo,brandText);tabs.append(brand);
+ const links=node('div');links.className='admin-sidebar-links';links.id='admin-sidebar-links';
+ let prevGroup='';
+ const groups={
+  overview:'نظرة عامة',dishes:'محتوى المنيو',categories:'محتوى المنيو',
+  menu_settings:'محتوى المنيو',menu_links:'محتوى المنيو',menu_ads:'محتوى المنيو',
+  rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
+  menu_staff:'إدارة الحساب',account:'إدارة الحساب'
+ };
+ for(const [key,[label]] of Object.entries(sections)){
+  if(['menu_staff','account','events','overview'].includes(key)&&role!=='owner')continue;
+  const group=groups[key]||'المزيد';
+  if(group!==prevGroup){const groupLabel=node('span',group);groupLabel.className='admin-sidebar-group';links.append(groupLabel);prevGroup=group;}
+  const btn=action('',()=>openSection(key));btn.id='admin-tab-'+key;btn.dataset.section=key;btn.className='admin-nav-button';
+  btn.append(adminSidebarIcon(key),node('span',label));links.append(btn);
+ }
+ tabs.append(links);
+ const profile=node('div');profile.className='admin-sidebar-profile';
+ const avatar=node('span',role==='owner'?'م':'ف');avatar.className='admin-profile-avatar';
+ const info=node('span');info.className='admin-profile-info';
+ info.append(node('strong',role==='owner'?'مدير الموقع':'فريق المطعم'),node('small',String(email||'')));
+ const logout=action('↪',async()=>{try{await api('/auth/v1/logout',{method:'POST'});}finally{persist(null);loggedOut();notice('تم تسجيل الخروج');}});
+ logout.id='logout';logout.className='admin-profile-logout';logout.title='تسجيل الخروج';logout.setAttribute('aria-label','تسجيل الخروج');
+ profile.append(avatar,info,logout);tabs.append(profile);
+}
+
 async function enter(){
   const user=await api('/auth/v1/user');
   if(!user?.email)throw new Error('تعذّر التحقق من الحساب');
   session.user=user;persist(session);
   const own=await api('/rest/v1/menu_staff?select=role&email=eq.'+encodeURIComponent(user.email.toLowerCase()));
   if(!own.length) throw new Error('لا توجد صلاحية لهذا الحساب');
-  role=own[0].role; $('login').hidden=true; $('logout').hidden=false; $('tabs').replaceChildren();
-  for(const [key,[label]] of Object.entries(sections)){
-    if(['menu_staff','account','events','overview'].includes(key)&&role!=='owner') continue;
-    const b=action(label,()=>openSection(key)); b.dataset.section=key;b.id='admin-tab-'+key; $('tabs').append(b);
-  }
+  role=own[0].role; $('login').hidden=true;
+  buildAdminSidebar(user.email);
   const saved=location.hash.slice(1);
   await openSection(Object.hasOwn(sections,saved)&&(!['menu_staff','account','events','overview'].includes(saved)||role==='owner')?saved:(role==='owner'?'overview':'dishes'));
 }
@@ -110,7 +161,7 @@ $('access').onsubmit=async e=>{
   await enter();
  }catch(err){persist(null);loggedOut();notice(err.message);}
 };
-$('logout').onclick=async()=>{try{await api('/auth/v1/logout',{method:'POST'});} finally {persist(null);loggedOut();notice('تم تسجيل الخروج');}};
+
 /* Drag handles preserve category membership while updating real menu order.
    Mouse, touch, pen, and keyboard are supported. */
 /* Drag-to-reorder with a stable drag source: do not move a captured
@@ -864,7 +915,7 @@ async function openSection(key){
  $('body').classList.toggle('ga-overview',key==='overview');
  const sameSection=section===key;
  const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0];
- for(const b of $('tabs').children)b.setAttribute('aria-current',String(b.dataset.section===key));
+ for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='account'){await renderOwnerAccount();return;}
  if(key==='overview'){await renderGaOverview();return;}
   if(key==='events'){await renderActionReports();return;}
