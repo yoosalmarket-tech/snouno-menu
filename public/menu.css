@@ -1229,3 +1229,13 @@ html body.rich-menu-active:not([data-preview]) #menu>#rich-menu{
    transparency can expose the white shell as a visible flash. */
 #inside.menu-browsing-in{animation:none!important;opacity:1!important;}
 @keyframes snounu-menu-browse-appear{from{opacity:1;}to{opacity:1;}}
+
+/* Interactive-mode shell must be dark during module initialization too:
+   desktop previously exposed the light standard-menu shell for a frame. */
+body.rich-menu-active:not([data-preview]),
+body.rich-menu-active:not([data-preview]) #shell,
+body.rich-menu-active:not([data-preview]) #inside,
+body.rich-menu-active:not([data-preview]) #menu,
+body.rich-menu-active:not([data-preview]) #rich-menu{
+ background-color:#242329!important;
+}
