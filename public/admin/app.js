@@ -3,6 +3,7 @@ const endpoint = 'https://wknpuzdyemwkllmxehyy.supabase.co';
 const apiKey = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const $ = id => document.getElementById(id);
 const sections = {
+  overview: ['اللوحة الرئيسية', []],
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['makook_url','رابط الوجبة المباشر من مكوك (اختياري)','url'],['utlob_url','رابط الوجبة المباشر من تطبيق اطلب (اختياري)','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
   menu_settings: ['مطعم السنونو', [
@@ -90,11 +91,11 @@ async function enter(){
   if(!own.length) throw new Error('لا توجد صلاحية لهذا الحساب');
   role=own[0].role; $('login').hidden=true; $('logout').hidden=false; $('tabs').replaceChildren();
   for(const [key,[label]] of Object.entries(sections)){
-    if(['menu_staff','account','events'].includes(key)&&role!=='owner') continue;
+    if(['menu_staff','account','events','overview'].includes(key)&&role!=='owner') continue;
     const b=action(label,()=>openSection(key)); b.dataset.section=key;b.id='admin-tab-'+key; $('tabs').append(b);
   }
   const saved=location.hash.slice(1);
-  await openSection(Object.hasOwn(sections,saved)&&(!['menu_staff','account','events'].includes(saved)||role==='owner')?saved:'dishes');
+  await openSection(Object.hasOwn(sections,saved)&&(!['menu_staff','account','events','overview'].includes(saved)||role==='owner')?saved:(role==='owner'?'overview':'dishes'));
 }
 $('remember-me').checked=rememberMe;
 $('access').onsubmit=async e=>{
@@ -409,6 +410,105 @@ function setupUnusedUploadCleanup(box){
  });
  cleanup.form.append(scan);
 }
+
+const gaEventLabels={
+ 'page_view':'مشاهدات الصفحات','view_item':'عرض تفاصيل طبق',
+ 'delivery_app_click':'نقرات تطبيقات التوصيل',
+ 'delivery_referral_unique':'الإحالات الفريدة',
+ 'add_to_wishlist':'إضافة إلى المفضلة',
+ 'meal_share_click':'مشاركة طبق','scroll':'التمرير في المنيو'
+};
+function gaNumber(number){return Number(number||0).toLocaleString('en-US',{maximumFractionDigits:0});}
+function gaMoney(number){return Number(number||0).toLocaleString('en-US',{maximumFractionDigits:2})+' ₪';}
+async function renderGaOverview(days=28){
+ const area=$('body'),ticket=generation;
+ const top=node('div');top.className='ga-heading';
+ const description=node('p','إحصائيات مباشرة من تقارير Google Analytics 4 (قد يتأخر تحديث البيانات).');
+ const interval=node('select');interval.id='ga-date-range';interval.setAttribute('aria-label','الفترة الزمنية');
+ for(const [count,label] of [[7,'آخر 7 أيام'],[28,'آخر 28 يوماً'],[90,'آخر 90 يوماً']]){
+  const option=node('option',label);option.value=String(count);interval.append(option);
+ }
+ interval.value=String(days);
+ interval.onchange=()=>renderGaOverview(Number(interval.value));
+ const refresh=action('تحديث',()=>renderGaOverview(Number(interval.value)));
+ refresh.id='ga-refresh';refresh.dataset.trackAction='ga_overview_refresh';
+ top.append(description,interval,refresh);
+ const status=node('p','جارٍ تحميل الإحصائيات من GA4…');status.id='ga-loading';
+ area.replaceChildren(top,status);
+ try{
+  // Use the same authenticated session as the menu admin; no GA credentials in the browser.
+  if(session?.expires_at*1000<Date.now()+60000)await api('/auth/v1/user');
+  const response=await fetch('/api/ga4?days='+encodeURIComponent(days),{
+   headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'
+  });
+  const data=await response.json();
+  if(ticket!==generation)return;
+  if(!response.ok){
+   const msg=data.error==='not_configured'
+    ?'الاتصال بـ GA4 لم يكتمل بعد. يجب تفعيل Google Analytics Data API وإضافة حساب خدمة Google بصلاحية Viewer، ثم ضبط GA4_SERVICE_ACCOUNT_JSON في إعدادات Vercel وإعادة النشر.'
+    :'تعذر جلب بيانات GA4. تأكد من صلاحية حساب الخدمة، رقم الخاصية، وإعدادات الاتصال.';
+   status.textContent=msg;status.className='ga-notice';return;
+  }
+  const metrics=node('section');metrics.id='ga-summary-cards';metrics.className='ga-stats-grid';
+  const cards=[
+   ['الزيارات (Sessions)',gaNumber(data.summary.sessions),'عدد الجلسات، وليس عدد الأشخاص'],
+   ['الزوار الفريدون',gaNumber(data.summary.totalUsers),'مستخدمون مميزون ضمن الفترة المحددة'],
+   ['الزوار الجدد',gaNumber(data.summary.newUsers),'أول زيارة مقاسة'],
+   ['مشاهدات الصفحات',gaNumber(data.summary.views),'تشمل المشاهدات المتكررة'],
+   ['الجلسات المتفاعلة',gaNumber(data.summary.engagedSessions),'حسب تعريف GA4 للجلسة المتفاعلة'],
+   ['الأحداث الرئيسية',gaNumber(data.summary.keyEvents),'جميع الأحداث المحددة كأحداث رئيسية'],
+   ['نقرات التوصيل',gaNumber(data.eventCounts?.delivery_app_click?.count),'تشمل النقرات المتكررة'],
+   ['إحالات التوصيل الفريدة',gaNumber(data.eventCounts?.delivery_referral_unique?.count),'أول إحالة من كل نافذة جلسة في المنيو'],
+   ['قيمة الإحالات',data.warning?.some(t=>t.includes('Referral breakdown'))?'—':gaMoney(data.totals?.referralValue),'قيمة سعر الطبق، وليست إيرادات مبيعات مثبتة']
+  ];
+  for(const [name,value,detail] of cards){
+   const card=node('article');card.className='ga-stat';
+   card.append(node('span',name),node('strong',value),node('small',detail));metrics.append(card);
+  }
+  const makeTable=(heading,headers,rows)=>{
+   const block=node('section');block.className='analytics-report ga-table';
+   block.append(node('h2',heading));
+   if(!rows.length){block.append(node('p','لا تتوفر بيانات معالجة لهذه الفترة بعد.'));return block;}
+   const table=node('table');table.className='action-report-table';
+   const head=node('thead'),tr=node('tr');headers.forEach(h=>tr.append(node('th',h)));head.append(tr);table.append(head);
+   const body=node('tbody');
+   for(const entry of rows){
+    const row=node('tr');for(const cellValue of entry)row.append(node('td',cellValue));body.append(row);
+   }
+   table.append(body);block.append(table);return block;
+  };
+  const eventCounts=Object.entries(data.eventCounts||{}).map(([key,entry])=>[
+   gaEventLabels[key]||key,gaNumber(entry.count),gaNumber(entry.keyEvents)
+  ]);
+  const eventsTable=makeTable('الأحداث المهمة',['الحدث','مرات التنفيذ','أحداث رئيسية'],eventCounts);
+  const topReferrals=(data.referrals||[]).slice(0,30).map(r=>[
+   r.meal,r.platform,gaNumber(r.count),gaMoney(r.value)
+  ]);
+  const refTable=makeTable('الإحالات حسب الطبق والتطبيق',['الطبق','تطبيق التوصيل','إحالات','قيمة الإحالات'],topReferrals);
+  const trend=node('section');trend.id='ga-daily-trend';trend.className='analytics-report';
+  trend.append(node('h2','الزيارات اليومية'));
+  const daily=(data.daily||[]).slice(-30),largest=Math.max(1,...daily.map(r=>r.sessions));
+  if(!daily.length)trend.append(node('p','لا توجد بيانات يومية لهذه الفترة.'));
+  else {
+   const chart=node('div');chart.className='ga-trend-bars';
+   for(const r of daily){
+    const column=node('div');column.className='ga-trend-day';
+    const bar=node('div');bar.className='ga-trend-bar';bar.style.height=Math.max(3,r.sessions/largest*100)+'%';
+    column.title=r.date+': '+gaNumber(r.sessions)+' زيارة، '+gaNumber(r.users)+' زائر فريد في ذلك اليوم';
+    column.append(bar);chart.append(column);
+   }
+   trend.append(chart,node('p','كل عمود يمثل عدد الزيارات (Sessions) في يوم واحد.'));
+  }
+  const foot=node('p','المصدر: Google Analytics 4 · آخر جلب: '+new Date(data.asOf).toLocaleString('ar')+' · لا تمثل قيمة الإحالات مبيعات فعلية.');
+  foot.className='ga-footnote';
+  const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
+  if(notes)notes.className='ga-notice';
+  area.replaceChildren(top,metrics,trend,refTable,eventsTable,foot,...(notes?[notes]:[]));
+ }catch(error){
+  if(ticket===generation){status.textContent='حدث خطأ أثناء قراءة GA4. '+(error?.message||'');status.className='ga-notice';}
+ }
+}
+
 async function renderActionReports(){
  const area=$('body'),ticket=generation;
  const [events,meals]=await Promise.all([
@@ -456,14 +556,15 @@ async function renderActionReports(){
  area.replaceChildren(refresh,summary,actions,controls,dishesBox,recent);
 }
 async function openSection(key){
- if(['menu_staff','account','events'].includes(key)&&role!=='owner'){
+ if(['menu_staff','account','events','overview'].includes(key)&&role!=='owner'){
   notice('هذه الصفحة متاحة للمالك فقط');return;
  }
  const sameSection=section===key;
  const ticket=++generation; section=key; history.replaceState(null,'','#'+key); notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0];
  for(const b of $('tabs').children)b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='account'){await renderOwnerAccount();return;}
- if(key==='events'){await renderActionReports();return;}
+ if(key==='overview'){await renderGaOverview();return;}
+  if(key==='events'){await renderActionReports();return;}
  const feedback=['rankings','submissions'].includes(key);
  const table=feedback?'menu_feedback':key;
  const condition=feedback?'&kind='+ (key==='rankings'?'eq.':'neq.') +encodeURIComponent('تقييم'):'';
