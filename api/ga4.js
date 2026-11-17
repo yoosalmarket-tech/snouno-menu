@@ -152,6 +152,7 @@ export default async function handler(req,res){
       summary:{sessions:metrics[0]||0,totalUsers:metrics[1]||0,activeUsers:metrics[2]||0,newUsers:metrics[3]||0,views:metrics[4]||0,keyEvents:metrics[5]||0,engagedSessions:metrics[6]||0},
       eventCounts,referrals,topMeals,topPlatforms,trafficSources,
       reportStatus:{
+        eventsAvailable:eventsResult.status==='fulfilled',
         rankingsAvailable:mealRanksResult.status==='fulfilled'||platformRanksResult.status==='fulfilled',
         mealRankingAvailable:mealRanksResult.status==='fulfilled',
         platformRankingAvailable:platformRanksResult.status==='fulfilled',
