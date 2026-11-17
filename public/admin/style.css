@@ -1941,3 +1941,41 @@ main:has(#body.ga-overview) #tabs a.admin-nav-button:focus-visible{
  main:has(#body.ga-overview) > nav#tabs,
  #admin-page-header .admin-mobile-menu-toggle span{transition:none!important;}
 }
+
+/* Admin title/action alignment: title right, Add on far left, same row. */
+#admin-title-row.admin-title-row{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:16px;min-width:0;width:100%;margin:0 0 20px;
+}
+#admin-title-row #title{
+ flex:1 1 auto;min-width:0;margin:0;
+ color:#000000;font-size:clamp(25px,2.8vw,34px);
+ font-weight:900;line-height:1.45;text-align:right;
+ overflow-wrap:anywhere;
+}
+#admin-title-row .admin-title-action{
+ flex:0 0 auto;display:flex;align-items:center;
+ justify-content:flex-end;margin-inline-start:auto;
+}
+#admin-title-row .admin-title-action:empty{display:none;}
+#admin-title-row #admin-add-button{
+ display:inline-flex;align-items:center;justify-content:center;
+ flex:none;min-height:44px;padding:9px 23px;
+ border:1px solid #FDBE2D;border-radius:12px;
+ background:#FDBE2D;color:#000000;font:850 15px/1.5 inherit;
+ box-shadow:none;white-space:nowrap;cursor:pointer;
+}
+#admin-title-row #admin-add-button:hover{background:#FDBE2D;color:#000000;}
+#admin-title-row #admin-add-button:focus-visible{
+ outline:3px solid #000000;outline-offset:3px;
+}
+main:has(#body.ga-overview) #admin-title-row{display:none;}
+main:has(> #tabs:empty) #admin-title-row{justify-content:center;}
+main:has(> #tabs:empty) #admin-title-row #title{text-align:center;}
+@media(max-width:520px){
+ #admin-title-row.admin-title-row{gap:10px;margin-bottom:16px;}
+ #admin-title-row #title{font-size:clamp(21px,5.8vw,26px);}
+ #admin-title-row #admin-add-button{
+  min-height:40px;padding:8px 15px;font-size:13px;border-radius:10px;
+ }
+}
