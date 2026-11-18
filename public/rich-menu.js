@@ -254,7 +254,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   // Keep adjacent meals within the showroom. Both sides use one mirrored
   // entry/exit path instead of throwing an outgoing plate toward the camera.
   const desktop=window.matchMedia('(min-width:981px)').matches;
-  const sideRoom=clamp(width*(desktop?.30:.33),70,190);
+  // More space between neighboring plates (about 30-40% farther apart).
+  // Keep the same mirrored depth, opacity, spring physics and edge bounce.
+  const sideRoom=clamp(width*(desktop?.40:.44),92,255);
   const availableHeight=desktop?Math.max(160,height-120):Math.max(180,height);
   const scale=clamp(availableHeight/340,availableHeight<230?.53:.62,1.1)*(desktop?1.04:.96);
   for(let i=0;i<dishesEls.length;i++){
