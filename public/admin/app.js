@@ -259,6 +259,13 @@ async function enter(){
   const own=await api('/rest/v1/menu_staff?select=role&email=eq.'+encodeURIComponent(user.email.toLowerCase()));
   if(!own.length) throw new Error('لا توجد صلاحية لهذا الحساب');
   role=own[0].role; $('login').hidden=true;
+  // Keep the dashboard's own browser-tab icon synchronized after a future
+  // upload from the Restaurant settings page, without delaying sign-in.
+  void api('/rest/v1/menu_settings?select=favicon_url&limit=1')
+   .then(rows=>{
+    const icon=document.getElementById('snounu-favicon');
+    if(icon&&rows[0]?.favicon_url)icon.href=rows[0].favicon_url;
+   }).catch(()=>{});
   buildAdminSidebar(user.email);
   const requested=keyFromAdminLocation();
   await openSection(authorizedAdminSection(requested)?requested:(role==='owner'?'overview':'dishes'),{initial:true});
