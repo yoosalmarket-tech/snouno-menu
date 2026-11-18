@@ -390,8 +390,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   if(p.axis==='x')goTo(Math.round(k+velocity*7));
   else if(p.axis==='y'){
    const delta=event.clientY-p.y;
-   // Up moves to the previous category, down to the next, including wrap.
-   if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?-1:1));
+   // Mobile: swipe up advances, swipe down goes back; desktop gesture stays as before.
+   // changeGroup handles wrapping at the first and last categories.
+   if(Math.abs(delta)>50){
+    const mobile=window.matchMedia('(max-width:980px)').matches;
+    changeGroup(groupIndex+(mobile?(delta<0?1:-1):(delta<0?-1:1)));
+   }
   }else if(p.index!=null){
    const selected=group()?.items[p.index];
    if(selected){
