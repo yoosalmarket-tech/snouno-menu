@@ -1447,7 +1447,10 @@ function setupMenuInstall(){
   $('install-app-label').textContent=isEnglish()?'Install the app':'تثبيت التطبيق';
   $('install-promo-close').setAttribute('aria-label',isEnglish()?'Dismiss install offer':'إغلاق إعلان التثبيت');
  };
- const eligible=()=>mobile()&&!standalone()&&!dismissed()&&currentPage()==='welcome';
+ // Keep the floating install card eligible during Welcome -> Menu navigation.
+ // Early browsing shouldn't cancel a pending offer.
+ const eligible=()=>mobile()&&!standalone()&&!dismissed()&&
+  (currentPage()==='welcome'||currentPage()==='menu');
  const showWhenReady=(attempt=0)=>{
   if(!eligible())return;
   if(!document.documentElement.classList.contains('loader-complete')){
@@ -1460,12 +1463,9 @@ function setupMenuInstall(){
   hideTimer=setTimeout(()=>hide({remember:true}),20000);
  };
  // Show once per browser tab, after the welcome animation. Ignore or close it freely.
+ // Route changes don't dismiss this offer; its existing 20s timer continues.
  showTimer=setTimeout(()=>showWhenReady(),2100);
  $('install-promo-close').addEventListener('click',()=>hide({remember:true}));
- document.addEventListener('click',event=>{
-  if(event.target.closest('a[data-page="menu"],a[href="/menu"]'))hide({remember:true});
- },{capture:true});
- window.addEventListener('popstate',()=>{if(currentPage()!=='welcome')hide({remember:true});});
  window.addEventListener('resize',()=>{if(!mobile())hide();},{passive:true});
  window.addEventListener('beforeinstallprompt',event=>{
   event.preventDefault();
