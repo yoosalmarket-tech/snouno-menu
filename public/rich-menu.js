@@ -99,7 +99,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  const focusCategory=()=>{
   const selected=categoryEls[groupIndex];if(!selected)return;
   const r=selected.getBoundingClientRect(),p=u.categories.getBoundingClientRect();
-  u.categories.scrollBy({left:r.left+r.width/2-p.left-p.width/2,behavior:reduced.matches?'instant':'smooth'});
+  const vertical=getComputedStyle(u.categories).flexDirection==='column';
+  u.categories.scrollBy(vertical
+   ? {top:r.top+r.height/2-p.top-p.height/2,behavior:reduced.matches?'instant':'smooth'}
+   : {left:r.left+r.width/2-p.left-p.width/2,behavior:reduced.matches?'instant':'smooth'});
  };
  function drawCategoryTabs(){
   u.categories.replaceChildren();categoryEls=[];
@@ -246,38 +249,30 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const g=group();if(!g)return;
   const len=g.items.length;
   const height=u.wrap.clientHeight,width=u.wrap.clientWidth;
-  const travel=clamp(width*.56,180,440);
-  // Desktop makes better use of the wide food showroom, while preserving
-  // the existing mobile animation and its swipe physics.
+  // Keep adjacent meals within the showroom. Both sides use one mirrored
+  // entry/exit path instead of throwing an outgoing plate toward the camera.
   const desktop=window.matchMedia('(min-width:981px)').matches;
-  const availableHeight=desktop?Math.max(120,height-110):height;
-  const scale=clamp(availableHeight/380,availableHeight<200?.42:.5,1)*(desktop?1.02:.88);
+  const sideRoom=clamp(width*(desktop?.30:.33),70,190);
+  const availableHeight=desktop?Math.max(160,height-120):Math.max(180,height);
+  const scale=clamp(availableHeight/340,availableHeight<230?.53:.62,1.1)*(desktop?1.04:.96);
   for(let i=0;i<dishesEls.length;i++){
    const el=dishesEls[i],dif=i-k;
    el.setAttribute('aria-selected',String(i===front));
-   if(Math.abs(dif)>5.6){el.style.visibility='hidden';el.style.pointerEvents='none';continue;}
+   if(Math.abs(dif)>3.1){el.style.visibility='hidden';el.style.pointerEvents='none';continue;}
    el.style.visibility='visible';
-   let x=0,y=0,z=0,rotateY=0,rotateZ=0,opacity=1;
-   // Keep the original incoming/outgoing depth and opacity curves. Blend
-   // their handedness on reversal, without touching k or its spring.
    const distance=Math.abs(dif);
-   const incoming=clamp((1+Math.sign(dif)*visualDirection)/2,0,1);
-   const inZ=-distance*300,outZ=Math.min(distance,1.3)*420;
-   const inY=Math.min(distance*42+Math.max(0,distance-1)*6,115);
-   const outY=-distance*55;
-   x=dif*travel+Math.sin(Math.min(distance,4)*.75)*24*Math.sign(dif);
-   y=outY+(inY-outY)*incoming;
-   z=outZ+(inZ-outZ)*incoming;
-   rotateY=Math.sign(dif)*Math.min(distance,2)*7*incoming;
-   rotateZ=Math.sign(dif)*distance*6*(1-incoming);
-   const inOpacity=(distance>4?Math.max(0,1-(distance-4)*.7):1)*(.35+.65*(1-Math.min(distance,4)*.17));
-   const outOpacity=Math.max(0,1-distance*1.3);
-   opacity=outOpacity+(inOpacity-outOpacity)*incoming;
+   // Symmetric in both swipe directions; transform stays continuous on reversal.
+   const x=Math.sign(dif)*Math.min(distance,1.15)*sideRoom;
+   const y=Math.min(distance,2.5)*(desktop?34:22);
+   const z=-Math.min(distance,3)*(desktop?270:240);
+   const rotateY=Math.sign(dif)*Math.min(distance,1.5)*9;
+   const rotateZ=-Math.sign(dif)*Math.min(distance,2)*2.8;
+   const opacity=distance<=1?1-distance*.30:distance<=2?.70-(distance-1)*.42:Math.max(0,.28-(distance-2)*.28);
    const rotX=clamp(-velocity*25,-8,8);
    el.style.transform='translate(-50%,0) translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,'+z.toFixed(1)+'px) rotateX('+rotX.toFixed(2)+'deg) rotateY('+rotateY.toFixed(2)+'deg) rotateZ('+rotateZ.toFixed(2)+'deg) scale('+scale.toFixed(3)+')';
    el.style.opacity=opacity.toFixed(3);
    // Transparent outgoing dishes must not intercept taps on the centered dish.
-   el.style.pointerEvents=opacity>.15?'auto':'none';
+   el.style.pointerEvents=opacity>.35?'auto':'none';
    el.style.zIndex=String(Math.round(1000+z*.1));
   }
   // Keep the name, rating and price steady while food bounces at an edge.
