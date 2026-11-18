@@ -254,7 +254,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const scale=clamp(availableHeight/380,availableHeight<200?.42:.5,1)*(desktop?1.02:.88);
   for(let i=0;i<dishesEls.length;i++){
    const el=dishesEls[i],dif=i-k;
-   if(Math.abs(dif)>5.6){el.style.visibility='hidden';continue;}
+   el.setAttribute('aria-selected',String(i===front));
+   if(Math.abs(dif)>5.6){el.style.visibility='hidden';el.style.pointerEvents='none';continue;}
    el.style.visibility='visible';
    let x=0,y=0,z=0,rotateY=0,rotateZ=0,opacity=1;
    // Keep the original incoming/outgoing depth and opacity curves. Blend
@@ -275,8 +276,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    const rotX=clamp(-velocity*25,-8,8);
    el.style.transform='translate(-50%,0) translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,'+z.toFixed(1)+'px) rotateX('+rotX.toFixed(2)+'deg) rotateY('+rotateY.toFixed(2)+'deg) rotateZ('+rotateZ.toFixed(2)+'deg) scale('+scale.toFixed(3)+')';
    el.style.opacity=opacity.toFixed(3);
+   // Transparent outgoing dishes must not intercept taps on the centered dish.
+   el.style.pointerEvents=opacity>.15?'auto':'none';
    el.style.zIndex=String(Math.round(1000+z*.1));
-   el.setAttribute('aria-selected',String(i===front));
   }
   // Keep the name, rating and price steady while food bounces at an edge.
   const infoPosition=clamp(k,0,len-1);
@@ -353,7 +355,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   if(typeof onSelection==='function')onSelection({categoryId:group()?.id});
  }
  function pointerDown(event){
-  if(event.button!==0||swapping||!active||pointer||u.sheet.open)return;
+  if(event.button!==0||swapping||!active||pointer||u.sheet.open||event.isPrimary===false)return;
   const el=event.target.closest('.rm-dish');
   pointer={id:event.pointerId,x:event.clientX,y:event.clientY,lastT:performance.now(),startK:k,axis:null,index:el?Number(el.dataset.idx):null};
   u.stage.focus({preventScroll:true});
@@ -388,7 +390,11 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?1:-1));
   }else if(p.index!=null){
    const selected=group()?.items[p.index];
-   if(selected){goTo(p.index);scheduleMealOpen(selected);}
+   if(selected){
+    const wasFront=p.index===front;
+    goTo(p.index);
+    if(wasFront)scheduleMealOpen(selected);
+   }
   }
  }
  function cancelPointer(){
@@ -405,6 +411,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   if(now-lastWheel>260){wheelAxis=null;wheelHandled=false;wheelDistance=0;}
   lastWheel=now;
   if(!wheelAxis)wheelAxis=Math.abs(dx)>Math.abs(dy)?'x':'y';
+  const delta=wheelAxis==='x'?dx:dy;
+  const beyondCategory=wheelAxis==='y'&&(groupIndex+Math.sign(delta)<0||groupIndex+Math.sign(delta)>=groups.length);
+  if(beyondCategory&&!swapping&&!wheelHandled)return;
   event.preventDefault();
   if(swapping){wheelHandled=true;return;}
   if(wheelHandled)return;
