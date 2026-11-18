@@ -1012,6 +1012,42 @@ async function renderGaOverview(days=28){
     const card=node('div');card.className='ga-live-metric';
     card.append(node('span',label),node('strong',gaNumber(value||0)));liveMetrics.append(card);
    }
+   // Fill the previously unused half of the realtime Overview with genuine
+   // GA4 active users by device. This belongs to Overview, not Investment.
+   if(!investment){
+    const panel=node('section');panel.id='ga-realtime-devices';panel.className='ga-live-device-breakdown';
+    const heading=node('h3','الأجهزة المستخدمة الآن');
+    panel.append(heading);
+    if(realtime.devicesAvailable===true){
+     const records=new Map();
+     for(const entry of realtime.devices||[]){
+      const key=String(entry?.name||'unknown').toLowerCase();
+      records.set(key,(records.get(key)||0)+Math.max(0,Number(entry?.count)||0));
+     }
+     const mainDevices=[['mobile','الجوال'],['desktop','الكمبيوتر'],['tablet','التابلت']];
+     const extras=[...records].filter(([name])=>!mainDevices.some(([key])=>key===name))
+       .reduce((n,[,count])=>n+count,0);
+     const summary=mainDevices.map(([key,label])=>({label,count:records.get(key)||0}));
+     if(extras>0)summary.push({label:'أجهزة أخرى',count:extras});
+     const total=summary.reduce((n,entry)=>n+entry.count,0);
+     const list=node('div');list.className='ga-live-device-list';
+     for(const entry of summary){
+      const row=node('div');row.className='ga-live-device-row';
+      const name=node('span',entry.label);
+      const count=node('strong',gaNumber(entry.count));count.dir='ltr';
+      const track=node('div');track.className='ga-live-device-track';
+      const bar=node('span');bar.className='ga-live-device-fill';
+      bar.style.width=(total>0?Math.min(100,100*entry.count/total):0).toFixed(1)+'%';
+      track.append(bar);
+      row.append(name,track,count);list.append(row);
+     }
+     panel.append(list);
+     if(total===0)panel.append(node('small','لا يوجد زوار نشطون حسب الأجهزة خلال آخر 30 دقيقة.'));
+    }else{
+     panel.append(node('p','لا تتوفر بيانات الأجهزة المباشرة حالياً.'));
+    }
+    liveMetrics.append(panel);
+   }
    live.append(liveMetrics);
    live.append(node('p',investment
     ?'النقرة تعني فتح رابط التوصيل وليست عملية بيع؛ الإحالة الأولى تُسجل مرة كل نافذة جلسة تقريباً. هذه بيانات آخر 30 دقيقة.'
