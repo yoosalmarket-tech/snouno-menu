@@ -231,7 +231,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
     u.price.append(old);
    }
   }
-  u.details.textContent=isEnglish()?'⌖ LOCATION & CONTACT':'⌖ موقعنا و التواصل';
+  u.details.textContent=isEnglish()?'＋ MEAL DETAILS':'＋ عرض تفاصيل الوجبة';
   at(u.customize,'.rm-order-en').textContent='ORDER NOW';
   at(u.customize,'.rm-order-ar').textContent='اطلب الآن';
   u.customize.setAttribute('aria-label',isEnglish()?'Order now':'اطلب الآن');
@@ -468,8 +468,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
     const mobile=window.matchMedia('(max-width:980px)').matches;
     changeGroup(groupIndex+(mobile?(delta<0?1:-1):(delta<0?-1:1)));
    }
-  }else if(p.source!=='info'){
-   // Tapping static information isn't a meal-image tap; don't open a popup.
+  }else if(p.source==='info'){
+   // A tap on meal information opens the same meal-specific ordering sheet
+   // as ORDER NOW. Gestures are handled above and action buttons never
+   // start a pointer gesture, so swiping or tapping them won't open it.
+   if(dish())scheduleMealOpen(dish());
+  }else{
    const index=desktopAdjacentHit(event.clientX,event.clientY,p.index);
    const selected=index==null?null:group()?.items[index];
    if(selected){
@@ -637,7 +641,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
  u.mealPrev.id='rich-desktop-meal-previous';u.mealNext.id='rich-desktop-meal-next';
  u.mealPrev.onclick=()=>step(-1);u.mealNext.onclick=()=>step(1);
- u.details.onclick=()=>openRichSheet('contact');
+ u.details.id='rich-meal-details';u.details.dataset.trackAction='order_now_click';
+ u.details.onclick=()=>{if(dish())openRichSheet('order',dish());};
  u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
  u.share.onclick=()=>{
   const current=dish();
