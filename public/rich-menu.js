@@ -19,6 +19,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<div class="rm-categories-track" role="tablist"></div></nav>',
  '<div class="rm-stage-wrap"><div class="rm-stage-word" aria-hidden="true"><span></span><span></span></div>',
  '<div class="rm-shadow" aria-hidden="true"></div><div class="rm-stage" role="listbox" tabindex="0"></div>',
+ // Desktop-only navigation buttons live outside the draggable carousel surface.
+ '<button class="rm-meal-nav rm-meal-nav-prev" type="button" aria-label="الوجبة السابقة" data-track-action="meal_previous"><span aria-hidden="true">←</span><span dir="rtl">السابقة</span></button>',
+ '<button class="rm-meal-nav rm-meal-nav-next" type="button" aria-label="الوجبة التالية" data-track-action="meal_next"><span dir="rtl">التالية</span><span aria-hidden="true">→</span></button>',
  '</div>',
  // The entire sidebar is a sibling of the 3D scene, not its descendant.
  '<aside class="rm-thumbs" aria-label="اختيار وجبة"><button type="button" class="rm-rail-button rm-rail-previous" aria-label="السابق">←</button>',
@@ -51,6 +54,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  host.replaceChildren(root);
  const u={
   stage:at(root,'.rm-stage'),wrap:at(root,'.rm-stage-wrap'),
+  mealPrev:at(root,'.rm-meal-nav-prev'),mealNext:at(root,'.rm-meal-nav-next'),
   logo:at(root,'.rm-top-logo'),word:at(root,'.rm-stage-word'),
   shadow:at(root,'.rm-shadow'),categories:at(root,'.rm-categories-track'),
   catCount:at(root,'.rm-categories-count'),
@@ -256,7 +260,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const desktop=window.matchMedia('(min-width:981px)').matches;
   // More space between neighboring plates (about 30-40% farther apart).
   // Keep the same mirrored depth, opacity, spring physics and edge bounce.
-  const sideRoom=clamp(width*(desktop?.40:.44),92,255);
+  // Desktop side plates sit farther out; the central plate keeps its full size.
+  const sideRoom=desktop?clamp(width*.50,160,305):clamp(width*.44,92,255);
   const availableHeight=desktop?Math.max(160,height-120):Math.max(180,height);
   const scale=clamp(availableHeight/340,availableHeight<230?.53:.62,1.1)*(desktop?1.04:.96);
   for(let i=0;i<dishesEls.length;i++){
@@ -273,7 +278,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    const rotateZ=-Math.sign(dif)*Math.min(distance,2)*2.8;
    const opacity=distance<=1?1-distance*.30:distance<=2?.70-(distance-1)*.42:Math.max(0,.28-(distance-2)*.28);
    const rotX=clamp(-velocity*25,-8,8);
-   el.style.transform='translate(-50%,0) translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,'+z.toFixed(1)+'px) rotateX('+rotX.toFixed(2)+'deg) rotateY('+rotateY.toFixed(2)+'deg) rotateZ('+rotateZ.toFixed(2)+'deg) scale('+scale.toFixed(3)+')';
+   // A subtle continuous shrink prevents desktop side plates from masking
+   // each other or the center plate. Mobile scaling remains untouched.
+   const mealScale=desktop?scale*(1-.20*Math.min(distance,1)):scale;
+   el.style.transform='translate(-50%,0) translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,'+z.toFixed(1)+'px) rotateX('+rotX.toFixed(2)+'deg) rotateY('+rotateY.toFixed(2)+'deg) rotateZ('+rotateZ.toFixed(2)+'deg) scale('+mealScale.toFixed(3)+')';
    el.style.opacity=opacity.toFixed(3);
    // Transparent outgoing dishes must not intercept taps on the centered dish.
    el.style.pointerEvents=opacity>.35?'auto':'none';
@@ -383,6 +391,24 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    k=value;p.lastT=now;
   }
  }
+ // On desktop, transparent padding of the foreground PNG can intercept a
+ // visible neighboring plate. Use the pointer's position within that plate
+ // to resolve the intended meal before deciding whether to open a popup.
+ function desktopAdjacentHit(clientX,clientY,clickedIndex){
+  if(!window.matchMedia('(min-width:981px)').matches)return clickedIndex;
+  const bounds=u.stage.getBoundingClientRect();
+  const offset=(clientX-bounds.left)/Math.max(bounds.width,1);
+  const direction=offset<.36?-1:offset>.64?1:0;
+  if(!direction)return clickedIndex;
+  const candidate=front+direction;
+  if(candidate<0||candidate>=(group()?.items.length||0))return clickedIndex;
+  const side=dishesEls[candidate];
+  if(!side||side.style.visibility==='hidden'||Number(side.style.opacity)<.35)return clickedIndex;
+  const rect=side.getBoundingClientRect();
+  if(clientX>=rect.left&&clientX<=rect.right&&clientY>=rect.top&&clientY<=rect.bottom)
+   return candidate;
+  return clickedIndex;
+ }
  function pointerUp(event){
   const p=pointer;if(!p||event.pointerId!==p.id)return;
   pointer=null;
@@ -396,11 +422,12 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
     const mobile=window.matchMedia('(max-width:980px)').matches;
     changeGroup(groupIndex+(mobile?(delta<0?1:-1):(delta<0?-1:1)));
    }
-  }else if(p.index!=null){
-   const selected=group()?.items[p.index];
+  }else{
+   const index=desktopAdjacentHit(event.clientX,event.clientY,p.index);
+   const selected=index==null?null:group()?.items[index];
    if(selected){
-    const wasFront=p.index===front;
-    goTo(p.index);
+    const wasFront=index===front;
+    goTo(index);
     if(wasFront)scheduleMealOpen(selected);
    }
   }
@@ -555,6 +582,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  u.catPrev.onclick=()=>changeGroup(groupIndex-1);
  u.catNext.onclick=()=>changeGroup(groupIndex+1);
  u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
+ u.mealPrev.id='rich-desktop-meal-previous';u.mealNext.id='rich-desktop-meal-next';
+ u.mealPrev.onclick=()=>step(-1);u.mealNext.onclick=()=>step(1);
  u.details.onclick=()=>openRichSheet('contact');
  u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
  u.share.onclick=()=>{
