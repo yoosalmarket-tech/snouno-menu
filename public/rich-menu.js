@@ -112,9 +112,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    button.dataset.trackAction='category_select';
    button.dataset.permalink='/menu?category='+encodeURIComponent(g.id)+'&mode=interactive';
    button.setAttribute('aria-label',g.name);
-   // The category rail is intentionally Arabic-only at every viewport width.
-   button.dir='rtl';button.title=g.name;
-   button.append(mk('span',null,g.name));
+   // Restore the original bilingual category buttons in the top navigation.
+   button.append(mk('strong',null,g.english||g.name),mk('span',null,g.name));
    button.addEventListener('click',()=>changeGroup(i));
    categoryEls.push(button);u.categories.append(button);
   });selectCategoryTab();
