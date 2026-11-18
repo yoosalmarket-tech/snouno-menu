@@ -28,6 +28,7 @@ const sections = {
     ['welcome_label_y_3','موضع النص للوجبة 3 — عمودي','position'],
     ['welcome_button','نص زر تصفح المنيو'],
     ['logo','شعار سنونو','image'],
+    ['favicon_url','شعار تبويب المتصفح (Favicon)','image'],
     ['contact','نص صفحة التواصل','textarea'],
     ['address','العنوان'],['hours','ساعات العمل'],
     ['hotline','رقم التواصل السريع']
@@ -1363,8 +1364,12 @@ async function edit(key,row,inline=false){
  if(key==='dishes'&&!cats.length){notice('أضف صنفاً أولاً لتضع الطبق فيه.');return;}
  const dishes=key==='menu_ads'?await api('/rest/v1/dishes?select=id,name&order=name'):[];
  const uploads={};
- const sizes={image:key==='menu_ads'?'1080 × 285':'1200 × 740',rich_image:'صورة PNG/WebP شفافة 900 × 900 أو أكبر',logo:'564 × 183',welcome_image_1:'صورة شفافة 720 × 720',welcome_image_2:'صورة شفافة 720 × 720',welcome_image_3:'صورة شفافة 720 × 720',banner:'1080 × 285',banner_two:'1080 × 285',banner_three:'1080 × 285'};
+ const sizes={image:key==='menu_ads'?'1080 × 285':'1200 × 740',rich_image:'صورة PNG/WebP شفافة 900 × 900 أو أكبر',logo:'564 × 183',favicon_url:'مربع 256 × 256 أو 512 × 512',welcome_image_1:'صورة شفافة 720 × 720',welcome_image_2:'صورة شفافة 720 × 720',welcome_image_3:'صورة شفافة 720 × 720',banner:'1080 × 285',banner_two:'1080 × 285',banner_three:'1080 × 285'};
  if(key==='menu_links')form.append(node('p',row.name));
+ if(key==='menu_settings'){
+  const icon=document.getElementById('snounu-favicon');
+  if(icon)icon.href=row.favicon_url||'/assets/snounu-favicon.png';
+ }
 
  for(const [field,caption,type='text'] of sections[key][1]){
    const label=node('label',caption);const input=node(type==='textarea'?'textarea':['select','product'].includes(type)?'select':'input');
@@ -1396,7 +1401,26 @@ async function edit(key,row,inline=false){
    if(field==='old_price')label.append(node('small','السعر السابق يظهر مشطوباً بالرمادي حتى لو كان أقل من الحالي (ارتفاع سعر). اتركه فارغاً إن لم يكن هناك سعر سابق.'));
    if(field==='rich_badge_x')label.append(node('small','لكل طبق موضع مستقل. يمكنك سحب الشارة فوق الصورة في المعاينة بالأسفل أو تعديل النسبة.'));
    if(field==='ingredients')label.append(node('small','افصل المكونات بفاصلة، أو اكتب «خضار: خس، خيار» في سطر لكل مجموعة.'));
-   if(type==='image'){const hint=node('small', 'المقاس المقترح: '+(sizes[field]||'1200 × 740')+' — يُفضّل WebP أو PNG بخلفية شفافة');label.append(hint);const upload=node('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';label.append(upload);uploads[field]=upload;}
+   if(type==='image'){
+    const hintText=field==='favicon_url'
+     ?'المقاس المقترح: '+sizes[field]+' — هذه الصورة تظهر في تبويب المتصفح، ولا تغيّر شعار المنيو أو أيقونة التطبيق المثبّت.'
+     :'المقاس المقترح: '+(sizes[field]||'1200 × 740')+' — يُفضّل WebP أو PNG بخلفية شفافة';
+    label.append(node('small',hintText));
+    const upload=node('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';label.append(upload);uploads[field]=upload;
+    if(field==='favicon_url'){
+     const sample=node('img');sample.alt='معاينة شعار تبويب المتصفح';sample.width=56;sample.height=56;
+     sample.style.cssText='display:block;width:56px;height:56px;object-fit:contain;border-radius:12px;background:#FDBE2D;margin:8px 0;';
+     sample.src=input.value||'/assets/snounu-favicon.png';
+     label.append(sample);
+     let sampleUrl='';
+     upload.addEventListener('change',()=>{
+      if(sampleUrl)URL.revokeObjectURL(sampleUrl);
+      sampleUrl=upload.files[0]?URL.createObjectURL(upload.files[0]):'';
+      sample.src=sampleUrl||input.value||'/assets/snounu-favicon.png';
+     });
+     input.addEventListener('input',()=>{if(!upload.files.length)sample.src=input.value||'/assets/snounu-favicon.png';});
+    }
+   }
    form.append(label);
  }
  const error=node('p');error.setAttribute('role','alert'); const save=node('button',inline?'حفظ جميع الإعدادات':'حفظ');save.id='admin-save-'+key+'-'+(row.id||'new');save.dataset.trackAction='admin_save_click';
