@@ -74,6 +74,50 @@ function rows(report){
     metrics:(row.metricValues||[]).map(v=>Number(v.value)||0)
   }));
 }
+
+/* A source search measures GA4 page views that kept either ?source=
+   or ?utm_source= in their landing URL; users are distinct in GA4 reports. */
+const normalizeVisitCode = text=>String(text||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+const quoteGaRegex = value=>[...String(value)].map(c=>'\\.^$|?*+()[]{}'.includes(c)?'\\'+c:c).join('');
+async function lookupVisitSource(token,days,searchText){
+  const query=String(searchText||'').trim(),needle=normalizeVisitCode(query);
+  if(query.length>120||needle.length<2)throw new RangeError('source_query_invalid');
+  const dateRanges=[{startDate:(days-1)+'daysAgo',endDate:'today'}];
+  const discovery=await gaReport(token,{
+    dateRanges,dimensions:[{name:'pageLocation'}],metrics:[{name:'screenPageViews'}],
+    limit:'10000',orderBys:[{metric:{metricName:'screenPageViews'},desc:true}]
+  });
+  const names=new Map();
+  for(const row of rows(discovery)){
+    if(!(row.metrics[0]>0))continue;
+    let url;try{url=new URL(row.dimensions[0]);}catch{continue;}
+    for(const key of ['source','utm_source']){
+      const code=String(url.searchParams.get(key)||'').trim();
+      if(!code||code.length>120||!normalizeVisitCode(code).includes(needle))continue;
+      const id=code.toLowerCase();
+      if(!names.has(id))names.set(id,code);
+    }
+  }
+  const codes=[...names.values()].sort((a,b)=>a.localeCompare(b)).slice(0,10);
+  const matches=await Promise.all(codes.map(async source=>{
+    const enc=encodeURIComponent(source);
+    const alternatives=[...new Set([source,enc,enc.replace(/%20/g,'+')])].map(quoteGaRegex);
+    const filter='[?&](?:source|utm_source)=(?:'+alternatives.join('|')+')(?:[&#]|$)';
+    const data=await gaReport(token,{
+      dateRanges,metrics:[{name:'totalUsers'},{name:'screenPageViews'}],
+      dimensionFilter:{filter:{fieldName:'pageLocation',stringFilter:{
+        matchType:'PARTIAL_REGEXP',value:filter,caseSensitive:false
+      }}}
+    });
+    const totals=rows(data)[0]?.metrics||[];
+    return {source,users:totals[0]||0,pageViews:totals[1]||0};
+  }));
+  return {source:'Google Analytics 4',days,query,matches,
+    truncated:Number(discovery.rowCount||0)>10000||names.size>10,
+    metric:'GA4 distinct users and page views for tagged URLs',
+    asOf:new Date().toISOString()};
+}
+
 export default async function handler(req,res){
   if(req.method!=='GET')return json(res,405,{error:'method_not_allowed'});
   try{
@@ -88,6 +132,13 @@ export default async function handler(req,res){
     const range={startDate:(days-1)+'daysAgo',endDate:'today'};
     const token=await googleToken(account);
     const base={dateRanges:[range]};
+    if(Object.hasOwn(req.query||{},'visitSource')){
+      try{return json(res,200,await lookupVisitSource(token,days,req.query.visitSource));}
+      catch(error){
+        if(error instanceof RangeError)return json(res,400,{error:'invalid_source',message:'Enter at least 2 characters (maximum 120).'});
+        throw error;
+      }
+    }
     const isReferral={filter:{fieldName:'eventName',stringFilter:{matchType:'EXACT',value:'delivery_referral_unique'}}};
     // Independent GA4 queries let rankings work even if the newer monetary
     // custom metric has not been processed yet.
