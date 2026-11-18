@@ -1477,9 +1477,16 @@ function setupMenuInstall(){
  window.addEventListener('beforeinstallprompt',event=>{
   event.preventDefault();
   installPrompt=event;
+  window.__snounuDeferredInstallPrompt=event;
  });
+ window.addEventListener('snounu-install-ready',()=>{
+  installPrompt=window.__snounuDeferredInstallPrompt;
+ });
+ // The early listener in the HTML head may have captured the event already.
+ installPrompt=window.__snounuDeferredInstallPrompt||installPrompt;
  window.addEventListener('appinstalled',()=>{
   installPrompt=null;
+  window.__snounuDeferredInstallPrompt=null;
   hide({remember:true});
  });
  window.matchMedia('(display-mode: standalone)').addEventListener?.('change',()=>{
@@ -1487,14 +1494,33 @@ function setupMenuInstall(){
  });
  $('install-guide-close').addEventListener('click',()=>guide.close());
  button.addEventListener('click',async()=>{
-  hide({remember:true});
-  if(standalone())return;
-  if(installPrompt){
-   const prompt=installPrompt;installPrompt=null;
-   prompt.prompt();
-   try{await prompt.userChoice;}catch{}
+  if(standalone()){hide({remember:true});return;}
+  // Modern Chromium can install the linked app directly on a user gesture.
+  // Fall back to the legacy beforeinstallprompt event where unsupported.
+  if(typeof navigator.install==='function'){
+   try{
+    await navigator.install();
+    hide({remember:true});
+    return;
+   }catch(error){
+    if(error?.name==='AbortError'){hide({remember:true});return;}
+    // Only use older Chrome's prompt if the new API cannot start.
+    console.info('Direct Snounu install unavailable:',error?.name||error);
+   }
+  }
+  const prompt=installPrompt||window.__snounuDeferredInstallPrompt;
+  if(prompt){
+   installPrompt=null;window.__snounuDeferredInstallPrompt=null;
+   try{
+    await prompt.prompt();
+    const choice=await prompt.userChoice;
+    // The browser decides whether installation was accepted or dismissed.
+    hide({remember:true});
+   }catch(error){console.info('Snounu native install prompt unavailable:',error);}
    return;
   }
+  // No browser-controlled install API was offered. A website cannot
+  // manufacture Chrome's system dialog; retain the optional instructions.
   const iOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
     (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   $('install-guide-title').textContent=isEnglish()?'Install Snounu':'تثبيت منيو سنونو';
