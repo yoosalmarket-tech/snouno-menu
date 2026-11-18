@@ -22,6 +22,10 @@
       "destination": "/admin/index.html"
     },
     {
+      "source": "/admin/investment",
+      "destination": "/admin/index.html"
+    },
+    {
       "source": "/admin/dishes",
       "destination": "/admin/index.html"
     },
