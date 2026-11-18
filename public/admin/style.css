@@ -2503,3 +2503,49 @@ main:has(#body.ga-overview) #tabs .admin-install-app:hover{
  #body.ga-overview .ga-source-result{flex-direction:column;align-items:stretch;}
  #body.ga-overview .ga-source-result-counts{width:100%;grid-template-columns:repeat(2,minmax(0,1fr));}
 }
+
+
+/* The realtime device report fills two previously unused metric columns. */
+#body.ga-overview .ga-live .ga-live-device-breakdown{
+ grid-column:span 2;min-width:0;min-height:112px;
+ border:1px solid #D6D6D6;border-radius:13px;background:#FFFFFF;
+ display:flex;flex-direction:column;gap:8px;padding:12px 15px;
+}
+#body.ga-overview .ga-live .ga-live-device-breakdown h3{
+ margin:0!important;color:#262626;font-size:13px!important;line-height:1.3;
+ font-family:Snounu,Tahoma,sans-serif;font-weight:850;text-align:right;
+}
+#body.ga-overview .ga-live-device-list{
+ display:grid;gap:6px;width:100%;min-width:0;
+}
+#body.ga-overview .ga-live-device-row{
+ display:grid;grid-template-columns:64px minmax(0,1fr) 30px;
+ align-items:center;gap:8px;direction:rtl;
+}
+#body.ga-overview .ga-live-device-row>span{
+ color:#595959;font-size:11px;font-weight:650;text-align:right;
+}
+#body.ga-overview .ga-live-device-row>strong{
+ color:#262626;font:800 13px/1.1 system-ui,sans-serif;
+ font-variant-numeric:tabular-nums;text-align:left;
+}
+#body.ga-overview .ga-live-device-track{
+ height:7px;border-radius:99px;background:#EAEAEA;
+ overflow:hidden;direction:ltr;
+}
+#body.ga-overview .ga-live-device-fill{
+ display:block;height:100%;border-radius:99px;
+ background:#FDBE2D;min-width:0;
+}
+#body.ga-overview .ga-live-device-breakdown>p,
+#body.ga-overview .ga-live-device-breakdown>small{
+ margin:0!important;color:#595959;font-size:11px;line-height:1.5;text-align:right;
+}
+@media(max-width:700px){
+ #body.ga-overview .ga-live .ga-live-device-breakdown{
+  grid-column:1/-1;min-height:0;padding:13px;
+ }
+ #body.ga-overview .ga-live-device-row{
+  grid-template-columns:70px minmax(0,1fr) 34px;
+ }
+}
