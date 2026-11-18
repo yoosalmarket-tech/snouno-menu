@@ -147,7 +147,7 @@ export default async function handler(req,res){
     // Independent GA4 queries let rankings work even if the newer monetary
     // custom metric has not been processed yet.
     const dims=(...names)=>names.map(name=>({name}));
-    const [summaryResult,eventsResult,referralsResult,mealRanksResult,platformRanksResult,valueResult,dailyResult,trafficSourcesResult,devicesResult,browsersResult,liveUsersResult,liveEventsResult]=await Promise.allSettled([
+    const [summaryResult,eventsResult,referralsResult,mealRanksResult,platformRanksResult,valueResult,dailyResult,trafficSourcesResult,devicesResult,browsersResult,liveUsersResult,liveEventsResult,liveDevicesResult]=await Promise.allSettled([
       gaReport(token,{...base,metrics:dims('sessions','totalUsers','activeUsers','newUsers','screenPageViews','keyEvents','engagedSessions')}),
       gaReport(token,{...base,dimensions:dims('eventName'),metrics:dims('eventCount','keyEvents'),limit:'100',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
       gaReport(token,{...base,dimensions:dims('customEvent:meal_name','customEvent:delivery_platform'),metrics:dims('eventCount'),dimensionFilter:isReferral,limit:'250',orderBys:[{metric:{metricName:'eventCount'},desc:true}]}),
@@ -160,7 +160,8 @@ export default async function handler(req,res){
       gaReport(token,{...base,dimensions:dims('deviceCategory'),metrics:dims('activeUsers'),limit:'20'}),
       gaReport(token,{...base,dimensions:dims('browser'),metrics:dims('activeUsers'),limit:'30',orderBys:[{metric:{metricName:'activeUsers'},desc:true}]}),
       gaRealtimeReport(token,{metrics:dims('activeUsers')}),
-      gaRealtimeReport(token,{dimensions:dims('eventName'),metrics:dims('eventCount'),limit:'100'})
+      gaRealtimeReport(token,{dimensions:dims('eventName'),metrics:dims('eventCount'),limit:'100'}),
+      gaRealtimeReport(token,{dimensions:dims('deviceCategory'),metrics:dims('activeUsers'),limit:'10'})
     ]);
     if(summaryResult.status!=='fulfilled')throw summaryResult.reason;
     const metrics=rows(summaryResult.value)[0]?.metrics||[];
@@ -200,11 +201,22 @@ export default async function handler(req,res){
     if(devicesResult.status==='rejected')warning.push('Device distribution is temporarily unavailable');
     if(browsersResult.status==='rejected')warning.push('Browser breakdown is temporarily unavailable');
     if(liveUsersResult.status==='rejected'||liveEventsResult.status==='rejected')warning.push('Realtime activity is temporarily unavailable');
+    if(liveDevicesResult.status==='rejected')warning.push('Realtime device breakdown is temporarily unavailable');
+    // A separate realtime query makes device data independent of 28-day historical
+    // device statistics. Missing API data remains unavailable, never a fake zero.
+    const realtimeDevices=liveDevicesResult.status==='fulfilled'
+      ?rows(liveDevicesResult.value).map(r=>({
+        name:String(r.dimensions[0]||'unknown').toLowerCase(),
+        count:r.metrics[0]
+      })).filter(r=>r.count>0)
+      :[];
     const realtimeEvents=liveEventsResult.status==='fulfilled'?Object.fromEntries(rows(liveEventsResult.value).map(r=>[r.dimensions[0],r.metrics[0]])):{};
     const realtime={
       available:liveUsersResult.status==='fulfilled'&&liveEventsResult.status==='fulfilled',
       activeUsers:liveUsersResult.status==='fulfilled'?(rows(liveUsersResult.value)[0]?.metrics[0]||0):null,
-      eventCounts:realtimeEvents
+      eventCounts:realtimeEvents,
+      devicesAvailable:liveDevicesResult.status==='fulfilled',
+      devices:realtimeDevices
     };
     const processedHasRows=(summaryResult.value?.rows||[]).length>0;
     const uniqueReferrals=eventsResult.status==='fulfilled'?(eventCounts.delivery_referral_unique?.count??0):null;
