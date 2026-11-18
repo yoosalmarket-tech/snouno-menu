@@ -4,6 +4,7 @@ const apiKey = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const $ = id => document.getElementById(id);
 const sections = {
   overview: ['اللوحة الرئيسية', []],
+  investment: ['الاستثمار', []],
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['makook_url','رابط الوجبة المباشر من مكوك (اختياري)','url'],['utlob_url','رابط الوجبة المباشر من تطبيق اطلب (اختياري)','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
   menu_settings: ['مطعم السنونو', [
@@ -51,7 +52,7 @@ let session=JSON.parse(localStorage.getItem(sessionKey)||sessionStorage.getItem(
 // Clean, refreshable URLs for every dashboard section. Legacy # links are
 // accepted on initial load only and replaced with canonical path URLs.
 const adminRouteSlugs={
- overview:'overview',dishes:'dishes',categories:'categories',
+ overview:'overview',investment:'investment',dishes:'dishes',categories:'categories',
  menu_settings:'restaurant',menu_links:'links',menu_ads:'ads',
  rankings:'ratings',events:'analytics',submissions:'messages',
  menu_staff:'staff',account:'account'
@@ -65,7 +66,7 @@ function keyFromAdminLocation(){
  return Object.hasOwn(sections,hash)?hash:null;
 }
 function authorizedAdminSection(key){
- return Object.hasOwn(sections,key)&&(!['menu_staff','account','events','overview'].includes(key)||role==='owner');
+ return Object.hasOwn(sections,key)&&(!['menu_staff','account','events','overview','investment'].includes(key)||role==='owner');
 }
 function closeAdminMobileNav({restoreFocus=false}={}){
  const open=document.body.classList.contains('admin-mobile-open');
@@ -132,6 +133,7 @@ async function api(path, options={}) {
 function loggedOut(){ generation++;role=null;closeAdminMobileNav();$('admin-page-header').hidden=true;$('admin-page-note').replaceChildren();$('admin-page-note').hidden=true;$('body').classList.remove('ga-overview');$('login').hidden=false;$('tabs').replaceChildren();$('body').replaceChildren();$('admin-title-action').replaceChildren();$('title').textContent='تسجيل الدخول'; }
 function adminSidebarIcon(key){
  const icons={
+  investment:'<path d="M3 20h18M5 17V9m7 8V4m7 13v-6"/><path d="m4 7 6-4 4 4 7-5"/>',
   overview:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   dishes:'<path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="1"/><circle cx="7" cy="12" r="1"/><circle cx="7" cy="18" r="1"/>',
   categories:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
@@ -200,13 +202,13 @@ function buildAdminSidebar(email){
  const links=node('div');links.className='admin-sidebar-links';links.id='admin-sidebar-links';
  let prevGroup='';
  const groups={
-  overview:'نظرة عامة',dishes:'محتوى المنيو',categories:'محتوى المنيو',
+  overview:'نظرة عامة',investment:'نظرة عامة',dishes:'محتوى المنيو',categories:'محتوى المنيو',
   menu_settings:'محتوى المنيو',menu_links:'محتوى المنيو',menu_ads:'محتوى المنيو',
   rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
   menu_staff:'إدارة الحساب',account:'إدارة الحساب'
  };
  for(const [key,[label]] of Object.entries(sections)){
-  if(['menu_staff','account','events','overview'].includes(key)&&role!=='owner')continue;
+  if(['menu_staff','account','events','overview','investment'].includes(key)&&role!=='owner')continue;
   const group=groups[key]||'المزيد';
   if(group!==prevGroup){const groupLabel=node('span',group);groupLabel.className='admin-sidebar-group';links.append(groupLabel);prevGroup=group;}
   const btn=node('a');btn.href=adminPath(key);btn.id='admin-tab-'+key;
@@ -1133,12 +1135,12 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  }
  closeAdminMobileNav({restoreFocus:true});
  updateAdminHeader(key);
- $('body').classList.toggle('ga-overview',key==='overview');
+ $('body').classList.toggle('ga-overview',key==='overview'||key==='investment');
  const sameSection=section===key;
  const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='account'){await renderOwnerAccount();return;}
- if(key==='overview'){await renderGaOverview();return;}
+ if(key==='overview'||key==='investment'){await renderGaOverview();return;}
   if(key==='events'){await renderActionReports();return;}
  const feedback=['rankings','submissions'].includes(key);
  const table=feedback?'menu_feedback':key;
