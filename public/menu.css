@@ -1241,7 +1241,7 @@ body.rich-menu-active:not([data-preview]) #rich-menu{
 }
 
 /* Optional installation promotion: a small, non-modal floating card.
-   It never blocks navigation or requires dismissal; closes itself after 11s. */
+   It never blocks navigation or requires dismissal; closes itself after 20s. */
 #install-snounu-promo[hidden]{display:none!important;}
 #install-snounu-promo{
  box-sizing:border-box;position:fixed;z-index:70;
