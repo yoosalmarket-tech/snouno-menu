@@ -717,6 +717,13 @@ function renderSettings(){
  $('browse').querySelector('span').textContent=buttonText;
  $('desktop-welcome-browse').querySelector('span').textContent=buttonText;
  setText('desktop-welcome-brand',tr(s.name));
+ // Keep the browser-tab icon independent of the large welcome/header logo.
+ // Uploaded files use unique Storage paths, so replacements avoid stale cache.
+ const favicon=document.getElementById('snounu-favicon');
+ if(favicon){
+  const faviconUrl=asset(s.favicon_url)||'/assets/snounu-favicon.png?v=20261118';
+  if(favicon.getAttribute('href')!==faviconUrl)favicon.href=faviconUrl;
+ }
  const logo=asset(s.logo)||'/assets/logo.webp';
  updateWelcomeLabels(mobileWelcomeIndex);
  $('logo').src=logo;$('welcome-logo').src=logo;$('desktop-welcome-logo').src=logo;
