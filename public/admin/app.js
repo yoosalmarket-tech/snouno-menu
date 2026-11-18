@@ -968,7 +968,7 @@ function gaVisitSourceSearch(days,ticket){
 }
 
 async function renderGaOverview(days=28){
- const area=$('body'),ticket=generation;
+ const area=$('body'),ticket=generation,investment=section==='investment';
  const top=node('div');top.className='ga-heading';
  const description=node('p','');description.hidden=true;
  const interval=node('select');interval.id='ga-date-range';interval.setAttribute('aria-label','الفترة الزمنية');
@@ -978,7 +978,7 @@ async function renderGaOverview(days=28){
  interval.value=String(days);
  interval.onchange=()=>renderGaOverview(Number(interval.value));
  const refresh=action('تحديث',()=>renderGaOverview(Number(interval.value)));
- refresh.id='ga-refresh';refresh.dataset.trackAction='ga_overview_refresh';
+ refresh.id='ga-refresh';refresh.dataset.trackAction=investment?'ga_investment_refresh':'ga_overview_refresh';
  top.append(interval,refresh);
  const status=node('p','جارٍ تحميل الإحصائيات من GA4…');status.id='ga-loading';
  area.replaceChildren(top,status);
@@ -1001,18 +1001,21 @@ async function renderGaOverview(days=28){
   live.append(node('h2','نشاط آخر 30 دقيقة (مباشر)'));
   if(realtime.available){
    const liveMetrics=node('div');liveMetrics.className='ga-live-metrics';
-   const liveCards=[
-    ['المستخدمون النشطون',realtime.activeUsers],
-    ['مشاهدات الصفحة',realtime.eventCounts?.page_view],
+   const liveCards=investment?[
     ['النقرات على روابط التوصيل',realtime.eventCounts?.delivery_app_click],
     ['الإحالات الأولى الجديدة',realtime.eventCounts?.delivery_referral_unique]
+   ]:[
+    ['المستخدمون النشطون',realtime.activeUsers],
+    ['مشاهدات الصفحة',realtime.eventCounts?.page_view]
    ];
    for(const [label,value] of liveCards){
     const card=node('div');card.className='ga-live-metric';
     card.append(node('span',label),node('strong',gaNumber(value||0)));liveMetrics.append(card);
    }
    live.append(liveMetrics);
-   live.append(node('p','النقرة تعني فتح رابط تطبيق التوصيل، وليس فتح نافذة اختيار التطبيقات. الإحالة الأولى تُسجل مرة واحدة في نافذة جلسة مدتها 30 دقيقة تقريباً؛ تكرار النقرات لا يزيدها. هذه بيانات آخر 30 دقيقة فقط.'));
+   live.append(node('p',investment
+    ?'النقرة تعني فتح رابط التوصيل وليست عملية بيع؛ الإحالة الأولى تُسجل مرة كل نافذة جلسة تقريباً. هذه بيانات آخر 30 دقيقة.'
+    :'هذه بيانات آخر 30 دقيقة فقط. قد تختلف عن تقارير GA4 التاريخية حتى تكتمل المعالجة.'));
   }else{
    live.append(node('p','تعذّر تحميل بيانات الوقت الفعلي حالياً. قد تكون خدمة GA4 Realtime غير متاحة مؤقتاً.'));
   }
@@ -1021,9 +1024,10 @@ async function renderGaOverview(days=28){
   const heroHeading=node('div');heroHeading.className='ga-hero-heading';
   const palestineHour=Number(new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:'Asia/Hebron'}).format(new Date()));
   const greeting=palestineHour<12?'صباح الخير':'مساء الخير';
-  const greetingTitle=node('h2');greetingTitle.append(node('span',greeting+'، '),node('em',role==='owner'?'مدير الموقع':'محرر الموقع'));
+  const greetingTitle=node('h2');if(investment)greetingTitle.textContent='الاستثمار والإحالات';
+  else greetingTitle.append(node('span',greeting+'، '),node('em',role==='owner'?'مدير الموقع':'محرر الموقع'));
   heroHeading.append(greetingTitle);
-  heroHeading.append(node('p','الزيارات والإحالات وأداء المنيو خلال الفترة المختارة حسب GA4.'));
+  heroHeading.append(node('p',investment?'مصادر الزيارات، قيمة الإحالات وتقديرات المبيعات حسب GA4.':'الزيارات وأداء المنيو وتفاعل الجمهور خلال الفترة المختارة حسب GA4.'));
   const heroTop=node('div');heroTop.className='ga-hero-top';
   heroTop.append(heroHeading,top);
   hero.append(heroTop);
@@ -1049,7 +1053,8 @@ async function renderGaOverview(days=28){
    card[2]='التقرير التاريخي لم يُعالج بعد';
   }
   const primaryMetrics=node('section');primaryMetrics.id='ga-primary-metrics';primaryMetrics.className='ga-primary-metrics';
-  const topOrder=[3,1,7,6];
+  const topOrder=investment?[7,8,6,0]:[3,1,0,2];
+  const visibleCards=new Set(investment?[0,1,6,7,8]:[0,1,2,3,4,5]);
   const emphasized=new Set(topOrder);
   const renderStat=(index,isPrimary)=>{
    const [name,value,detail]=cards[index];
@@ -1077,7 +1082,7 @@ async function renderGaOverview(days=28){
    return card;
   };
   topOrder.forEach(i=>primaryMetrics.append(renderStat(i,true)));
-  cards.forEach((entry,i)=>{if(!emphasized.has(i))metrics.append(renderStat(i,false));});
+  cards.forEach((entry,i)=>{if(visibleCards.has(i)&&!emphasized.has(i))metrics.append(renderStat(i,false));});
   const makeTable=(heading,headers,rows)=>{
    const block=node('section');block.className='analytics-report ga-table';
    block.append(node('h2',heading));
@@ -1090,10 +1095,12 @@ async function renderGaOverview(days=28){
    }
    table.append(body);block.append(table);return block;
   };
-  const eventCounts=Object.entries(data.eventCounts||{}).map(([key,entry])=>[
+  const referralEvents=new Set(['delivery_referral_unique','delivery_app_click']);
+  const visibleEvents=Object.entries(data.eventCounts||{}).filter(([key])=>investment?referralEvents.has(key):!referralEvents.has(key));
+  const eventCounts=visibleEvents.map(([key,entry])=>[
    gaEventLabels[key]||key,gaNumber(entry.count),gaNumber(entry.keyEvents)
   ]);
-  const eventsTable=makeTable('الأحداث المهمة',['الحدث','مرات التنفيذ','أحداث رئيسية'],eventCounts);
+  const eventsTable=makeTable(investment?'أحداث الإحالات':'الأحداث المهمة',['الحدث','مرات التنفيذ','أحداث رئيسية'],eventCounts);
   const topReferrals=(data.referrals||[]).slice(0,30).map(r=>[
    r.meal,r.platform,gaNumber(r.count),r.value==null?'—':gaMoney(r.value)
   ]);
@@ -1119,15 +1126,22 @@ async function renderGaOverview(days=28){
   const trend=gaDailyLineChart(data.daily||[]);
   const devices=gaDeviceDonutPanel(data.devices||[],data.reportStatus?.devicesAvailable===true);
   const browsers=gaBrowserPanel(data.browsers||[],data.reportStatus?.browsersAvailable===true);
-  const eventsGraph=gaEventsGraph(data.eventCounts||{});
+  const eventsGraph=gaEventsGraph(Object.fromEntries(visibleEvents));
   const chartsRow=node('div');chartsRow.className='ga-overview-chart-row';chartsRow.append(trend,devices);
-  const insightsRow=node('div');insightsRow.className='ga-overview-insights-row';insightsRow.append(eventsGraph,topSources,browsers);
-  const foot=node('p','المصدر: Google Analytics 4 · آخر جلب: '+new Date(data.asOf).toLocaleString('ar')+' · لا تمثل قيمة الإحالات مبيعات فعلية.');
+  const insightsRow=node('div');insightsRow.className='ga-overview-insights-row';insightsRow.append(eventsGraph,browsers);
+  const foot=node('p','المصدر: Google Analytics 4 · آخر جلب: '+new Date(data.asOf).toLocaleString('ar')+(investment?' · قيمة الإحالات ليست مبيعات فعلية.':''));
   foot.className='ga-footnote';
   const notes=(data.warning||[]).length?node('p','ملاحظة: بعض بيانات GA4 لا تزال غير متاحة أو قيد المعالجة، خاصةً الأبعاد والمقاييس المخصصة.') :null;
   if(notes)notes.className='ga-notice';
   area.classList.add('ga-overview');
-  area.replaceChildren(hero,primaryMetrics,chartsRow,insightsRow,...(pendingNote?[pendingNote]:[]),estimate,ranks,live,historyTitle,metrics,refTable,eventsTable,sources,foot,...(notes?[notes]:[]));
+  if(investment){
+   const search=gaVisitSourceSearch(days,ticket);
+   area.replaceChildren(hero,primaryMetrics,...(pendingNote?[pendingNote]:[]),
+    search,topSources,sources,estimate,ranks,live,historyTitle,metrics,refTable,eventsTable,foot,...(notes?[notes]:[]));
+  }else{
+   area.replaceChildren(hero,primaryMetrics,chartsRow,insightsRow,...(pendingNote?[pendingNote]:[]),
+    live,historyTitle,metrics,eventsTable,foot,...(notes?[notes]:[]));
+  }
  }catch(error){
   if(ticket===generation){status.textContent='حدث خطأ أثناء قراءة GA4. '+(error?.message||'');status.className='ga-notice';}
  }
