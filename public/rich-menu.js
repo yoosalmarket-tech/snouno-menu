@@ -395,11 +395,17 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  }
  function pointerDown(event){
   if(event.button!==0||swapping||!active||pointer||u.sheet.open||event.isPrimary===false)return;
-  const el=event.target.closest('.rm-dish');
+  const fromInfo=event.currentTarget===u.info;
+  // Controls on the information panel must remain ordinary, clickable buttons.
+  // Dragging on its text, price, rating or blank space uses the same physics
+  // as dragging a food image; no separate swipe simulation is introduced.
+  if(fromInfo&&event.target.closest('button,a,input,textarea,select,[role="button"]'))return;
+  const el=fromInfo?null:event.target.closest('.rm-dish');
   pointer={id:event.pointerId,x:event.clientX,y:event.clientY,lastT:performance.now(),
-   startK:k,startFront:front,startTarget:target,axis:null,index:el?Number(el.dataset.idx):null};
-  u.stage.focus({preventScroll:true});
-  u.stage.setPointerCapture?.(event.pointerId);
+   startK:k,startFront:front,startTarget:target,axis:null,index:el?Number(el.dataset.idx):null,
+   source:fromInfo?'info':'stage',captureTarget:event.currentTarget};
+  if(!fromInfo)u.stage.focus({preventScroll:true});
+  event.currentTarget.setPointerCapture?.(event.pointerId);
  }
  function pointerMove(event){
   const p=pointer;if(!p||event.pointerId!==p.id)return;
@@ -441,7 +447,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  function pointerUp(event){
   const p=pointer;if(!p||event.pointerId!==p.id)return;
   pointer=null;
-  if(u.stage.hasPointerCapture?.(event.pointerId))u.stage.releasePointerCapture(event.pointerId);
+  const capture=p.captureTarget||u.stage;
+  if(capture.hasPointerCapture?.(event.pointerId))capture.releasePointerCapture(event.pointerId);
   if(p.axis==='x'){
    const dx=event.clientX-p.x;
    if(Math.abs(dx)>=45){
@@ -461,7 +468,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
     const mobile=window.matchMedia('(max-width:980px)').matches;
     changeGroup(groupIndex+(mobile?(delta<0?1:-1):(delta<0?-1:1)));
    }
-  }else{
+  }else if(p.source!=='info'){
+   // Tapping static information isn't a meal-image tap; don't open a popup.
    const index=desktopAdjacentHit(event.clientX,event.clientY,p.index);
    const selected=index==null?null:group()?.items[index];
    if(selected){
@@ -474,7 +482,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  function cancelPointer(){
   const p=pointer;if(!p)return;
   pointer=null;
-  if(u.stage.hasPointerCapture?.(p.id))u.stage.releasePointerCapture(p.id);
+  const capture=p.captureTarget||u.stage;
+  if(capture.hasPointerCapture?.(p.id))capture.releasePointerCapture(p.id);
   if(p.axis==='x')goTo(Math.round(k));
  }
  function wheel(event){
@@ -606,12 +615,17 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
      event.clientY<bounds.top||event.clientY>bounds.bottom)closeSheet();
  });
 
- u.stage.addEventListener('pointerdown',pointerDown);
- u.stage.addEventListener('pointermove',pointerMove);
- u.stage.addEventListener('pointerup',pointerUp);
- u.stage.addEventListener('pointercancel',cancelPointer);
- u.stage.addEventListener('lostpointercapture',cancelPointer);
- u.stage.addEventListener('wheel',wheel,{passive:false});
+ // Both the food stage and the meal information are gesture surfaces.
+ // Reusing the same handlers preserves spring inertia, boundary bounce,
+ // vertical category navigation, and the three-outward-swipes transition.
+ for(const surface of [u.stage,u.info]){
+  surface.addEventListener('pointerdown',pointerDown);
+  surface.addEventListener('pointermove',pointerMove);
+  surface.addEventListener('pointerup',pointerUp);
+  surface.addEventListener('pointercancel',cancelPointer);
+  surface.addEventListener('lostpointercapture',cancelPointer);
+  surface.addEventListener('wheel',wheel,{passive:false});
+ }
  u.stage.addEventListener('keydown',key);
  at(root,'.rm-exit').id='rich-exit';
  u.catPrev.id='rich-category-previous';u.catNext.id='rich-category-next';
