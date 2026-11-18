@@ -325,16 +325,43 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const next=clamp(index,0,g.items.length-1);
   if(Math.abs(next-k)>.001)motionDirection=Math.sign(next-k);
   const changed=next!==target;target=next;
+  if(changed)resetEdgeSwipes();
   if(changed&&typeof onSelection==='function')onSelection({mealId:g.items[target]?.id,categoryId:g.id});
   if(reduced.matches){k=target;velocity=0;updateFront(target);draw();}
  }
- const step=delta=>{
+ // Count consecutive outward swipes only when the selected meal is
+ // already at a category boundary. Normal navigation resets the sequence.
+ let edgeSwipeCount=0,edgeSwipeDirection=0,edgeSwipeGroup=null;
+ function resetEdgeSwipes(){
+  edgeSwipeCount=0;edgeSwipeDirection=0;edgeSwipeGroup=null;
+ }
+ function recordEdgeSwipe(direction){
+  const current=group(),last=(current?.items.length||0)-1;
+  if(!current||groups.length<=1||front!==(direction>0?last:0)||
+     target!==(direction>0?last:0)){
+   resetEdgeSwipes();return false;
+  }
+  if(edgeSwipeDirection!==direction||edgeSwipeGroup!==current.id){
+   edgeSwipeCount=0;
+  }
+  edgeSwipeDirection=direction;edgeSwipeGroup=current.id;
+  edgeSwipeCount++;
+  if(edgeSwipeCount<3)return false;
+  resetEdgeSwipes();
+  // The existing changeGroup() wraps first and last categories.
+  void changeGroup(groupIndex+direction);
+  return true;
+ }
+ const step=(delta,{swipe=false}={})=>{
   if(swapping||pointer||!active)return;
   motionDirection=Math.sign(delta);
   const maxIndex=(group()?.items.length||1)-1;
   const next=Math.round(target)+delta;
   if(next<0||next>maxIndex){
-   // At either end, a wheel gesture or arrow press gives a small bounce.
+   // Trackpad swipes count; regular navigation buttons retain their bounce.
+   if(swipe&&recordEdgeSwipe(Math.sign(delta)))return;
+   if(!swipe)resetEdgeSwipes();
+   // First and second outward swipes retain the existing edge bounce.
    if(!reduced.matches&&active&&!swapping&&!pointer){
     target=next<0?0:maxIndex;
     velocity=next<0?-.12:.12;
@@ -349,6 +376,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   // movement direction from the unwrapped request for the transition.
   const nextIndex=((index%groups.length)+groups.length)%groups.length;
   if(nextIndex===groupIndex)return;
+  resetEdgeSwipes();
   swapping=true;clearTimeout(viewTimer);viewCandidate=null;
   target=front;k=front;velocity=0;
   const serial=++swapToken,direction=index>groupIndex?1:-1;
@@ -368,7 +396,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  function pointerDown(event){
   if(event.button!==0||swapping||!active||pointer||u.sheet.open||event.isPrimary===false)return;
   const el=event.target.closest('.rm-dish');
-  pointer={id:event.pointerId,x:event.clientX,y:event.clientY,lastT:performance.now(),startK:k,axis:null,index:el?Number(el.dataset.idx):null};
+  pointer={id:event.pointerId,x:event.clientX,y:event.clientY,lastT:performance.now(),
+   startK:k,startFront:front,startTarget:target,axis:null,index:el?Number(el.dataset.idx):null};
   u.stage.focus({preventScroll:true});
   u.stage.setPointerCapture?.(event.pointerId);
  }
@@ -413,8 +442,18 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const p=pointer;if(!p||event.pointerId!==p.id)return;
   pointer=null;
   if(u.stage.hasPointerCapture?.(event.pointerId))u.stage.releasePointerCapture(event.pointerId);
-  if(p.axis==='x')goTo(Math.round(k+velocity*7));
-  else if(p.axis==='y'){
+  if(p.axis==='x'){
+   const dx=event.clientX-p.x;
+   if(Math.abs(dx)>=45){
+    // Swiping left advances a meal; swiping right moves back.
+    const direction=dx<0?1:-1,last=(group()?.items.length||1)-1;
+    const boundary=direction>0?last:0;
+    if(p.startFront===boundary&&p.startTarget===boundary){
+     if(recordEdgeSwipe(direction))return;
+    }else resetEdgeSwipes();
+   }
+   goTo(Math.round(k+velocity*7));
+  }else if(p.axis==='y'){
    const delta=event.clientY-p.y;
    // Mobile: swipe up advances, swipe down goes back; desktop gesture stays as before.
    // changeGroup handles wrapping at the first and last categories.
@@ -454,7 +493,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   wheelDistance+=(wheelAxis==='x'?dx:dy)*(event.deltaMode===1?16:event.deltaMode===2?u.wrap.clientHeight:1);
   if(Math.abs(wheelDistance)<8)return;
   wheelHandled=true;
-  if(wheelAxis==='x')step(wheelDistance>0?1:-1);
+  if(wheelAxis==='x')step(wheelDistance>0?1:-1,{swipe:true});
   else changeGroup(groupIndex+(wheelDistance>0?1:-1));
  }
  function key(event){
@@ -597,7 +636,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   info();
  };
  function refresh(){
-  cancelPointer();++swapToken;swapping=false;
+  resetEdgeSwipes();cancelPointer();++swapToken;swapping=false;
   root.classList.remove('rm-category-out','rm-category-in');
   snapshot=getData();
   const oldGroup=group()?.id,oldDish=dish()?.id;
@@ -622,7 +661,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   if(groupAt<0&&selected)groupAt=groups.findIndex(g=>g.items.some(m=>String(m.id)===String(mealId)));
   if(!selected)groupAt=groups.findIndex(g=>String(g.id)===String(categoryId));
   if(groupAt<0)return false;
-  cancelPointer();groupIndex=groupAt;
+  resetEdgeSwipes();cancelPointer();groupIndex=groupAt;
   const index=selected?group().items.findIndex(m=>String(m.id)===String(selected.id)):0;
   front=Math.max(0,index);k=front;target=front;velocity=0;
   root.classList.remove('rm-category-out','rm-category-in');
