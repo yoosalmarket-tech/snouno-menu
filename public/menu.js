@@ -721,7 +721,7 @@ function renderSettings(){
  // Uploaded files use unique Storage paths, so replacements avoid stale cache.
  const favicon=document.getElementById('snounu-favicon');
  if(favicon){
-  const faviconUrl=asset(s.favicon_url)||'/assets/snounu-favicon.png?v=20261118';
+  const faviconUrl=asset(s.favicon_url)||'/assets/snounu-browser-192.png?v=20261118b';
   if(favicon.getAttribute('href')!==faviconUrl)favicon.href=faviconUrl;
  }
  const logo=asset(s.logo)||'/assets/logo.webp';
