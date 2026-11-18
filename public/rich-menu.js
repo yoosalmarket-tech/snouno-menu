@@ -121,7 +121,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  function selectCategoryTab(){
   u.catCount.textContent=groups.length?(groupIndex+1)+' / '+groups.length:'0 / 0';
   categoryEls.forEach((el,i)=>el.setAttribute('aria-selected',String(i===groupIndex)));
-  u.catPrev.disabled=groupIndex===0;u.catNext.disabled=groupIndex>=groups.length-1;
+  // Both controls can wrap; only disable when there is no other category.
+  u.catPrev.disabled=groups.length<=1;u.catNext.disabled=groups.length<=1;
   focusCategory();
  }
  function paintStage(){
@@ -335,7 +336,11 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   goTo(next);
  };
  async function changeGroup(index){
-  if(swapping||pointer||destroyed||index<0||index>=groups.length||index===groupIndex)return;
+  if(swapping||pointer||destroyed||groups.length<=1||!Number.isInteger(index))return;
+  // Normalize requested category to the circular index. Keep the original
+  // movement direction from the unwrapped request for the transition.
+  const nextIndex=((index%groups.length)+groups.length)%groups.length;
+  if(nextIndex===groupIndex)return;
   swapping=true;clearTimeout(viewTimer);viewCandidate=null;
   target=front;k=front;velocity=0;
   const serial=++swapToken,direction=index>groupIndex?1:-1;
@@ -344,7 +349,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   root.classList.remove('rm-category-in');root.classList.add('rm-category-out');
   await new Promise(r=>setTimeout(r,reduced.matches?0:220));
   if(serial!==swapToken||destroyed)return;
-  groupIndex=index;front=0;k=0;target=0;velocity=0;motionDirection=visualDirection=1;
+  groupIndex=nextIndex;front=0;k=0;target=0;velocity=0;motionDirection=visualDirection=1;
   paintStage();info();selectCategoryTab();draw();
   root.classList.remove('rm-category-out');root.classList.add('rm-category-in');
   await new Promise(r=>setTimeout(r,reduced.matches?0:550));
@@ -385,7 +390,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   if(p.axis==='x')goTo(Math.round(k+velocity*7));
   else if(p.axis==='y'){
    const delta=event.clientY-p.y;
-   if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?1:-1));
+   // Up moves to the previous category, down to the next, including wrap.
+   if(Math.abs(delta)>50)changeGroup(groupIndex+(delta<0?-1:1));
   }else if(p.index!=null){
    const selected=group()?.items[p.index];
    if(selected){
@@ -410,8 +416,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   lastWheel=now;
   if(!wheelAxis)wheelAxis=Math.abs(dx)>Math.abs(dy)?'x':'y';
   const delta=wheelAxis==='x'?dx:dy;
-  const beyondCategory=wheelAxis==='y'&&(groupIndex+Math.sign(delta)<0||groupIndex+Math.sign(delta)>=groups.length);
-  if(beyondCategory&&!swapping&&!wheelHandled)return;
+  // Let the wheel reach the opposite end; one gesture still moves once.
   event.preventDefault();
   if(swapping){wheelHandled=true;return;}
   if(wheelHandled)return;
