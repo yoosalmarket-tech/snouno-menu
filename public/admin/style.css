@@ -2434,3 +2434,72 @@ main:has(#body.ga-overview) #tabs .admin-install-app:hover{
   min-height:45px;justify-content:center;
  }
 }
+
+
+/* Investment source lookup: visible only on the authenticated Investment view. */
+#body.ga-overview #ga-visit-source-search{
+ margin:0 0 16px!important;
+ border:1px solid #E2E2E2;
+ border-radius:20px;
+ padding:clamp(16px,2.5vw,25px);
+ background:#FFFFFF;
+}
+#body.ga-overview .ga-source-search .ga-chart-heading h2{
+ margin-bottom:8px;font-weight:900;font-size:clamp(18px,2vw,23px);
+}
+#body.ga-overview .ga-source-search .ga-chart-heading p{
+ font-size:13px;line-height:1.8;color:#595959;
+}
+#body.ga-overview .ga-source-search-form{
+ display:flex;align-items:stretch;gap:10px;
+ margin:15px 0 9px;
+}
+#body.ga-overview .ga-source-search-form input{
+ flex:1 1 auto;min-width:0;min-height:49px;
+ border:1px solid #C9C9C9;border-radius:12px;
+ background:#FAFAFA;color:#242424;
+ padding:9px 14px;font:600 15px/1.4 system-ui,Arial,sans-serif;
+}
+#body.ga-overview .ga-source-search-form input:focus-visible{
+ outline:2px solid #FDBE2D;outline-offset:2px;
+}
+#body.ga-overview .ga-source-search-form button{
+ flex:0 0 auto;min-width:92px;min-height:49px;
+ border:0;border-radius:12px;padding:10px 19px;
+ background:#FDBE2D;color:#262626;font-weight:900;
+ cursor:pointer;
+}
+#body.ga-overview .ga-source-search-form button:disabled{opacity:.5;cursor:wait;}
+#body.ga-overview .ga-source-search-help{
+ color:#646464;font-size:12px;line-height:1.8;margin:7px 0;
+}
+#body.ga-overview #ga-source-lookup-status{
+ font-size:13px;color:#444;font-weight:700;margin:10px 0 0;
+}
+#body.ga-overview .ga-source-search-results{display:grid;gap:10px;margin-top:12px;}
+#body.ga-overview .ga-source-result{
+ display:flex;align-items:center;justify-content:space-between;gap:15px;
+ background:#F7F7F7;border:1px solid #E3E3E3;border-radius:14px;
+ padding:14px;
+}
+#body.ga-overview .ga-source-result>strong{
+ color:#252525;font:800 14px/1.6 system-ui,sans-serif;
+ overflow-wrap:anywhere;text-align:start;
+}
+#body.ga-overview .ga-source-result-counts{
+ display:grid;grid-template-columns:repeat(2,minmax(90px,1fr));gap:12px;
+}
+#body.ga-overview .ga-source-result-counts>div{
+ display:flex;flex-direction:column;gap:2px;align-items:center;
+ background:#FFFFFF;border-radius:10px;padding:8px 10px;
+}
+#body.ga-overview .ga-source-result-counts strong{
+ font-size:23px;line-height:1.2;color:#262626;font-variant-numeric:tabular-nums;
+}
+#body.ga-overview .ga-source-result-counts span{font-size:11px;color:#595959;}
+@media(max-width:620px){
+ #body.ga-overview .ga-source-search-form{flex-direction:column;}
+ #body.ga-overview .ga-source-search-form button{width:100%;}
+ #body.ga-overview .ga-source-result{flex-direction:column;align-items:stretch;}
+ #body.ga-overview .ga-source-result-counts{width:100%;grid-template-columns:repeat(2,minmax(0,1fr));}
+}
