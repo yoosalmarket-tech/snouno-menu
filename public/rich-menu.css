@@ -1818,3 +1818,37 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
  #rich-menu .rm-cat strong{font-size:9px!important;}
  #rich-menu .rm-cat span{font-size:12px!important;}
 }
+
+
+/* Desktop-only previous/next meal controls; the mobile layout stays untouched. */
+#rich-menu .rm-meal-nav{display:none;}
+@media(min-width:981px){
+ #rich-menu .rm-meal-nav{
+  position:absolute!important;
+  bottom:clamp(15px,3svh,33px)!important;
+  z-index:8!important;
+  display:flex!important;align-items:center;justify-content:center;
+  gap:10px;min-height:48px;
+  padding:9px 14px!important;
+  border:1px solid #8d7849!important;border-radius:999px!important;
+  background:#29272fe8!important;color:#f8e7c9!important;
+  font:800 14px/1.2 Snounu,Tahoma,sans-serif!important;
+  box-shadow:0 6px 18px #0006!important;
+  backdrop-filter:blur(8px);
+  cursor:pointer;transition:background .2s,transform .2s;
+ }
+ #rich-menu .rm-meal-nav span[aria-hidden=true]{
+  color:#FDBE2D;font:900 23px/1 system-ui,Arial,sans-serif!important;
+ }
+ #rich-menu .rm-meal-nav:hover{background:#3c3325!important;transform:translateY(-2px);}
+ #rich-menu .rm-meal-nav:active{transform:translateY(1px);}
+ #rich-menu .rm-meal-nav:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px;}
+ #rich-menu .rm-meal-nav-prev{left:clamp(10px,1.8vw,28px)!important;}
+ #rich-menu .rm-meal-nav-next{right:clamp(10px,1.8vw,28px)!important;}
+}
+@media(min-width:981px) and (max-width:1120px){
+ #rich-menu .rm-meal-nav{
+  min-height:43px;padding:8px 10px!important;gap:6px;
+  font-size:12px!important;
+ }
+}
