@@ -98,7 +98,11 @@ async function lookupVisitSource(token,days,searchText){
       if(!names.has(id))names.set(id,code);
     }
   }
-  const codes=[...names.values()].sort((a,b)=>a.localeCompare(b)).slice(0,10);
+  // When the normalized code is an exact match, don't mix in names like
+  // sharingboxvideo10 when searching for sharing box video 1.
+  const candidates=[...names.values()];
+  const exact=candidates.filter(code=>normalizeVisitCode(code)===needle);
+  const codes=(exact.length?exact:candidates).sort((a,b)=>a.localeCompare(b)).slice(0,10);
   const matches=await Promise.all(codes.map(async source=>{
     const enc=encodeURIComponent(source);
     const alternatives=[...new Set([source,enc,enc.replace(/%20/g,'+')])].map(quoteGaRegex);
@@ -113,7 +117,7 @@ async function lookupVisitSource(token,days,searchText){
     return {source,users:totals[0]||0,pageViews:totals[1]||0};
   }));
   return {source:'Google Analytics 4',days,query,matches,
-    truncated:Number(discovery.rowCount||0)>10000||names.size>10,
+    truncated:Number(discovery.rowCount||0)>10000||(exact.length?exact.length:candidates.length)>10,
     metric:'GA4 distinct users and page views for tagged URLs',
     asOf:new Date().toISOString()};
 }
