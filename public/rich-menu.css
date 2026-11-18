@@ -1852,3 +1852,10 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
   font-size:12px!important;
  }
 }
+
+
+/* Let meal-description text use the same touch swipe gestures as the food
+   carousel; action buttons remain fully clickable and focusable. */
+#rich-menu .rm-info{
+ touch-action:none;
+}
