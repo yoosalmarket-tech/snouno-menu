@@ -22,7 +22,13 @@
       "src": "/assets/snounu-app-512.png?v=20261118b",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/snounu-app-512.png?v=20261118b",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
