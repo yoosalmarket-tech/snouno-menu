@@ -1197,7 +1197,7 @@ function installPreview(){
    settings={...original.settings};links=original.links.map(v=>({...v}));
    if(key==='menu_settings'){
      settings={...settings,...data};
-     if(['name','welcome','hero','welcome_button','hotline','logo','welcome_caption','welcome_subtitle','welcome_question','welcome_label','welcome_desktop_accent','welcome_description','welcome_meal_1','welcome_meal_2','welcome_meal_3','welcome_image_1','welcome_image_2' ,'welcome_image_3','welcome_label_x_1','welcome_label_y_1','welcome_label_x_2','welcome_label_y_2','welcome_label_x_3','welcome_label_y_3'].includes(field))dest='welcome';
+     if(['name','welcome','welcome_button','hotline','logo','welcome_caption','welcome_subtitle','welcome_question','welcome_label','welcome_desktop_accent','welcome_description','welcome_meal_1','welcome_meal_2','welcome_meal_3','welcome_image_1','welcome_image_2' ,'welcome_image_3','welcome_label_x_1','welcome_label_y_1','welcome_label_x_2','welcome_label_y_2','welcome_label_x_3','welcome_label_y_3'].includes(field))dest='welcome';
      if(['address','hours','contact'].includes(field))dest='contact';
    }else if(key==='menu_links'){
      dest='contact';links=links.map(link=>link.id===data.id?{...link,url:data.url}:link);

@@ -1371,7 +1371,7 @@ async function edit(key,row,inline=false){
  if(key==='dishes'&&!cats.length){notice('أضف صنفاً أولاً لتضع الطبق فيه.');return;}
  const dishes=key==='menu_ads'?await api('/rest/v1/dishes?select=id,name&order=name'):[];
  const uploads={};
- const sizes={image:key==='menu_ads'?'1080 × 285':'1200 × 740',rich_image:'صورة PNG/WebP شفافة 900 × 900 أو أكبر',logo:'564 × 183',favicon_url:'مربع 256 × 256 أو 512 × 512',welcome_image_1:'صورة شفافة 720 × 720',welcome_image_2:'صورة شفافة 720 × 720',welcome_image_3:'صورة شفافة 720 × 720',banner:'1080 × 285',banner_two:'1080 × 285',banner_three:'1080 × 285'};
+ const sizes={image:key==='menu_ads'?'1080 × 285':'1200 × 740',rich_image:'صورة PNG/WebP شفافة 900 × 900 أو أكبر',logo:'564 × 183',favicon_url:'مربع 256 × 256 أو 512 × 512',welcome_image_1:'صورة شفافة 720 × 720',welcome_image_2:'صورة شفافة 720 × 720',welcome_image_3:'صورة شفافة 720 × 720'};
  if(key==='menu_links')form.append(node('p',row.name));
  if(key==='menu_settings'){
   const icon=document.getElementById('snounu-favicon');
