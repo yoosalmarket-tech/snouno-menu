@@ -72,6 +72,7 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
  const verificationCode=el('code');verify.append(verificationCode);
  const syncVerification=()=>{const value=String(val(form,'gsc_verification')).replace(/^google-site-verification=/,'');
   verificationCode.textContent='<meta name="google-site-verification" content="'+value.replace(/"/g,'')+'">';};
+ general.append(verify);
  form.append(general);
  const pagePanel=panel('SEO حسب الصفحة','يمكنك تحرير Title وMeta Description وCanonical وOpen Graph وضبط ظهور كل صفحة في فهرس البحث بشكل منفصل.');
  const tabs=el('div',null,'seo-tabbar');const contents=el('div');

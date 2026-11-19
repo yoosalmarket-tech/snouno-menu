@@ -36,9 +36,15 @@ async function getPublic(table){
   const rows=await r.json();return rows[0]||{};
  }catch(e){console.warn('SEO read fallback:',table,e.message);return {}}
 }
-function sitemap(data){
+function sitemap(data,meals=[]){
  const pages=data.pages||{};
  const list=ROUTES.filter(route=>pages[route]?.index!==false).map(route=>canonical(pages[route]?.canonical,route));
+ if(pages.menu?.index!==false){
+  for(const meal of meals){
+   if(/^[0-9a-f-]{36}$/.test(meal.id)&&meal.available!==false)
+    list.push(ORIGIN+'/menu?dish='+encodeURIComponent(meal.id));
+  }
+ }
  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+
   list.map(url=>'<url><loc>'+esc(url)+'</loc></url>').join('')+'</urlset>';
 }
@@ -46,8 +52,8 @@ function meta(data,settings,links,route,dish=null){
  const cfg={...DEFAULTS.pages[route],...data.pages?.[route]};
  const title=String((dish&&(dish.seo_title||dish.name+' | منيو سنونو'))||cfg.title||DEFAULTS.pages[route].title).slice(0,180);
  const description=String((dish&&(dish.seo_description||dish.description))||cfg.description||DEFAULTS.pages[route].description).slice(0,350);
- const openTitle=String(cfg.og_title||title).slice(0,180);
- const openDescription=String(cfg.og_description||description).slice(0,350);
+ const openTitle=String(dish?title:(cfg.og_title||title)).slice(0,180);
+ const openDescription=String(dish?description:(cfg.og_description||description)).slice(0,350);
  const url=dish?ORIGIN+'/menu?dish='+encodeURIComponent(dish.id):canonical(cfg.canonical,route);
  const image=absolute((dish&&dish.image)||cfg.og_image||data.default_image||DEFAULTS.default_image);
  const robots=cfg.index===false?'noindex,follow':'index,follow,max-image-preview:large';
@@ -123,7 +129,15 @@ export default async function handler(req,res){
   if(data.sitemap_enabled===false){res.statusCode=404;res.end('Not Found');return;}
   res.statusCode=200;res.setHeader('Content-Type','application/xml; charset=utf-8');
   res.setHeader('Cache-Control','public, s-maxage=60, stale-while-revalidate=240');
-  res.end(sitemap(data));return;
+  let meals=[];
+  if(data.pages?.menu?.index!==false){
+   try{
+    const r=await fetch(SUPABASE+'dishes?select=id,available&order=position.asc&limit=200',{
+     headers:{apikey:KEY},signal:AbortSignal.timeout(3500),cache:'no-store'});
+    if(r.ok)meals=await r.json();
+   }catch(error){console.warn('SEO sitemap meal fallback:',error?.message||error);}
+  }
+  res.end(sitemap(data,meals));return;
  }
  let html;
  try{html=fs.readFileSync(path.join(process.cwd(),'public','index.html'),'utf8');}
