@@ -8,6 +8,7 @@ const ROUTES=['welcome','menu','contact'];
 const DEFAULTS={
  site_name:'مطعم سنونو',default_image:'/assets/welcome/2468.webp',
  default_image_alt:'وجبات مطعم سنونو',restaurant_schema:true,sitemap_enabled:true,
+ gsc_verification:'FxBgeG9-DRQywMawFPR0aEd-bdjPXu242JXAuiM_tlU',
  pages:{
   welcome:{title:'مطعم سنونو | الوجبات والعروض',description:'استكشف وجبات مطعم سنونو واختر وجبتك المفضلة.',canonical:'/welcome',index:true},
   menu:{title:'منيو مطعم سنونو | قائمة الطعام والأسعار',description:'تصفح منيو مطعم سنونو، شاهد الصور والأسعار والوجبات.',canonical:'/menu',index:true},
@@ -50,6 +51,7 @@ function meta(data,settings,links,route){
  const url=canonical(cfg.canonical,route),image=absolute(cfg.og_image||data.default_image||DEFAULTS.default_image);
  const robots=cfg.index===false?'noindex,follow':'index,follow,max-image-preview:large';
  const social=String(data.social_handle||'').replace(/^@/,'').trim();
+ const verification=String(data.gsc_verification||'').replace(/^google-site-verification=/,'').trim();
  const tags=[
   '<meta name="description" content="'+esc(description)+'">',
   '<meta name="robots" content="'+robots+'">',
@@ -69,6 +71,7 @@ function meta(data,settings,links,route){
   tags.push('<meta property="og:image:alt" content="'+esc(data.default_image_alt||DEFAULTS.default_image_alt)+'">');
   tags.push('<meta name="twitter:image" content="'+esc(image)+'">');
  }
+ if(/^[A-Za-z0-9_-]{15,150}$/.test(verification))tags.push('<meta name="google-site-verification" content="'+esc(verification)+'">');
  if(social&&/^[A-Za-z0-9_]{1,15}$/.test(social))tags.push('<meta name="twitter:site" content="@'+esc(social)+'">');
  if(data.restaurant_schema!==false){
   const schema={
@@ -117,6 +120,7 @@ export default async function handler(req,res){
  const info=meta(data,settings,Array.isArray(allLinks)?allLinks:[],route);
  // Keep the original responsive menu shell and its JavaScript behavior intact.
  html=html.replace(/<title>[^<]*<\/title>/i,'<title>'+esc(info.title)+'</title>');
+ html=html.replace(/<meta\s+name=["']google-site-verification["'][^>]*>/gi,'');
  html=html.replace('</head>',info.tags+'\n</head>');
  res.statusCode=200;
  res.setHeader('Content-Type','text/html; charset=utf-8');
