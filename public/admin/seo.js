@@ -188,7 +188,8 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
  for(const [name,url,detail] of [
   ['sitemap.xml','/sitemap.xml','خريطة الروابط القابلة للفهرسة'],
   ['robots.txt','/robots.txt','تعليمات زواحف البحث'],
-  ['Google verification','/welcome','وسم Google داخل HTML head'],
+  ['Google HTML verification','/google4e9150f78d7ff579.html','ملف التحقق من ملكية Google في جذر الموقع'],
+   ['Google verification tag','/welcome','وسم Google داخل HTML head'],
   ['JSON-LD Restaurant','/menu','بيانات المطعم بصيغة JSON-LD'],
   ['Canonical + Open Graph','/contact','روابط أساسية وبيانات مشاركة']
  ]){
