@@ -1,6 +1,5 @@
-/* Opt-in immersive Snounu menu, based on motion behavior in the supplied
-   Hungry Buten HTML: spring inertia, horizontal 3D dish feed, swipe-driven
-   category transitions, and a perspective thumbnail rail. No original art. */
+/* Opt-in immersive Snounu menu: spring inertia, horizontal 3D dish feed,
+   swipe-driven category transitions, and a perspective thumbnail rail. */
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));

@@ -1,5 +1,4 @@
-/* Snounu interactive stage, based on the behavior/spacing of the supplied
-   Hungry Buten offline HTML. Scoped to #rich-menu, no copied assets. */
+/* Snounu interactive stage, dedicated layout scoped to #rich-menu. */
 #rich-menu{--rm-yellow:#FDBE2D;--rm-ink:#242329;--rm-cream:#eae1d0;--rm-muted:#afa99f;--rm-line:#4e493f;--rm-panel:#29282e;isolation:isolate;color:#f8f3ec;font-family:"Qatar2022 Arabic",Tahoma,sans-serif}
 #rich-menu *{box-sizing:border-box}
 #rich-menu button{font:inherit;cursor:pointer}
@@ -249,9 +248,8 @@
 }
 
 
-/* Interactive-mode-only overlays. The reference Hungry Buten HTML used
-   a dark, bottom-anchored sheet with rounded top corners, grab handle,
-   inset controls and yellow action chips. Snounu logo/typography retained. */
+/* Interactive-mode-only overlays: a dark, bottom-anchored sheet with rounded top
+   corners, grab handle, inset controls and yellow action chips. */
 #rich-menu .rm-dish-badge{
   top:55%!important;left:50%!important;
   z-index:9!important;
