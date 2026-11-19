@@ -241,6 +241,8 @@ async function syncRichMode(){
   richDesired=false;localStorage.removeItem('snounu-rich-mode');
   document.body.classList.remove('rich-menu-active');
   target.hidden=true;
+  // If loading the interactive assets fails, build the standard menu now.
+  if(currentPage()==='menu'&&dishes.length){renderAds();renderCards();}
   $('network').hidden=false;
   $('network').textContent=isEnglish()?'Interactive mode unavailable; the standard menu remains active.':'تعذّر تحميل الوضع التفاعلي، المنيو العادي متاح.';
  }finally{richBusy=false;updateRichToggle();}
