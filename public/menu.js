@@ -460,7 +460,7 @@ function updateWelcomeLabels(index){
  }
  $('mobile-meal-prefix').textContent=label;
  $('mobile-meal-name').textContent=welcomeMealName(index);
- $('cover-photo').alt=welcomeMealName(index);
+ $('cover-photo').alt=seoImageSettings['welcome_image_alt_'+(index+1)]||welcomeMealName(index);
  [...document.querySelectorAll('.welcome-stage-rail button')].forEach((d,i)=>{
   d.setAttribute('aria-current',String(i===index));
   d.setAttribute('aria-label',welcomeMealName(i));
@@ -1050,7 +1050,7 @@ function mealCard(d,context='regular'){
    const open=make('button');open.className='card-open';open.id=(context==='regular'?'open-meal-':context+'-open-')+d.id;
    open.dataset.mealId=d.id;open.dataset.trackAction='meal_open';
    open.onclick=()=>detail(d);
-   if(d.image){const photo=make('img');photo.loading='lazy';photo.decoding='async';photo.src=asset(d.image);photo.alt=displayName(d);open.append(photo);}
+   if(d.image){const photo=make('img');photo.loading='lazy';photo.decoding='async';photo.src=asset(d.image);photo.alt=d.seo_alt||displayName(d);open.append(photo);}
    if(d.rating!=null)open.append(startingScore(d.rating));
    open.append(make('strong',displayName(d)),make('p',displayDescription(d)),price(d));if(!d.available)open.append(make('small',tr('غير متوفر')));
    article.append(open);
@@ -1258,12 +1258,24 @@ function installPreview(){
  });
  window.parent.postMessage('snounu-preview-ready',location.origin);
 }
+let seoImageSettings={};
+async function refreshSeoWelcomeAlts(){
+ try{
+  const response=await fetch(base+'seo_settings?select=data&id=eq.1',{headers});
+  if(!response.ok)return;
+  const rows=await response.json();
+  seoImageSettings=rows[0]?.data||{};
+  updateWelcomeLabels(mobileWelcomeIndex);
+ }catch{}
+}
 async function load(){
  try{
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
   [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  // The SEO fetch runs after initial menu data, outside the 3-second decision.
+  setTimeout(()=>void refreshSeoWelcomeAlts(),3200);
   void syncRichMode();
   applyDeepLink();
   return true;

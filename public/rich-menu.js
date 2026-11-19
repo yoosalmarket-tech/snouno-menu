@@ -223,7 +223,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    const photo=validImage(meal.rich_image)||validImage(meal.image);
    if(photo){
     const image=mk('img','rm-dish-photo');image.dataset.src=photo;
-    image.alt=getName(meal);image.draggable=false;image.decoding='async';
+    image.alt=meal.seo_alt||getName(meal);image.draggable=false;image.decoding='async';
     image.loading='lazy';frame.append(image);
    }else{
     const empty=mk('div','rm-dish-photo','🍽');
