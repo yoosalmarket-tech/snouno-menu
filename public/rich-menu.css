@@ -1857,3 +1857,35 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
 #rich-menu .rm-info{
  touch-action:none;
 }
+
+/* Non-disruptive connection fallback inside the interactive stage. */
+#rich-menu .rm-network-notice{
+ position:absolute;z-index:45;top:74px;right:clamp(10px,2vw,22px);
+ display:flex;align-items:center;gap:10px;direction:rtl;
+ width:max-content;max-width:min(440px,calc(100% - 20px));
+ padding:11px 12px;border:1px solid #73633f;border-radius:15px;
+ color:#f9f4e8;background:#27252ff2;
+ box-shadow:0 12px 28px #0008;
+ font:700 12px/1.6 "Qatar2022 Arabic",Tahoma,sans-serif;
+}
+#rich-menu .rm-network-notice[hidden]{display:none!important}
+#rich-menu .rm-network-copy{flex:1;min-width:0}
+#rich-menu .rm-network-switch{
+ flex:none;border:0;border-radius:11px;padding:9px 11px;
+ color:#17140d;background:#FDBE2D;font-weight:900;font-size:12px;
+ cursor:pointer;
+}
+#rich-menu .rm-network-close{
+ flex:none;display:grid;place-items:center;border:0;border-radius:50%;
+ width:26px;height:26px;background:#ffffff19;color:#fff;
+ font:700 20px/1 Arial,sans-serif;cursor:pointer;
+}
+#rich-menu .rm-network-notice button:focus-visible{outline:2px solid #FDBE2D;outline-offset:2px}
+@media(max-width:980px){
+ #rich-menu .rm-network-notice{
+  top:auto;bottom:clamp(16px,6svh,62px);left:10px;right:10px;
+  width:auto;max-width:none;flex-wrap:wrap;justify-content:flex-start;
+  padding:10px;font-size:12px;
+ }
+ #rich-menu .rm-network-switch{padding:8px 10px}
+}
