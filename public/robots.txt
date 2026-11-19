@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://snounu-restaurant.vercel.app/sitemap.xml

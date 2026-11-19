@@ -18,6 +18,18 @@
   ],
   "rewrites": [
     {
+      "source": "/admin/seo",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/search-queries",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/",
+      "destination": "/api/seo-page?route=welcome"
+    },
+    {
       "source": "/admin/overview",
       "destination": "/admin/index.html"
     },
@@ -67,15 +79,19 @@
     },
     {
       "source": "/welcome",
-      "destination": "/index.html"
+      "destination": "/api/seo-page?route=welcome"
     },
     {
       "source": "/menu",
-      "destination": "/index.html"
+      "destination": "/api/seo-page?route=menu"
     },
     {
       "source": "/contact",
-      "destination": "/index.html"
+      "destination": "/api/seo-page?route=contact"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/seo-page?type=sitemap"
     }
   ],
   "redirects": [
@@ -101,5 +117,10 @@
       "destination": "https://snounu-restaurant.vercel.app/:path*",
       "permanent": true
     }
-  ]
+  ],
+  "functions": {
+    "api/seo-page.js": {
+      "includeFiles": "public/index.html"
+    }
+  }
 }
