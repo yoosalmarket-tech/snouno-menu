@@ -51,6 +51,17 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  share.setAttribute('aria-label','مشاركة الوجبة');
  at(root,'.rm-info-actions').insertBefore(share,at(root,'.rm-info-fav'));
  host.replaceChildren(root);
+ // A non-modal way out if the currently selected meal photo stalls.
+ const networkNotice=mk('div','rm-network-notice');
+ networkNotice.hidden=true;
+ networkNotice.setAttribute('role','status');
+ const noticeCopy=mk('span','rm-network-copy');
+ const noticeSwitch=mk('button','rm-network-switch');
+ noticeSwitch.type='button';noticeSwitch.dataset.trackAction='rich_slow_switch_to_standard';
+ noticeSwitch.onclick=()=>{networkNotice.hidden=true;onExit?.();};
+ const noticeClose=mk('button','rm-network-close','×');
+ noticeClose.type='button';noticeClose.setAttribute('aria-label','إغلاق التنبيه');
+ networkNotice.append(noticeCopy,noticeSwitch,noticeClose);root.append(networkNotice);
  const u={
   stage:at(root,'.rm-stage'),wrap:at(root,'.rm-stage-wrap'),
   mealPrev:at(root,'.rm-meal-nav-prev'),mealNext:at(root,'.rm-meal-nav-next'),
@@ -94,6 +105,71 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  let motionDirection=1,visualDirection=1;
  let dishesEls=[],thumbEls=[],categoryEls=[],snapshot={},destroyed=false;
  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const connection=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+ let networkDegraded=false,noticeDismissed=false,imageWatchTimer=0,networkCautionTimer=0;
+ let watchedPhoto=null,watchedLoad=null,watchedError=null;
+ const constrainedNetwork=()=>networkDegraded||navigator.onLine===false||
+  connection?.saveData===true||/^(slow-2g|2g)$/.test(connection?.effectiveType||'');
+ const updateNoticeLanguage=()=>{
+  const english=isEnglish();
+  noticeCopy.textContent=english?'Images are taking longer than expected. Try the standard menu?':'تحميل صور الوجبات بطيء. هل تفضّل المنيو العادي؟';
+  noticeSwitch.textContent=english?'Switch to standard menu':'الانتقال للمنيو العادي';
+  noticeClose.setAttribute('aria-label',english?'Dismiss message':'إغلاق التنبيه');
+ };
+ noticeClose.onclick=()=>{noticeDismissed=true;networkNotice.hidden=true;};
+ const offerStandardMenu=()=>{
+  networkDegraded=true;
+  if(!active||destroyed||noticeDismissed)return;
+  updateNoticeLanguage();networkNotice.hidden=false;
+ };
+ function stopImageWatch(){
+  clearTimeout(imageWatchTimer);clearTimeout(networkCautionTimer);
+  if(watchedPhoto){
+   watchedPhoto.removeEventListener('load',watchedLoad);
+   watchedPhoto.removeEventListener('error',watchedError);
+  }
+  watchedPhoto=watchedLoad=watchedError=null;
+ }
+ // Only the selected category exists in the DOM, and only nearby dishes
+ // receive src attributes. Never prefetch unopened categories.
+ function loadNearbyImages(center=front){
+  const limited=constrainedNetwork(),radius=limited?1:2;
+  for(let i=0;i<dishesEls.length;i++){
+   if(Math.abs(i-center)>radius)continue;
+   const img=dishesEls[i].querySelector('img.rm-dish-photo');
+   if(img?.dataset.src&&!img.hasAttribute('src')){
+    img.loading=Math.abs(i-center)<=1?'eager':'lazy';
+    img.src=img.dataset.src;
+   }
+  }
+  const start=clamp(center-1,0,Math.max(0,thumbEls.length-3));
+  for(let i=start;i<Math.min(start+3,thumbEls.length);i++){
+   if(limited&&i!==center)continue;
+   const img=thumbEls[i].querySelector('img');
+   if(img?.dataset.src&&!img.hasAttribute('src'))img.src=img.dataset.src;
+  }
+ }
+ function watchSelectedImage(){
+  stopImageWatch();
+  if(!active||destroyed)return;
+  loadNearbyImages();
+  const photo=dishesEls[front]?.querySelector('img.rm-dish-photo');
+  if(!photo||!photo.hasAttribute('src'))return;
+  if(photo.complete&&photo.naturalWidth>0){networkNotice.hidden=true;return;}
+  if(photo.complete&&photo.naturalWidth===0){offerStandardMenu();return;}
+  watchedPhoto=photo;
+  watchedLoad=()=>{stopImageWatch();networkNotice.hidden=true;};
+  watchedError=()=>{stopImageWatch();offerStandardMenu();};
+  photo.addEventListener('load',watchedLoad,{once:true});
+  photo.addEventListener('error',watchedError,{once:true});
+  networkCautionTimer=setTimeout(()=>{networkDegraded=true;},2500);
+  imageWatchTimer=setTimeout(()=>{stopImageWatch();offerStandardMenu();},6000);
+ }
+ const handleNetworkChange=()=>{
+  if(constrainedNetwork()){networkDegraded=true;if(navigator.onLine===false)offerStandardMenu();}
+ };
+ window.addEventListener('offline',handleNetworkChange);
+ connection?.addEventListener?.('change',handleNetworkChange);
  const group=()=>groups[groupIndex];
  const dish=()=>group()?.items[front];
  const getName=d=>snapshot.displayName?.(d)||d.name;
@@ -146,9 +222,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    frame.append(mk('div','rm-dish-shadow'));
    const photo=validImage(meal.rich_image)||validImage(meal.image);
    if(photo){
-    const image=mk('img','rm-dish-photo');image.src=photo;
+    const image=mk('img','rm-dish-photo');image.dataset.src=photo;
     image.alt=getName(meal);image.draggable=false;image.decoding='async';
-    image.loading=i<4?'eager':'lazy';frame.append(image);
+    image.loading='lazy';frame.append(image);
    }else{
     const empty=mk('div','rm-dish-photo','🍽');
     empty.style.cssText='display:grid;place-items:center;font-size:76px;color:#FDBE2D';
@@ -170,7 +246,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    thumbnail.dataset.mealId=String(meal.id);thumbnail.dataset.categoryId=String(g.id);
    thumbnail.dataset.trackAction='meal_select';
    thumbnail.title=getName(meal);thumbnail.setAttribute('aria-label',getName(meal));
-   if(photo){const img=mk('img');img.src=photo;img.alt='';img.loading='lazy';img.draggable=false;thumbnail.append(img);}
+   if(photo){const img=mk('img');img.dataset.src=photo;img.alt='';img.loading='lazy';img.draggable=false;thumbnail.append(img);}
    else thumbnail.textContent='•';
    const label=mk('span','rm-thumb-name',getName(meal));label.dir=isEnglish()?'ltr':'rtl';
    thumbnail.append(label);
@@ -238,6 +314,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   u.fav.textContent=saved?'♥':'♡';u.fav.setAttribute('aria-pressed',String(saved));
   u.fav.setAttribute('aria-label',saved?'إزالة من المفضلة':'إضافة إلى المفضلة');
   labelRail();
+  updateNoticeLanguage();
+  loadNearbyImages();
+  watchSelectedImage();
  }
  function updateFront(index){
   const g=group();if(!g)return;
@@ -324,6 +403,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   const next=clamp(index,0,g.items.length-1);
   if(Math.abs(next-k)>.001)motionDirection=Math.sign(next-k);
   const changed=next!==target;target=next;
+  if(changed)loadNearbyImages(next);
   if(changed)resetEdgeSwipes();
   if(changed&&typeof onSelection==='function')onSelection({mealId:g.items[target]?.id,categoryId:g.id});
   if(reduced.matches){k=target;velocity=0;updateFront(target);draw();}
@@ -690,14 +770,23 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  function setActive(on){
   active=!!on&&!destroyed;
   trackVisibleMeal();
-  if(active){lastTime=0;if(!frame)frame=requestAnimationFrame(tick);}
-  else{
+  if(active){
+   lastTime=0;
+   loadNearbyImages();watchSelectedImage();
+   if(!frame)frame=requestAnimationFrame(tick);
+  }else{
+   stopImageWatch();
    cancelPointer();
    cancelAnimationFrame(frame);frame=0;
    if(pendingMealOpen){clearTimeout(pendingMealOpen);pendingMealOpen=0;}
   }
  }
- function destroy(){destroyed=true;resetInteractiveCredit();setActive(false);closeSheet();++swapToken;root.remove();}
+ function destroy(){
+  destroyed=true;resetInteractiveCredit();setActive(false);closeSheet();
+  window.removeEventListener('offline',handleNetworkChange);
+  connection?.removeEventListener?.('change',handleNetworkChange);
+  ++swapToken;root.remove();
+ }
  refresh();
  return {refresh,setActive,destroy,focusLink,get selected(){return dish();}};
 }
