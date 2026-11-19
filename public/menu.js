@@ -130,10 +130,24 @@ function noteSelection(kind,id){
 
 /* Rich menu is an explicit, bandwidth-sensitive opt-in. Nothing from the
    immersive stage is fetched until its switch is on. */
-let richDesired=!isPreview&&(explicitMode==='interactive'||(explicitMode!=='standard'&&localStorage.getItem('snounu-rich-mode')==='1'));
-// Test the first visit during the yellow loading screen. Returning visitors
-// keep their saved preference instead of repeating the network check.
-const firstVisitModeCheck=!isPreview&&!['interactive','standard'].includes(explicitMode)&&localStorage.getItem('snounu-rich-mode')===null;
+// Check the connection on each new browsing session, or after 30 minutes.
+// A manual mode selection is preserved within the current session.
+const modePreferenceKey='snounu-rich-mode';
+const modeTestTimeKey='snounu-mode-tested-at-v1';
+const modeSessionKey='snounu-mode-tested-session-v1';
+const savedMode=localStorage.getItem(modePreferenceKey);
+const previousTestAt=Number(localStorage.getItem(modeTestTimeKey)||0);
+const testIsRecent=previousTestAt>0&&Date.now()>=previousTestAt&&Date.now()-previousTestAt<30*60*1000;
+let testedThisSession=false;
+try{testedThisSession=sessionStorage.getItem(modeSessionKey)==='1';}catch{}
+const firstVisitModeCheck=!isPreview&&!['interactive','standard'].includes(explicitMode)
+ &&(!testedThisSession||!testIsRecent||!['0','1'].includes(savedMode));
+let richDesired=!isPreview&&(explicitMode==='interactive'||(explicitMode!=='standard'&&!firstVisitModeCheck&&savedMode==='1'));
+function rememberMode(value){
+ localStorage.setItem(modePreferenceKey,value?'1':'0');
+ localStorage.setItem(modeTestTimeKey,String(Date.now()));
+ try{sessionStorage.setItem(modeSessionKey,'1');}catch{}
+}
 const firstVisitStartedAt=performance.now();
 let firstVisitDecisionComplete=!firstVisitModeCheck;
 let richController=null,richImport=null,richBusy=false,richRevision=0;
@@ -152,13 +166,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=swipe-meal-info-same-carousel-20261118';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=network-fallback-edit9-20261119';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=meal-info-tap-opens-order-20261118')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=network-fallback-edit9-20261119')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -224,7 +238,7 @@ async function syncRichMode(){
    onExit:()=>{
     richDesired=false;
     richToggle.checked=false;
-    localStorage.setItem('snounu-rich-mode','0');
+    rememberMode(false);
     reflectExplicitMode();
     void syncRichMode();
    },
@@ -249,7 +263,7 @@ async function syncRichMode(){
 }
 richToggle?.addEventListener('change',()=>{
  richDesired=richToggle.checked;
- localStorage.setItem('snounu-rich-mode',richDesired?'1':'0');
+ rememberMode(richDesired);
  reflectExplicitMode();
  void syncRichMode();
 });
@@ -1444,7 +1458,7 @@ async function chooseFirstVisitMode(initialMenu){
   }
   richDesired=Boolean(fast);
   firstVisitDecisionComplete=true;
-  localStorage.setItem('snounu-rich-mode',fast?'1':'0');
+  rememberMode(fast);
   updateRichToggle();
   if(currentPage()==='menu'){void syncRichMode();applyDeepLink();}
   if(!fast&&!dishes.length){
