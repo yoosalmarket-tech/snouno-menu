@@ -60,7 +60,7 @@ function trackMenuAction(action,target,mealId){
  if(action!=='order_platform_click')registerReferralSession();
  if(action==='order_platform_click'){
   const platform=target?.dataset.platform||target?.dataset.channel;
-  if(['utlob','sonbol','makook'].includes(platform)){
+  if(['sonbol','makook'].includes(platform)){
    const firstReferral=registerReferralSession(true);
    // Raw click event remains unchanged for click-through analysis.
    trackMealEvent('delivery_app_click',meal,{delivery_platform:platform});
@@ -333,13 +333,12 @@ for(const switcher of document.querySelectorAll('.language-switch')){
 function asset(src){if(!src)return '';if(isPreview&&src.startsWith('blob:'+location.origin+'/'))return src;try{const u=new URL(src,location.origin);return /^(https?:)$/.test(u.protocol)?u.href:'';}catch{return '';}}
 function setText(id,text){$(id).textContent=text||'';}
 function image(src,alt){const img=make('img');img.src=asset(src);img.alt=alt;return img;}
-const ordering=['makook','sonbol','utlob'];
+const ordering=['makook','sonbol'];
 function contactLinks(container,channels,meal) {
  container.replaceChildren();
  for(const channel of channels){
    const link=links.find(row=>row.channel===channel);
-   const url=channel==='sonbol'&&meal?.id?meal.sonbol_url:
-     channel==='utlob'&&meal?.utlob_url?meal.utlob_url:link?.url;
+   const url=channel==='sonbol'&&meal?.id?meal.sonbol_url:link?.url;
    if(!link||!url||!/^https?:\/\//i.test(url))continue;
    const a=make('a');a.href=url;a.dataset.channel=channel;
    a.setAttribute('aria-label',tr(link.name));

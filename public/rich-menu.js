@@ -603,7 +603,6 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  const platformInfo={
   sonbol:{ar:'سنبل',en:'Sonbol',icon:'/assets/sonbol.svg'},
   makook:{ar:'مكوك',en:'Makook',icon:'/assets/makook.svg'},
-  utlob:{ar:'اطلب',en:'Utlob',icon:'/assets/utlob.svg',url:'https://utlob.co/stores/172'},
   whatsapp:{ar:'واتساب',en:'WhatsApp',icon:'/assets/whatsapp.svg'}
  };
  const restaurantLink=channel=>snapshot.links?.find(item=>item.channel===channel)?.url||'';
@@ -669,7 +668,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    }
    const heading=mk('h3','rm-sheet-links-heading',english?(kind==='order'?'Choose an ordering service':'Order or contact us'):(kind==='order'?'اختار التطبيق المناسب للطلب':'اطلب أو تواصل معنا'));
    u.sheetBody.append(heading);
-   const channels=kind==='order'?['sonbol','makook','utlob']:['makook','sonbol','utlob','whatsapp'];
+   const channels=kind==='order'?['sonbol','makook']:['makook','sonbol','whatsapp'];
    const links=mk('div','rm-sheet-links');
    for(const channel of channels){const link=linkCard(channel,kind==='order'?meal:null);if(link)links.append(link);}
    if(!links.children.length)links.append(mk('p','rm-sheet-empty',english?'Ordering links are not currently available.':'روابط الطلب غير متاحة حالياً.'));

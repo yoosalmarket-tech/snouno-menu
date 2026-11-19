@@ -5,7 +5,7 @@ const $ = id => document.getElementById(id);
 const sections = {
   overview: ['اللوحة الرئيسية', []],
   investment: ['الاستثمار', []],
-  dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['makook_url','رابط الوجبة المباشر من مكوك (اختياري)','url'],['utlob_url','رابط الوجبة المباشر من تطبيق اطلب (اختياري)','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
+  dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['makook_url','رابط الوجبة المباشر من مكوك (اختياري)','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
   menu_settings: ['مطعم السنونو', [
     ['name','اسم المطعم'],
@@ -1455,7 +1455,6 @@ async function edit(key,row,inline=false){
      if(key==='dishes'){
        if(!data.sonbol_url)data.sonbol_url=null;
        if(!data.makook_url)data.makook_url=null;
-       if(!data.utlob_url)data.utlob_url=null;
        if(!data.rich_image)data.rich_image=null;
        if(!row.id){
          const existing=await api('/rest/v1/dishes?select=position&category_id=eq.'+encodeURIComponent(data.category_id)+'&order=position.desc&limit=1');
