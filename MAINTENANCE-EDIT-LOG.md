@@ -133,3 +133,36 @@ WHERE id=1;
 `59cc71a6dd18e47f9f06576498b4dec3be097690`.
 Edits 1–5 and the earlier three-second mode-loading prototype are independent.
 Do not overwrite unrelated work or reset `main` to restore an individual edit.
+
+## Edit No. 8 — Deploy the 3-second first-category mode check
+Baseline: `dab145aec6707f575730a3d53c279426d4eb7cc6`.
+Preparation branch: `release-3s-loading-isolation-20261119`.
+Original implementation was prepared on `safari-3s-loading-isolation-20261119`.
+
+Files: `public/menu.js` and `public/index.html`.
+Changes:
+- First-time automatic experience selection waits up to **3 seconds** total
+  for the shared Supabase menu information and every interactive meal image in
+  the first actual category to be fully decoded.
+- The test does NOT import interactive JS/CSS or build the standard meal cards.
+- In interactive mode, standard ads/cards are cleared, so they cannot
+  request all the regular dish images while hidden.
+- In normal mode, do not request interactive JS/CSS unless manually enabled.
+  Ordinary meal photos use lazy loading once in standard mode.
+- On switch back to standard mode, render its cards/ads; cleanly destroy the
+  interactive controller and its meal-image DOM.
+- The normal and interactive interfaces still share base menu JSON, common
+  CSS, translations, and welcome-screen images.
+- A cache-busting menu script URL ensures online installed PWAs request the
+  updated JavaScript. No ad destinations, data, pricing or analytics schema
+  changed.
+- Saved manual/automatic mode preferences stay as before; returning visitors
+  do not automatically retest. Safari's Reduce Motion setting may still
+  suppress CSS animation and cannot be overridden by this edit.
+
+**Selective rollback ("cancel edit no.8")**: Revert only the Edit No. 8
+commit's `public/menu.js` and `public/index.html` modifications, restore
+their prior content from baseline
+`dab145aec6707f575730a3d53c279426d4eb7cc6`, then deploy the revert;
+do not undo Edits 1–7 or any independent newer work. A later change to these
+same files requires a selective reverse patch instead of a whole-file replace.

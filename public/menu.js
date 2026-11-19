@@ -178,9 +178,24 @@ async function syncRichMode(){
  const version=++richRevision;
  document.body.classList.toggle('rich-menu-active',enabled&&currentPage()==='menu');
  updateRichToggle();
+ // The two menu modes share menu data, but never build each other's meal imagery.
+ if(settings?.name&&dishes.length){
+  if(enabled&&currentPage()==='menu'){
+   stopCarousel();
+   for(const id of ['ad-track','ad-dots','ad-thumbnails','cards','chips'])$(id).replaceChildren();
+   $('ads').hidden=true;
+   menuSections=[];categoryButtons.clear();activeCategory=null;
+  }else if(!enabled&&currentPage()==='menu'&&firstVisitDecisionComplete){
+   renderAds();renderCards();
+  }
+ }
  if(!enabled||currentPage()!=='menu'){
-  if(richController)richController.setActive(false);
+  if(richController){
+   if(!enabled){richController.destroy();richController=null;}
+   else richController.setActive(false);
+  }
   target.hidden=true;
+  if(!enabled)target.replaceChildren();
   return;
  }
  target.hidden=false;
@@ -216,7 +231,7 @@ async function syncRichMode(){
    onFavorite:meal=>{
     if(favorites.has(meal.id))favorites.delete(meal.id);else favorites.add(meal.id);
     localStorage.setItem('snounu-favorites',JSON.stringify([...favorites]));
-    renderCards();
+    richController?.refresh();
    }
   });
   richController.setActive(true);
@@ -226,6 +241,8 @@ async function syncRichMode(){
   richDesired=false;localStorage.removeItem('snounu-rich-mode');
   document.body.classList.remove('rich-menu-active');
   target.hidden=true;
+  // If loading the interactive assets fails, build the standard menu now.
+  if(currentPage()==='menu'&&dishes.length){renderAds();renderCards();}
   $('network').hidden=false;
   $('network').textContent=isEnglish()?'Interactive mode unavailable; the standard menu remains active.':'تعذّر تحميل الوضع التفاعلي، المنيو العادي متاح.';
  }finally{richBusy=false;updateRichToggle();}
@@ -609,6 +626,10 @@ function renderAds() {
  stopCarousel();
  const ads=advertisements.filter(ad=>asset(ad.image));
  const track=$('ad-track'), dots=$('ad-dots'),thumbs=$('ad-thumbnails');
+ if(!isPreview&&(richDesired||!firstVisitDecisionComplete||currentPage()!=='menu')){
+  track.replaceChildren();dots.replaceChildren();thumbs.replaceChildren();$('ads').hidden=true;
+  return;
+ }
  track.replaceChildren(); dots.replaceChildren();thumbs.replaceChildren(); $('ads').hidden=!ads.length;
  const duration=3000;
  const motion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -974,6 +995,10 @@ function price(d){
 }
 function renderCards(){
  const q=$('search').value.trim().toLocaleLowerCase();const grid=$('cards');grid.replaceChildren();
+ if(!isPreview&&(richDesired||!firstVisitDecisionComplete||currentPage()!=='menu')){
+  $('chips').replaceChildren();menuSections=[];categoryButtons.clear();activeCategory=null;
+  return;
+ }
  const groups=[];
  const visible=dishes.filter(d=>(d.name+' '+d.description+' '+displayName(d)+' '+displayDescription(d)).toLocaleLowerCase().includes(q));
  const byCategory=new Map();
@@ -998,7 +1023,6 @@ function renderCards(){
  }
  if(!visible.length&&q){const p=make('p',tr('لا توجد أطباق مطابقة.'));p.className='empty';grid.append(p);}
  menuSections=groups.map(group=>group.section);renderChips(groups);
- if(richController)richController.refresh();
 }
 function startingScore(value){
  const score=make('span');score.className='rating';
@@ -1013,7 +1037,7 @@ function mealCard(d,context='regular'){
    const open=make('button');open.className='card-open';open.id=(context==='regular'?'open-meal-':context+'-open-')+d.id;
    open.dataset.mealId=d.id;open.dataset.trackAction='meal_open';
    open.onclick=()=>detail(d);
-   if(d.image)open.append(image(d.image,displayName(d)));
+   if(d.image){const photo=make('img');photo.loading='lazy';photo.decoding='async';photo.src=asset(d.image);photo.alt=displayName(d);open.append(photo);}
    if(d.rating!=null)open.append(startingScore(d.rating));
    open.append(make('strong',displayName(d)),make('p',displayDescription(d)),price(d));if(!d.available)open.append(make('small',tr('غير متوفر')));
    article.append(open);
@@ -1394,29 +1418,30 @@ async function revealPage(){
  $('page-loader').style.display='none';
  startWelcomeCarousel();
 }
-// Measure menu API, interactive CSS/JS and a real meal image while the
-// loading screen is active. After five seconds choose the lightweight menu.
+// First-visit test only loads shared menu data and every interactive meal
+// image in the first category. No rich CSS/JS or standard-menu cards.
+// Use the standard mode after three seconds.
 async function chooseFirstVisitMode(initialMenu){
- let timer;
+ let timer,timedOut=false,samples=[];
  try{
-  const remaining=Math.max(0,5000-(performance.now()-firstVisitStartedAt));
-  const deadline=new Promise(resolve=>{timer=setTimeout(()=>resolve(false),remaining);});
-  const probe=Promise.all([initialMenu,richAssets()]).then(async([loaded])=>{
-   if(!loaded||!categories.length)return false;
-   // Only the first three meals of the first menu category count.
-   // Honor the database's position/name ordering used by the actual menu.
+  const remaining=Math.max(0,3000-(performance.now()-firstVisitStartedAt));
+  const deadline=new Promise(resolve=>{timer=setTimeout(()=>{timedOut=true;resolve(false);},remaining);});
+  const probe=initialMenu.then(async loaded=>{
+   if(timedOut||performance.now()-firstVisitStartedAt>3000||!loaded||!categories.length)return false;
    const firstCategory=categories[0];
-   const firstThree=dishes.filter(meal=>String(meal.category_id)===String(firstCategory.id)).slice(0,3);
-   if(firstThree.length!==3)return false;
-   const sources=firstThree.map(meal=>asset(meal.rich_image||meal.image));
+   const firstMeals=dishes.filter(meal=>String(meal.category_id)===String(firstCategory.id));
+   if(!firstMeals.length)return false;
+   const sources=firstMeals.map(meal=>asset(meal.rich_image||meal.image));
    if(sources.some(src=>!src))return false;
-   // Full decoding, not merely a successful HTTP connection, is the green
-   // flag. Any failed image or an elapsed five-second deadline falls back.
-   const samples=sources.map(src=>{const img=new Image();img.decoding='async';img.src=src;return img;});
+   samples=sources.map(src=>{const img=new Image();img.decoding='async';img.src=src;return img;});
    await Promise.all(samples.map(img=>img.decode()));
-   return true;
+   return !timedOut&&performance.now()-firstVisitStartedAt<=3000;
   }).catch(()=>false);
   const fast=await Promise.race([probe,deadline]);
+  if(!fast){
+   timedOut=true;
+   for(const img of samples)img.removeAttribute('src');
+  }
   richDesired=Boolean(fast);
   firstVisitDecisionComplete=true;
   localStorage.setItem('snounu-rich-mode',fast?'1':'0');
