@@ -2,6 +2,8 @@
 -- Public settings are readable by visitors/crawlers. Search query reports are
 -- OWNER-ONLY and can only be filled using authentic GSC exports.
 ALTER TABLE public.dishes
+  ADD COLUMN IF NOT EXISTS seo_title text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS seo_description text NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS seo_alt text NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS seo_image_filename text NOT NULL DEFAULT '';
 

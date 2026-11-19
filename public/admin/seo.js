@@ -45,7 +45,7 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
  root.replaceChildren();
  const [records,dishes]=await Promise.all([
   api('/rest/v1/seo_settings?select=data&id=eq.1&limit=1'),
-  api('/rest/v1/dishes?select=id,name,image,rich_image,seo_alt,seo_image_filename&order=name&limit=200')
+  api('/rest/v1/dishes?select=id,name,image,rich_image,seo_title,seo_description,seo_alt,seo_image_filename&order=name&limit=200')
  ]);
  if(!records.length)throw Error('إعدادات SEO لم تُهيأ بعد في قاعدة البيانات');
  const old=records[0].data||{};
@@ -152,10 +152,12 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
   const details=el('div');details.append(el('strong',dish.name));
   details.append(el('small','العادي: '+fileName(dish.image)));
   details.append(el('small','التفاعلي: '+fileName(dish.rich_image)));
+  const seoTitle=formField(details,'title-'+dish.id,'عنوان مشاركة هذه الوجبة',dish.seo_title||'','text','يُستخدم عند فتح رابط الوجبة المباشر (?dish=...).');
+  const seoDescription=formField(details,'description-'+dish.id,'وصف الوجبة لمحركات البحث',dish.seo_description||dish.description||'','textarea');
   const alt=formField(details,'alt-'+dish.id,'ALT · النص البديل',dish.seo_alt||dish.name);
   const filename=formField(details,'filename-'+dish.id,'اسم ملف الصور عند الرفع القادم',dish.seo_image_filename||'','text','مثال: snounu-sharing-box');
-  const changed=()=>updated.set(dish.id,{id:dish.id,seo_alt:alt.value.trim(),seo_image_filename:filename.value.trim()});
-  alt.addEventListener('input',changed);filename.addEventListener('input',changed);
+  const changed=()=>updated.set(dish.id,{id:dish.id,seo_title:seoTitle.value.trim(),seo_description:seoDescription.value.trim(),seo_alt:alt.value.trim(),seo_image_filename:filename.value.trim()});
+  for(const input of [seoTitle,seoDescription,alt,filename])input.addEventListener('input',changed);
   item.append(pic,details);list.append(item);itemSearch.push(item);
  }
  const imageSave=btn('حفظ أوصاف الصور',async()=>{
@@ -164,10 +166,10 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
   try{
    for(const v of updated.values()){
     if(v.seo_image_filename&&!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v.seo_image_filename))throw Error('اسم الملف يجب أن يكون حروفاً إنجليزية صغيرة وأرقاماً وشرطة -');
-    if(v.seo_image_filename.length>65||v.seo_alt.length>200)throw Error('وصف أو اسم صورة طويل جداً');
+    if(v.seo_image_filename.length>65||v.seo_alt.length>200||v.seo_title.length>180||v.seo_description.length>350)throw Error('عنوان أو وصف أو اسم صورة طويل جداً');
    }
    for(const value of updated.values())await api('/rest/v1/dishes?id=eq.'+encodeURIComponent(value.id),{
-    method:'PATCH',body:{seo_alt:value.seo_alt,seo_image_filename:value.seo_image_filename},headers:{Prefer:'return=minimal'}
+    method:'PATCH',body:{seo_title:value.seo_title,seo_description:value.seo_description,seo_alt:value.seo_alt,seo_image_filename:value.seo_image_filename},headers:{Prefer:'return=minimal'}
    });
    notice('تم حفظ أوصاف '+updated.size+' وجبة. أسماء الصور الحالية لم تتغير.');
    updated.clear();

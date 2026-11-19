@@ -116,6 +116,11 @@
       ],
       "destination": "https://snounu-restaurant.vercel.app/:path*",
       "permanent": true
+    },
+    {
+      "source": "/",
+      "destination": "/welcome",
+      "permanent": false
     }
   ],
   "functions": {

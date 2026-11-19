@@ -42,13 +42,14 @@ function sitemap(data){
  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+
   list.map(url=>'<url><loc>'+esc(url)+'</loc></url>').join('')+'</urlset>';
 }
-function meta(data,settings,links,route){
+function meta(data,settings,links,route,dish=null){
  const cfg={...DEFAULTS.pages[route],...data.pages?.[route]};
- const title=String(cfg.title||DEFAULTS.pages[route].title).slice(0,180);
- const description=String(cfg.description||DEFAULTS.pages[route].description).slice(0,350);
+ const title=String((dish&&(dish.seo_title||dish.name+' | منيو سنونو'))||cfg.title||DEFAULTS.pages[route].title).slice(0,180);
+ const description=String((dish&&(dish.seo_description||dish.description))||cfg.description||DEFAULTS.pages[route].description).slice(0,350);
  const openTitle=String(cfg.og_title||title).slice(0,180);
  const openDescription=String(cfg.og_description||description).slice(0,350);
- const url=canonical(cfg.canonical,route),image=absolute(cfg.og_image||data.default_image||DEFAULTS.default_image);
+ const url=dish?ORIGIN+'/menu?dish='+encodeURIComponent(dish.id):canonical(cfg.canonical,route);
+ const image=absolute((dish&&dish.image)||cfg.og_image||data.default_image||DEFAULTS.default_image);
  const robots=cfg.index===false?'noindex,follow':'index,follow,max-image-preview:large';
  const social=String(data.social_handle||'').replace(/^@/,'').trim();
  const verification=String(data.gsc_verification||'').replace(/^google-site-verification=/,'').trim();
@@ -68,7 +69,7 @@ function meta(data,settings,links,route){
  ];
  if(image){
   tags.push('<meta property="og:image" content="'+esc(image)+'">');
-  tags.push('<meta property="og:image:alt" content="'+esc(data.default_image_alt||DEFAULTS.default_image_alt)+'">');
+  tags.push('<meta property="og:image:alt" content="'+esc(dish?.seo_alt||data.default_image_alt||DEFAULTS.default_image_alt)+'">');
   tags.push('<meta name="twitter:image" content="'+esc(image)+'">');
  }
  if(/^[A-Za-z0-9_-]{15,150}$/.test(verification))tags.push('<meta name="google-site-verification" content="'+esc(verification)+'">');
@@ -90,6 +91,12 @@ function meta(data,settings,links,route){
    ['instagram','facebook'].includes(links.find(x=>x.url===url)?.channel));
   if(sameAs.length)schema.sameAs=sameAs;
   tags.push('<script type="application/ld+json">'+JSON.stringify(schema).replace(/</g,'\\u003c')+'</script>');
+  if(dish){
+   const menuItem={'@context':'https://schema.org','@type':'MenuItem',
+    name:dish.name,url,description,offers:{'@type':'Offer',priceCurrency:'ILS',price:Number(dish.price)||0}};
+   if(image)menuItem.image=image;
+   tags.push('<script type="application/ld+json">'+JSON.stringify(menuItem).replace(/</g,'\\u003c')+'</script>');
+  }
  }
  return {title,tags:tags.join('\n')};
 }
@@ -108,6 +115,10 @@ export default async function handler(req,res){
   })()
  ]);
  const data={...DEFAULTS,...record.data,pages:{...DEFAULTS.pages,...record.data?.pages}};
+ const dishId=String(req.query?.dish||'');
+ const dish=/^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(dishId)&&route==='menu'
+  ?await getPublic('dishes?select=id,name,description,image,price,seo_alt,seo_title,seo_description&id=eq.'+encodeURIComponent(dishId)+'&limit=1')
+  :null;
  if(type==='sitemap'){
   if(data.sitemap_enabled===false){res.statusCode=404;res.end('Not Found');return;}
   res.statusCode=200;res.setHeader('Content-Type','application/xml; charset=utf-8');
@@ -117,7 +128,7 @@ export default async function handler(req,res){
  let html;
  try{html=fs.readFileSync(path.join(process.cwd(),'public','index.html'),'utf8');}
  catch(e){console.error('SEO HTML template missing',e);res.statusCode=500;res.end('Template unavailable');return;}
- const info=meta(data,settings,Array.isArray(allLinks)?allLinks:[],route);
+ const info=meta(data,settings,Array.isArray(allLinks)?allLinks:[],route,dish?.id?dish:null);
  // Keep the original responsive menu shell and its JavaScript behavior intact.
  html=html.replace(/<title>[^<]*<\/title>/i,'<title>'+esc(info.title)+'</title>');
  html=html.replace(/<meta\s+name=["']google-site-verification["'][^>]*>/gi,'');
