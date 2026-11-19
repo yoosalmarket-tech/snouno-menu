@@ -1,4 +1,4 @@
-import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js';
+import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=remove-utlob-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
@@ -172,7 +172,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=network-fallback-edit9-20261119')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=remove-utlob-edit10-20261119')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
