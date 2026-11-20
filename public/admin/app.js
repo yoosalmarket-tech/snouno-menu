@@ -1263,7 +1263,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
    $('body').replaceChildren();
    const ticketNow=generation;
    try{
-    const module=await import('./seo.js?v=seo-edit11-20261119');
+    const module=await import('./seo.js?v=seo-edit12-20261120');
     if(ticketNow!==generation)return;
     const args={api,root:$('body'),notice,role,navigate:target=>openSection(target),
      token:()=>session?.access_token||''};
@@ -1468,7 +1468,7 @@ async function edit(key,row,inline=false){
          if(!ext)throw new Error('اختر صورة PNG أو JPEG أو WebP');
          const slug=(key==='dishes'?(data.seo_image_filename||row.seo_image_filename||''):'')
            .replace(/[^a-z0-9-]/g,'').slice(0,65).replace(/^-+|-+$/g,'');
-          const path='/menu-images/'+crypto.randomUUID()+(slug?'-'+slug:'')+'.'+ext;
+          const path='/menu-images/'+(slug?slug+'-'+(field==='rich_image'?'interactive':'regular')+'-':'')+crypto.randomUUID()+'.'+ext;
          await api('/storage/v1/object'+path,{method:'POST',body:file});
          data[field]=endpoint+'/storage/v1/object/public'+path;
        }
