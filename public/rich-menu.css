@@ -1890,10 +1890,17 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
  #rich-menu .rm-network-switch{padding:8px 10px}
 }
 
-/* Preserve the spring carousel transforms; grayscale only the dish image layers. */
-#rich-menu .rm-dish[data-unavailable="true"] img.rm-dish-photo,
-body.restaurant-closed #rich-menu img.rm-dish-photo{filter:grayscale(1) drop-shadow(0 9px 14px #0008)!important;-webkit-filter:grayscale(1) drop-shadow(0 9px 14px #0008)!important;transition:filter .35s ease}
-#rich-menu .rm-thumb[data-unavailable="true"] img,
-body.restaurant-closed #rich-menu .rm-thumb img{filter:grayscale(1)!important;-webkit-filter:grayscale(1)!important;transition:filter .35s ease}
-body.restaurant-closed #rich-menu .rm-stage-wrap::before{content:"المطعم مغلق الآن";position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:999;color:#fff;background:#29282ad9;border:1px solid #9b927b;border-radius:999px;padding:5px 15px;font:700 12px/1.5 "Qatar2022 Arabic",Tahoma,sans-serif;white-space:nowrap;pointer-events:none}
-body.lang-en.restaurant-closed #rich-menu .rm-stage-wrap::before{content:"Restaurant currently closed"}
+/* Availability labels replace grayscale. Food images keep their original color and 3D motion. */
+#rich-menu .rm-availability{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:95%;padding:3px 13px;border:1px solid #d0a453;border-radius:999px;background:#6a4b24;color:#ffe3a4;font:800 11px/1.6 Snounu,Tahoma,sans-serif;margin:4px auto 0}
+#rich-menu .rm-availability[hidden]{display:none!important}
+#rich-menu .rm-availability::before{content:"";width:6px;height:6px;flex:none;border-radius:50%;background:#ffd879}
+#rich-menu .rm-customize:disabled{background:#343239!important;border-color:#867352!important;box-shadow:none!important;color:#ebd3a0!important;cursor:not-allowed}
+#rich-menu .rm-customize:disabled .rm-order-icon{background:#ae9666!important;color:#2b251c!important}
+#rich-menu .rm-customize:disabled strong{color:#efd5a3!important}
+#rich-menu .rm-info-details:disabled{background:#c8b998!important;color:#34302a!important;box-shadow:0 3px 0 #817253!important;cursor:not-allowed;transform:none!important}
+#rich-menu .rm-closure-note{display:none;margin:5px 0 3px;padding:7px 12px;max-width:min(100%,530px);min-width:0;align-items:center;justify-content:center;gap:8px;background:#37322c;border:1px solid #82704b;border-radius:12px;color:#ffdf9d;text-align:center;font:700 12px/1.55 Snounu,Tahoma,sans-serif}
+#rich-menu .rm-closure-note-copy{overflow-wrap:anywhere}
+#rich-menu .rm-closure-mark{display:grid;place-items:center;width:23px;height:23px;flex:none;border-radius:50%;background:#FDBE2D;color:#231c12;font:900 17px/1 system-ui,sans-serif}
+body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
+@media(max-width:980px){#rich-menu .rm-closure-note{font-size:11px;padding:6px 9px;margin:3px 0;gap:7px}}
+
