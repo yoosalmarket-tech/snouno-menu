@@ -1889,3 +1889,11 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
  }
  #rich-menu .rm-network-switch{padding:8px 10px}
 }
+
+/* Preserve the spring carousel transforms; grayscale only the dish image layers. */
+#rich-menu .rm-dish[data-unavailable="true"] img.rm-dish-photo,
+body.restaurant-closed #rich-menu img.rm-dish-photo{filter:grayscale(1) drop-shadow(0 9px 14px #0008)!important;-webkit-filter:grayscale(1) drop-shadow(0 9px 14px #0008)!important;transition:filter .35s ease}
+#rich-menu .rm-thumb[data-unavailable="true"] img,
+body.restaurant-closed #rich-menu .rm-thumb img{filter:grayscale(1)!important;-webkit-filter:grayscale(1)!important;transition:filter .35s ease}
+body.restaurant-closed #rich-menu .rm-stage-wrap::before{content:"المطعم مغلق الآن";position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:999;color:#fff;background:#29282ad9;border:1px solid #9b927b;border-radius:999px;padding:5px 15px;font:700 12px/1.5 "Qatar2022 Arabic",Tahoma,sans-serif;white-space:nowrap;pointer-events:none}
+body.lang-en.restaurant-closed #rich-menu .rm-stage-wrap::before{content:"Restaurant currently closed"}
