@@ -1263,7 +1263,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
    $('body').replaceChildren();
    const ticketNow=generation;
    try{
-    const module=await import('./seo.js?v=seo-edit13-20261120');
+    const module=await import('./seo.js?v=seo-field-help14-20261120');
     if(ticketNow!==generation)return;
     const args={api,root:$('body'),notice,role,navigate:target=>openSection(target),
      token:()=>session?.access_token||''};
