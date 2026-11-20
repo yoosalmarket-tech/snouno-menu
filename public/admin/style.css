@@ -2574,6 +2574,14 @@ main:has(#body.ga-overview) #tabs .admin-install-app:hover{
 }
 .seo-field textarea{min-height:86px;resize:vertical}
 .seo-field small{opacity:.7;font-size:11px;font-weight:450;line-height:1.6}
+.seo-save-message{flex-basis:100%;font-size:13px;line-height:1.65;font-weight:650;margin:8px 0;color:inherit}
+.seo-save-message:empty{display:none}
+.seo-save-message[data-state="success"]{color:#207b44}
+.seo-save-message[data-state="error"]{color:#b42318}
+.seo-field .seo-inline-error{color:#b42318;opacity:1;font-size:12px;font-weight:700}
+.seo-field .seo-inline-error:empty{display:none}
+.seo-field input[aria-invalid="true"]{border:2px solid #b42318;outline-offset:2px}
+
 .seo-check{display:flex;align-items:center;gap:12px}
 .seo-check input{width:21px;height:21px;accent-color:#FDBE2D;cursor:pointer}
 .seo-tabbar{display:flex;gap:8px;overflow-x:auto;margin:12px 0 18px}
