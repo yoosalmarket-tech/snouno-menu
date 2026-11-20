@@ -1,10 +1,10 @@
 /* Snounu installable menu. Network-first shell, no caching user actions,
    authentication, delivery referral tracking, or API responses. */
-const CACHE='snounu-menu-shell-v7';
+const CACHE='snounu-menu-shell-v8';
 const CORE=['/welcome','/assets/snounu-original-192.png?v=20261118-original','/assets/snounu-original-512.png?v=20261118-original','/assets/logo.webp'];
 const PUBLIC_ROUTES=new Set(['/','/welcome','/menu','/contact']);
 const ASSET_PATHS=new Set([
- '/menu.css','/desktop.css','/menu.js','/rich-menu.js','/rich-menu.css',
+ '/menu.css','/desktop.css','/menu.js','/rich-menu.js','/rich-menu.css','/closure-schedule.js',
  '/brand.css','/assets/logo.webp','/assets/snounu-icon.png',
  '/assets/snounu-original-192.png','/assets/snounu-original-512.png',
  '/assets/qatar-bold.woff'
