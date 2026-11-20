@@ -2643,3 +2643,32 @@ main:has(#body.ga-overview) #tabs .admin-install-app:hover{
  .seo-panel h2{font-size:18px}
 }
 @media(max-width:460px){.seo-query-controls{grid-template-columns:1fr}.seo-query-controls>.seo-field:first-child{grid-column:auto}}
+
+/* Restaurant closing periods editor: independent of the main restaurant form. */
+.closure-manager{margin:0 0 22px;padding:22px;border:1px solid var(--line,#ded7c8);border-radius:18px;background:var(--surface,#fff);box-shadow:0 4px 25px #0000000b}
+.closure-manager h2{margin:0 0 8px;font-size:22px}
+.closure-manager>p:first-of-type{margin:0 0 18px;font-size:13px;line-height:1.9;color:var(--soft,#69615b)}
+.closure-rules{display:grid;gap:14px}
+.closure-empty{margin:0;background:#f7f4ed;border:1px dashed #d6c8a5;padding:15px;color:#3a3328;border-radius:12px}
+.closure-rule{padding:16px;border:1px solid #d9d1c1;border-radius:14px;display:grid;gap:13px}
+.closure-rule-head{display:flex;justify-content:space-between;gap:15px;align-items:center}
+.closure-rule-head strong{font-size:16px}
+.closure-remove{background:transparent;border:1px solid #b9a69d;border-radius:8px;padding:7px 10px;font-size:12px;color:inherit}
+.closure-rule label{display:grid;gap:5px;font-size:13px;font-weight:700}
+.closure-rule input[type="date"],.closure-rule input[type="time"],.closure-rule select{width:100%;max-width:100%;min-height:43px;padding:9px;border:1px solid #c6bfaf;border-radius:10px;background:var(--surface,#fff);color:inherit;box-sizing:border-box}
+.closure-weekdays{border:1px solid #d9d1c1;border-radius:11px;margin:0;padding:12px}
+.closure-weekdays legend{font-size:13px;font-weight:700}
+.closure-day-picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px}
+.closure-rule .closure-day-pick{display:flex;align-items:center;justify-content:space-between;padding:8px;border:1px solid #d9d1c1;border-radius:9px;gap:8px;font-size:12px}
+.closure-day-pick input,.closure-all-day input{width:18px;height:18px;accent-color:#FDBE2D}
+.closure-rule .closure-all-day{display:flex;align-items:center;gap:9px}
+.closure-time-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.closure-rule small,.closure-guidance{font-size:12px;line-height:1.7;opacity:.8}
+.closure-controls{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0 9px}
+.closure-controls button{background:#FDBE2D;border:0;border-radius:11px;padding:11px 15px;color:#15130f;font:inherit;font-weight:750;cursor:pointer}
+.closure-controls .closure-add{background:transparent;color:inherit;border:1px solid #c1ad7b}
+.closure-controls button:disabled{opacity:.5;cursor:wait}
+.closure-feedback{min-height:20px;margin:8px 0;font-size:13px;line-height:1.65}
+.closure-feedback[data-state="success"]{color:#218456}.closure-feedback[data-state="error"]{color:#bc3422}
+.closure-feedback[data-state="pending"]{color:#966e16}
+@media(max-width:620px){.closure-manager{padding:15px}.closure-rule{padding:12px}.closure-day-picks{grid-template-columns:repeat(2,minmax(0,1fr))}.closure-time-fields{grid-template-columns:1fr 1fr;gap:7px}}
