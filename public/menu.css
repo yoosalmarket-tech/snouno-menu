@@ -1317,3 +1317,13 @@ body.rich-menu-active:not([data-preview]) #rich-menu{
  opacity:1!important;
  transform:none!important;
 }
+
+/* Availability and Gaza-time scheduled closures: food imagery only. */
+#menu .card.meal-unavailable .card-open img,
+#menu .dish-photo.meal-unavailable img,
+body.restaurant-closed #menu .card-open img,
+body.restaurant-closed #menu .dish-photo img,
+body.restaurant-closed #menu .banner,
+body.restaurant-closed #menu .ad-track img,
+body.restaurant-closed #menu .ad-thumbnail img{filter:grayscale(1)!important;-webkit-filter:grayscale(1)!important;transition:filter .35s ease}
+.restaurant-closure-banner{margin:0 0 14px;padding:11px 14px;border:1px solid #c9a34f;border-radius:12px;background:#fff1c8;color:#32260d;font-weight:750;font-size:13px;line-height:1.6;text-align:center}
