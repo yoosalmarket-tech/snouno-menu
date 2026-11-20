@@ -16,6 +16,147 @@ function panel(title,description){
  const n=el('section',null,'seo-panel');n.append(el('h2',title));
  if(description)n.append(el('p',description,'seo-muted'));return n;
 }
+/* Explain what each SEO field controls, and where its value can actually appear.
+   This reference stays in the dashboard only; it never changes public SEO metadata. */
+const seoHelp={
+ site_name:[
+  'اسم المطعم المرسل مع بيانات معاينة الرابط (og:site_name). يختلف عن اسم المطعم في إعدادات المنيو.',
+  'في مشاركة الروابط فقط إذا عرض تطبيق المشاركة اسم الموقع؛ لا يغيّر الاسم الظاهر داخل المنيو.'
+ ],
+ default_image:[
+  'الرابط الفعلي للصورة الاحتياطية لمشاركة صفحات سنونو عندما لا تكون للصفحة صورة مشاركة خاصة. كتابة اسم ملف جديد هنا لا تنقل الصورة أو تعيد تسميتها.',
+  'قد تظهر صورتها في معاينة رابط الصفحة على واتساب وفيسبوك وX؛ لا تغيّر صور الوجبات داخل المنيو. روابط الوجبات المباشرة تستخدم صورة الوجبة.'
+ ],
+ default_image_alt:[
+  'نص يصف صورة المشاركة الافتراضية ضمن بيانات Open Graph، لا يغيّر اسم الصورة أو محتواها.',
+  'غير مطبوع على الصفحة أو فوق الصورة؛ تتعامل معه بعض منصات المشاركة وأدوات الوصول.'
+ ],
+ social_handle:[
+  'اسم حساب سنونو على X (تويتر سابقًا)، دون @، لإضافته في بيانات twitter:site. لا ينشئ حسابًا ولا رابط متابعة.',
+  'خلف الكواليس في بيانات مشاركة X فقط عند إدخال اسم حساب صالح؛ لا يظهر في تصميم المنيو.'
+ ],
+ restaurant_schema:[
+  'تشغيل أو إيقاف البيانات المنظمة من نوع Restaurant التي يقرؤها Google، مثل الاسم والعنوان ورقم الهاتف وساعات العمل من إعدادات المطعم.',
+  'غير مرئية في صفحة المنيو؛ توجد في كود HTML. قد تستخدمها محركات البحث لفهم المطعم ولا تضمن عرض نتيجة مميزة.'
+ ],
+ sitemap_enabled:[
+  'تشغيل أو إيقاف الملف /sitemap.xml الذي يحتوي روابط الصفحات والوجبات المؤهلة للفهرسة.',
+  'غير ظاهر للزبون أثناء التصفح، لكن يمكن فتح ملف Sitemap برابط مباشر؛ يفيد برامج الزحف وليس تصميم المنيو.'
+ ],
+ gsc_property:[
+  'عنوان موقع Google Search Console المسجل هنا للرجوع إليه داخل لوحة التحكم؛ إدخاله لا يربط الحساب ولا يمنح أي صلاحيات.',
+  'داخل لوحة التحكم فقط؛ لا يظهر للزوار ولا يغيّر موقع العقار المسجّل لدى Google.'
+ ],
+ gsc_verification:[
+  'رمز إثبات ملكية الموقع لـ Google Search Console. الصق قيمة content أو رمز التحقق وحده، لا وسم HTML كاملًا.',
+  'خلف الكواليس في وسم داخل رأس HTML؛ لا يظهر في تصميم المنيو أو نتائج البحث.'
+ ],
+ image_search:[
+  'يبحث في أسماء الوجبات وأسماء الصور الموجودة في قائمة التحرير بالأسفل لتجد الوجبة بسرعة.',
+  'داخل لوحة التحكم فقط؛ لا يغيّر البحث الذي يجريه الزوار في Google أو المنيو.'
+ ],
+ search:[
+  'فلتر محلي للعبارات التي أحضرها تقرير Google Search Console داخل جدول الكلمات.',
+  'داخل لوحة التحكم فقط؛ لا ينشر أي كلمات جديدة ولا يغيّر ترتيب الموقع في Google.'
+ ],
+ days:[
+  'عدد الأيام المطلوب جلب بياناتها من Google Search Console (من 7 إلى 90 يومًا).',
+  'داخل التقرير فقط؛ يؤثر على الفترة المعروضة وليس على أداء الموقع أو فهرسته.'
+ ],
+ source:[
+  'اسم مصدر بيانات التقرير. هذا الحقل للقراءة فقط ويحدد الخدمة المقصودة بالتقرير.',
+  'داخل لوحة التحكم فقط؛ لا يغيّر إعدادات Google ولا يرسل بيانات.'
+ ],
+ query_sort:[
+  'يرتب جدول عبارات البحث حسب النقرات أو مرات الظهور أو نسبة النقر CTR أو متوسط الموضع.',
+  'داخل لوحة التحكم فقط؛ لا يغيّر ترتيب ظهور سنونو في Google.'
+ ],
+ date_from:[
+  'أول يوم للفترة التي تمثلها بيانات CSV المستوردة من Search Console.',
+  'في سجلات التقرير داخل لوحة التحكم فقط؛ لا يغيّر بيانات Google الأصلية.'
+ ],
+ date_to:[
+  'آخر يوم للفترة التي تمثلها بيانات CSV المستوردة من Search Console.',
+  'في سجلات التقرير داخل لوحة التحكم فقط؛ لا يغيّر بيانات Google الأصلية.'
+ ],
+ csv:[
+  'ملف CSV لبيانات عبارات البحث الحقيقية الذي تُنزّله من Google Search Console، لاستيراده وعرضه هنا.',
+  'داخل لوحة التحكم فقط؛ لا تُضاف عبارات CSV إلى صفحات الموقع ولا تصبح كلمات مفتاحية تلقائيًا.'
+ ]
+};
+const pageSeoHelp={
+ title:[
+  'عنوان الصفحة في وسم HTML <title>. يُستخدم أيضًا عنوانًا افتراضيًا لمشاركة الرابط إذا لم تحدد عنوان مشاركة خاصًا.',
+  'يظهر في تبويب المتصفح، وقد تختاره Google عنوانًا لنتيجة البحث. لا يحل محل النص أو العناوين داخل تصميم المنيو.'
+ ],
+ description:[
+  'وصف الصفحة في Meta Description ليشرح محتواها لمحركات البحث، ويُستخدم افتراضيًا للمشاركة عند ترك وصف المشاركة فارغًا.',
+  'قد يظهر تحت الرابط في نتائج Google، لكن Google قد تختار مقتطفًا مختلفًا. لا يغيّر النص المكتوب داخل الصفحة.'
+ ],
+ canonical:[
+  'الرابط الأساسي المقترح لمحركات البحث لهذه الصفحة، لتجنّب اعتبار الروابط المتشابهة نسخًا مستقلة. لا يغيّر عنوان الصفحة المرئي.',
+  'داخل كود HTML فقط. لا يعيد توجيه الزائر إلى رابط آخر؛ تتعامل Google معه كإشارة وليست أمرًا ملزمًا.'
+ ],
+ og_title:[
+  'العنوان الخاص بمشاركة رابط هذه الصفحة على واتساب أو فيسبوك أو X. إذا تُرك فارغًا يُستخدم عنوان البحث.',
+  'في بطاقة معاينة الرابط عند عرض التطبيق لها؛ لا يغيّر عنوان Google أو النص داخل المنيو.'
+ ],
+ og_description:[
+  'الوصف الخاص ببطاقة مشاركة رابط هذه الصفحة. إذا تُرك فارغًا يُستخدم وصف الصفحة لمحركات البحث.',
+  'قد يظهر تحت صورة رابط المشاركة على واتساب وفيسبوك وغيرها؛ لا يغيّر وصف الوجبات داخل المنيو.'
+ ],
+ og_image:[
+  'رابط صورة مشاركة مخصّصة لهذه الصفحة بدل الصورة الافتراضية. اترك الحقل فارغًا لاستخدام الصورة العامة.',
+  'في بطاقة مشاركة رابط الصفحة العادي، إذا عرضت المنصة صورة المعاينة. لا يغيّر صور المنيو؛ رابط الوجبة المباشر يستخدم صورتها.'
+ ],
+ index:[
+  'السماح لمحركات البحث بفهرسة الصفحة. إيقافه يرسل توجيه noindex,follow ولا يمنع الزوار من فتح الرابط.',
+  'خلف الكواليس في وسم robots. قد تختفي الصفحة تدريجيًا من Google بعد إعادة الزحف، وليس فور الضغط على حفظ.'
+ ]
+};
+const mealSeoHelp={
+ title:[
+  'عنوان مخصص للرابط المباشر لهذه الوجبة (?dish=...) بدل اسمها العادي. يُستخدم في عنوان الصفحة وبيانات مشاركة رابط الوجبة.',
+  'قد يظهر في تبويب المتصفح ونتائج البحث ومعاينة مشاركة رابط الوجبة؛ لا يغيّر اسم الطبق داخل المنيو.'
+ ],
+ description:[
+  'وصف مخصص لرابط الوجبة المباشر: يستخدم في Meta Description ووصف المشاركة لهذه الوجبة.',
+  'قد يظهر في Google وبطاقة مشاركة رابط الوجبة؛ لا يغيّر وصف الوجبة المرئي على البطاقة أو في النافذة.'
+ ],
+ alt:[
+  'وصف واضح لما تحتويه صورة الوجبة، يستخدم في خاصية ALT للصور وفي وصف صورة رابط المشاركة الخاص بالوجبة.',
+  'لا يظهر فوق الصورة عادةً؛ يفيد قارئات الشاشة وقد يظهر إذا لم تُحمّل الصورة، ويساعد محركات البحث على فهمها.'
+ ],
+ filename:[
+  'اسم إنجليزي وصفي يُستخدم عند رفع صورة جديدة للوجبة. لتطبيقه على الصور المنشورة الآن استخدم زر «تطبيق الاسم على الصور الحالية»؛ الحفظ وحده لا يعيد تسمية الملفات.',
+  'لا يظهر كنص على الوجبة، لكنه يصبح جزءًا من رابط الصورة الفعلي عند الرفع أو إعادة النشر.'
+ ]
+};
+function seoHelpFor(key){
+ if(Object.hasOwn(seoHelp,key))return seoHelp[key];
+ const pageMatch=/^(welcome|menu|contact)_(title|description|canonical|og_title|og_description|og_image|index)$/.exec(key);
+ if(pageMatch)return pageSeoHelp[pageMatch[2]];
+ if(/^welcome_image_alt_[1-3]$/.test(key))return [
+  'وصف الصورة المقابلة في شاشة الترحيب (واحدة من الصور الثلاث)، لا يغيّر اسم الوجبة أو الصورة نفسها.',
+  'غير ظاهر كنص في تصميم الترحيب؛ يُستخدم كنص بديل للصورة، مثلًا لقارئات الشاشة أو عند تعذر تحميلها.'
+ ];
+ const mealMatch=/^(title|description|alt|filename)-[0-9a-f-]+$/i.exec(key);
+ if(mealMatch)return mealSeoHelp[mealMatch[1]];
+ return null;
+}
+function addSeoHelp(wrap,key){
+ const items=seoHelpFor(key);
+ if(!items)return;
+ for(const [heading,copy,css] of [
+  ['ماذا يتحكم؟',items[0],'seo-field-explainer'],
+  ['أين يظهر؟',items[1],'seo-field-explainer seo-field-visibility']
+ ]){
+  const line=el('small',null,css);
+  line.append(el('strong',heading),document.createTextNode(' '+copy));
+  wrap.append(line);
+ }
+}
+
 function formField(host,key,label,value='',kind='text',hint=''){
  const wrap=el('label',null,'seo-field');wrap.append(el('span',label));
  const input=el(kind==='textarea'?'textarea':'input');
@@ -24,7 +165,7 @@ function formField(host,key,label,value='',kind='text',hint=''){
  if(kind==='checkbox'){input.checked=value!==false;wrap.classList.add('seo-check');}
  else input.value=String(value??'');
  if(kind==='url'||key.includes('canonical')||key.includes('image'))input.dir='ltr';
- wrap.append(input);if(hint)wrap.append(el('small',hint));host.append(wrap);return input;
+ wrap.append(input);if(hint)wrap.append(el('small',hint));addSeoHelp(wrap,key);host.append(wrap);return input;
 }
 function val(form,name){const input=form.elements.namedItem(name);return input?.type==='checkbox'?input.checked:String(input?.value??'').trim()}
 const fileName=url=>{
@@ -70,7 +211,7 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
  ]);
  if(!records.length)throw Error('إعدادات SEO لم تُهيأ بعد في قاعدة البيانات');
  const old=records[0].data||{};
- const lead=panel('إعدادات ظهور المنيو في Google','المسار: لوحة التحكم ← SEO. هذه البيانات لا تظهر داخل تصميم المنيو، لكنها تظهر في مصدر HTML ونتائج البحث والمشاركة.');
+ const lead=panel('إعدادات ظهور المنيو في Google','كل حقل تحته شرحان: «ماذا يتحكم؟» و«أين يظهر؟». بعض القيم تظهر في نتائج Google أو عند مشاركة الرابط فقط، وبعضها لا يراه الزبون إطلاقًا.');
  lead.classList.add('seo-hero-panel');
  lead.append(el('p','GOOGLE SEARCH · OPEN GRAPH · IMAGE SEO · STRUCTURED DATA','seo-eyebrow'));
  const links=el('div',null,'seo-link-row');
@@ -176,7 +317,7 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
  actions.append(save,mainFeedback,btn('فتح Google Search Console',()=>window.open('https://search.google.com/search-console','_blank','noopener'),'seo-button seo-outline'));
  form.append(actions);form.addEventListener('submit',e=>e.preventDefault());
  root.append(form);form.addEventListener('input',syncVerification);syncVerification();selectPage('menu');
- const box=panel('صور الوجبات · الأسماء والأوصاف البديلة','أدخل اسماً إنجليزياً وصفياً، ثم اضغط «تطبيق الاسم على الصور الحالية» لإنشاء نسخ بأسماء جديدة وتحديث روابط الوجبة تلقائياً. الصور الأصلية تبقى متاحة للحماية من تعطل الروابط القديمة.');
+ const box=panel('صور الوجبات · الأسماء والأوصاف البديلة','هذه الحقول تخص ظهور كل وجبة في البحث والمشاركة والوصول. لا تغيّر وصفها أو اسمها المعروض داخل المنيو. لتغيير رابط الصورة فعليًا استخدم «تطبيق الاسم على الصور الحالية»؛ النسخ الأصلية تبقى متاحة.');
  const search=formField(box,'image_search','البحث عن وجبة أو اسم صورة','','search');
  const list=el('div',null,'seo-image-list');box.append(list);
  const updated=new Map();
@@ -293,15 +434,15 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
   const term=search.value.trim().toLocaleLowerCase();
   for(const item of itemSearch)item.hidden=!!term&&!item.dataset.search.includes(term);
  });
- const technical=panel('الملفات الفنية وما يراه محرك البحث','هذه المزايا تُخدم من الخادم وليست جزءاً من واجهة المنيو المرئية.');
+ const technical=panel('الملفات الفنية وما يراه محرك البحث','هذه روابط للملفات والأكواد التي تخدم محركات البحث. يستطيع بعض الأشخاص فتحها مباشرة، لكنها لا تظهر كأقسام أو نصوص داخل واجهة المنيو.');
  const technicalList=el('div',null,'seo-technical-grid');
  for(const [name,url,detail] of [
-  ['sitemap.xml','/sitemap.xml','خريطة الروابط القابلة للفهرسة'],
-  ['robots.txt','/robots.txt','تعليمات زواحف البحث'],
-  ['Google HTML verification','/google4e9150f78d7ff579.html','ملف التحقق من ملكية Google في جذر الموقع'],
-   ['Google verification tag','/welcome','وسم Google داخل HTML head'],
-  ['JSON-LD Restaurant','/menu','بيانات المطعم بصيغة JSON-LD'],
-  ['Canonical + Open Graph','/contact','روابط أساسية وبيانات مشاركة']
+  ['sitemap.xml','/sitemap.xml','ملف قائمة الروابط التي تقترحها على محركات البحث. يمكن فتحه مباشرة، لكنه ليس صفحة مرئية في المنيو.'],
+  ['robots.txt','/robots.txt','تعليمات عامة لزواحف محركات البحث. ملف عام يمكن فتحه عبر الرابط، ولا يظهر ضمن تصميم المنيو.'],
+  ['Google HTML verification','/google4e9150f78d7ff579.html','ملف مستقل للتحقق من ملكية الموقع لدى Google؛ يمكن فتحه بالرابط المباشر فقط.'],
+  ['Google verification tag','/welcome','رمز التحقق الموجود داخل كود HTML في صفحة الترحيب؛ لا يظهر للزائر كنص.'],
+  ['JSON-LD Restaurant','/menu','بيانات منظمة عن المطعم داخل كود الصفحة، وليست عناصر ظاهرة في المنيو.'],
+  ['Canonical + Open Graph','/contact','روابط أساسية وعناوين وأوصاف مشاركة ضمن كود صفحة التواصل، وليست نصوص تصميم الصفحة.']
  ]){
   const a=el('a',null,'seo-technical-link');a.href=url;a.target='_blank';a.rel='noopener noreferrer';
   a.append(el('strong',name),el('span',detail));technicalList.append(a);
@@ -366,7 +507,9 @@ export async function renderSeoQueries({api,root,notice,token,navigate}){
  for(const [key,label] of [['clicks','الأكثر نقرات'],['impressions','الأكثر ظهوراً'],['ctr','الأعلى CTR'],['position','أفضل ترتيب']]){
   const option=el('option',label);option.value=key;sort.append(option);
  }
- controls.append(sort);
+ const sortWrap=el('label',null,'seo-field');
+ sortWrap.append(el('span','ترتيب النتائج'),sort);addSeoHelp(sortWrap,'query_sort');
+ controls.append(sortWrap);
  const refresh=btn('تحديث البيانات من Google',()=>void loadLive(),'seo-button seo-primary');controls.append(refresh);
  filters.append(controls);
  const status=el('p','جارٍ الاتصال بـ Search Console…','seo-muted');status.id='seo-query-status';filters.append(status);
