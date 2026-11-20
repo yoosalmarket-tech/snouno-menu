@@ -130,7 +130,10 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
  const actions=el('div',null,'seo-actions');
  const save=btn('حفظ إعدادات SEO',async()=>{
   save.disabled=true;notice('');
+  mainFeedback.textContent='جارٍ حفظ التغييرات...';
+  mainFeedback.dataset.state='';
   try{
+   validateDirtyMealSeo();
    const next={
     ...old,site_name:val(form,'site_name').slice(0,100),
     default_image:safeImage(val(form,'default_image')),
@@ -155,19 +158,65 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
     index:val(form,p.id+'_index')
    };
    await api('/rest/v1/seo_settings?id=eq.1',{method:'PATCH',body:{data:next,updated_at:new Date().toISOString()},headers:{Prefer:'return=representation'}});
-   Object.assign(old,next);notice('تم حفظ SEO. قد تستغرق بيانات محركات البحث وقتاً للتحديث.');
-  }catch(e){notice('تعذر حفظ SEO: '+e.message)}
+   Object.assign(old,next);
+   let savedMeals=0;
+   try{savedMeals=await saveDirtyMealSeo();}
+   catch(mealError){
+    const message='تم حفظ إعدادات الصفحات العامة، لكن لم تُحفظ بعض بيانات الوجبات: '+mealError.message;
+    mainFeedback.textContent=message;mainFeedback.dataset.state='error';notice(message);return;
+   }
+   const message='تم حفظ إعدادات SEO'+(savedMeals?' وبيانات '+savedMeals+' وجبة':'')+'. قد يستغرق تحديث نتائج Google بعض الوقت.';
+   mainFeedback.textContent=message;mainFeedback.dataset.state='success';notice(message);
+  }catch(e){const message='تعذر حفظ إعدادات SEO: '+e.message;mainFeedback.textContent=message;mainFeedback.dataset.state='error';notice(message)}
   finally{save.disabled=false}
  },'seo-button seo-primary');
+ save.textContent='حفظ جميع تغييرات SEO';
  save.id='seo-save-settings';save.dataset.trackAction='seo_save_settings';
- actions.append(save,btn('فتح Google Search Console',()=>window.open('https://search.google.com/search-console','_blank','noopener'),'seo-button seo-outline'));
+ const mainFeedback=el('p','','seo-save-message');mainFeedback.setAttribute('role','status');mainFeedback.setAttribute('aria-live','polite');
+ actions.append(save,mainFeedback,btn('فتح Google Search Console',()=>window.open('https://search.google.com/search-console','_blank','noopener'),'seo-button seo-outline'));
  form.append(actions);form.addEventListener('submit',e=>e.preventDefault());
  root.append(form);form.addEventListener('input',syncVerification);syncVerification();selectPage('menu');
  const box=panel('صور الوجبات · الأسماء والأوصاف البديلة','أدخل اسماً إنجليزياً وصفياً، ثم اضغط «تطبيق الاسم على الصور الحالية» لإنشاء نسخ بأسماء جديدة وتحديث روابط الوجبة تلقائياً. الصور الأصلية تبقى متاحة للحماية من تعطل الروابط القديمة.');
  const search=formField(box,'image_search','البحث عن وجبة أو اسم صورة','','search');
  const list=el('div',null,'seo-image-list');box.append(list);
  const updated=new Map();
+ const editInputs=new Map();
  const itemSearch=[];
+ function invalidateFilename(id,message){
+  const refs=editInputs.get(id);
+  const input=refs?.filename;
+  if(!input)return;
+  refs.error.textContent=message;
+  input.setAttribute('aria-invalid','true');
+  input.focus();
+  input.scrollIntoView({block:'center',behavior:'smooth'});
+ }
+ function validateDirtyMealSeo(){
+  for(const [id,v] of updated){
+   if(v.seo_image_filename&&!validImageSlug(v.seo_image_filename)){
+    invalidateFilename(id,'استخدم اسماً بالإنجليزية بحروف صغيرة وأرقام وشرطات فقط، حتى 65 حرفاً. مثال: snounu-cheese-sticks-gaza');
+    throw Error('اسم ملف صورة الوجبة «'+(dishes.find(d=>d.id===id)?.name||id)+'» غير صالح. صححه في الحقل المشار إليه.');
+   }
+   if(v.seo_image_filename.length>65||v.seo_alt.length>200||v.seo_title.length>180||v.seo_description.length>350)
+    throw Error('هناك عنوان أو وصف أو اسم صورة يتجاوز الحد المسموح في '+(dishes.find(d=>d.id===id)?.name||'إحدى الوجبات'));
+  }
+ }
+ async function saveDirtyMealSeo(){
+  if(!updated.size)return 0;
+  validateDirtyMealSeo();
+  let savedCount=0;
+  for(const [id,v] of updated){
+   const rows=await api('/rest/v1/dishes?id=eq.'+encodeURIComponent(id),{
+    method:'PATCH',
+    body:{seo_title:v.seo_title,seo_description:v.seo_description,seo_alt:v.seo_alt,seo_image_filename:v.seo_image_filename},
+    headers:{Prefer:'return=representation'}
+   });
+   if(!Array.isArray(rows)||!rows.length)throw Error('تعذر التحقق من حفظ بيانات وجبة '+(dishes.find(d=>d.id===id)?.name||id));
+   const dish=dishes.find(d=>d.id===id);if(dish)Object.assign(dish,v);
+   updated.delete(id);savedCount++;
+  }
+  return savedCount;
+ }
  for(const dish of dishes){
   const item=el('article',null,'seo-image-row');item.dataset.search=(dish.name+' '+fileName(dish.image)+' '+fileName(dish.rich_image)).toLocaleLowerCase();
   const pic=el('img');pic.src=dish.image||'/assets/welcome/2468.webp';pic.alt=dish.name;pic.loading='lazy';
@@ -181,7 +230,15 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
   const filename=formField(details,'filename-'+dish.id,'اسم ملف الصور الحالي والجديد',dish.seo_image_filename||'','text','مثال: snounu-cheese-sticks-gaza — اكتب الاسم بدون امتداد الملف.');
   filename.dir='ltr';filename.placeholder='snounu-meal-gaza';
   const changed=()=>updated.set(dish.id,{id:dish.id,seo_title:seoTitle.value.trim(),seo_description:seoDescription.value.trim(),seo_alt:alt.value.trim(),seo_image_filename:filename.value.trim()});
-  for(const input of [seoTitle,seoDescription,alt,filename])input.addEventListener('input',changed);
+  const filenameError=el('small','','seo-inline-error');
+  filenameError.setAttribute('role','alert');
+  filename.parentElement.append(filenameError);
+  editInputs.set(dish.id,{filename,error:filenameError});
+  const onEdit=()=>{
+   if(validImageSlug(filename.value.trim())||!filename.value.trim()){filename.removeAttribute('aria-invalid');filenameError.textContent='';}
+   changed();
+  };
+  for(const input of [seoTitle,seoDescription,alt,filename])input.addEventListener('input',onEdit);
   const rename=btn('تطبيق الاسم على الصور الحالية',async()=>{
    const slug=filename.value.trim();
    if(!validImageSlug(slug)){notice('اكتب اسم ملف إنجليزياً صغيراً من أحرف وأرقام وشرطات، بحد أقصى 65 حرفاً. مثال: snounu-cheese-sticks-gaza');return;}
@@ -216,24 +273,22 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
   details.append(rename);
   item.append(pic,details);list.append(item);itemSearch.push(item);
  }
- const imageSave=btn('حفظ أوصاف الصور',async()=>{
-  if(!updated.size){notice('لا توجد تغييرات على الصور.');return}
+ const imageSave=btn('حفظ تغييرات الوجبات فقط',async()=>{
+  if(!updated.size){imageFeedback.textContent='لا توجد تغييرات غير محفوظة في الوجبات.';return;}
   imageSave.disabled=true;
+  imageFeedback.textContent='جارٍ حفظ بيانات الوجبات...';imageFeedback.dataset.state='';
   try{
-   for(const v of updated.values()){
-    if(v.seo_image_filename&&!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v.seo_image_filename))throw Error('اسم الملف يجب أن يكون حروفاً إنجليزية صغيرة وأرقاماً وشرطة -');
-    if(v.seo_image_filename.length>65||v.seo_alt.length>200||v.seo_title.length>180||v.seo_description.length>350)throw Error('عنوان أو وصف أو اسم صورة طويل جداً');
-   }
-   for(const value of updated.values())await api('/rest/v1/dishes?id=eq.'+encodeURIComponent(value.id),{
-    method:'PATCH',body:{seo_title:value.seo_title,seo_description:value.seo_description,seo_alt:value.seo_alt,seo_image_filename:value.seo_image_filename},headers:{Prefer:'return=minimal'}
-   });
-   notice('تم حفظ أوصاف '+updated.size+' وجبة. أسماء الصور الحالية لم تتغير.');
-   updated.clear();
-  }catch(e){notice('تعذر حفظ الصور: '+e.message)}
-  finally{imageSave.disabled=false}
+   const count=await saveDirtyMealSeo();
+   const message='تم حفظ بيانات '+count+' وجبة. لن تتغير روابط الصور المنشورة إلا عند الضغط على «تطبيق الاسم على الصور الحالية».';
+   imageFeedback.textContent=message;imageFeedback.dataset.state='success';notice(message);
+  }catch(e){
+   const message='تعذر حفظ بعض التغييرات: '+e.message;
+   imageFeedback.textContent=message;imageFeedback.dataset.state='error';notice(message);
+  }finally{imageSave.disabled=false;}
  },'seo-button seo-primary');
  imageSave.dataset.trackAction='seo_save_images';
- box.append(imageSave);root.append(box);
+ const imageFeedback=el('p','','seo-save-message');imageFeedback.setAttribute('role','status');imageFeedback.setAttribute('aria-live','polite');
+ box.append(imageSave,imageFeedback);root.append(box);
  search.addEventListener('input',()=>{
   const term=search.value.trim().toLocaleLowerCase();
   for(const item of itemSearch)item.hidden=!!term&&!item.dataset.search.includes(term);
