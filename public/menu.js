@@ -1,10 +1,35 @@
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
+import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
 const make=(tag,text)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;return el;};
 let dishes=[],categories=[],links=[],advertisements=[],settings={};
+function syncRestaurantClosure(){
+ const closed=isRestaurantClosed(settings.closure_rules);
+ document.body.classList.toggle('restaurant-closed',closed);
+ const banner=document.getElementById('restaurant-closure-banner');
+ if(banner){
+  banner.hidden=!closed;
+  banner.textContent=document.documentElement.lang==='en'
+   ?'The restaurant is currently closed. Feel free to browse the menu.'
+   :'المطعم مغلق الآن. يمكنك تصفح المنيو، ويرجى التأكد من المطعم قبل الطلب.';
+ }
+}
+function installRestaurantClosureUpdates(){
+ let banner=document.getElementById('restaurant-closure-banner');
+ if(!banner){
+  banner=document.createElement('p');banner.id='restaurant-closure-banner';
+  banner.className='restaurant-closure-banner';banner.setAttribute('role','status');
+  document.getElementById('menu')?.prepend(banner);
+ }
+ syncRestaurantClosure();
+ // Local timers handle time boundaries without repeated network requests.
+ window.setInterval(syncRestaurantClosure,30000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncRestaurantClosure();});
+}
+
 // Preserve returning visitors' favorites, theme, ratings and menu preferences after the rebrand.
 try {
  for (const oldKey of Object.keys(localStorage)) {
@@ -294,6 +319,7 @@ function translateStaticContent(){
 }
 function applyLanguage(){
  document.documentElement.lang=isEnglish()?'en':'ar';
+  syncRestaurantClosure();
  document.body.classList.toggle('lang-en',isEnglish());
  for(const toggle of document.querySelectorAll('.language-switch')){
    toggle.querySelector('.language-label').textContent=isEnglish()?'AR':'EN';
@@ -1044,7 +1070,7 @@ function startingScore(value){
  return score;
 }
 function mealCard(d,context='regular'){
-   const article=make('article');article.className='card';
+   const article=make('article');article.className='card';article.classList.toggle('meal-unavailable',d.available===false);
    article.id=(context==='regular'?'meal-':context+'-meal-')+d.id;
    article.dataset.mealId=d.id;article.dataset.categoryId=d.category_id;
    const open=make('button');open.className='card-open';open.id=(context==='regular'?'open-meal-':context+'-open-')+d.id;
@@ -1098,7 +1124,7 @@ function detail(d){
  if(d.id&&!isPreview)noteSelection('meal',d.id);
  const categoryLabel=tr(categories.find(c=>c.id===d.category_id)?.name||'');
  if(d.image){
-   const frame=make('figure');frame.className='dish-photo';
+   const frame=make('figure');frame.className='dish-photo';frame.classList.toggle('meal-unavailable',d.available===false);
    frame.append(image(d.image==='/assets/knockout.webp'?'/assets/knockout-detail.webp':d.image,displayName(d)));
    if(categoryLabel){const tag=make('span',categoryLabel);tag.className='photo-tag';frame.append(tag);}
    box.append(frame);
@@ -1273,7 +1299,7 @@ async function load(){
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links,advertisements]=values;renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   // The SEO fetch runs after initial menu data, outside the 3-second decision.
   setTimeout(()=>void refreshSeoWelcomeAlts(),3200);
   void syncRichMode();
