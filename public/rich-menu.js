@@ -31,10 +31,11 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  '<div class="rm-order-wrap"><button type="button" class="rm-customize" dir="rtl" aria-label="اطلب الآن"><span class="rm-order-ar" dir="rtl">اطلب الآن</span><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><strong class="rm-order-en" lang="en" dir="ltr">ORDER NOW</strong></button></div>',
  '<span class="rm-info-rating" dir="ltr" hidden></span>',
  // Center meal copy as a group between the rating and the bottom action.
- '<div class="rm-meal-copy"><h2 class="rm-info-name"></h2><p class="rm-info-desc"></p><span class="rm-info-price" dir="ltr"></span></div>',
+ '<div class="rm-meal-copy"><h2 class="rm-info-name"></h2><span class="rm-availability" hidden></span><p class="rm-info-desc"></p><span class="rm-info-price" dir="ltr"></span></div>',
  '<div class="rm-info-actions">',
  '<button type="button" class="rm-info-details">＋ عرض تفاصيل الوجبة</button>',
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
+ '<p class="rm-closure-note" role="status"><span class="rm-closure-mark" aria-hidden="true">◷</span><span class="rm-closure-note-copy"></span></p>',
  '<small class="rm-instruction" dir="rtl">اسحب يمين ويسار للتنقل بين الوجبات، وفوق وتحت لتغيير التصنيفات</small></section>',
  '<dialog class="rm-sheet" aria-labelledby="rm-sheet-title" dir="rtl"><div class="rm-sheet-grab" aria-hidden="true"></div>',
  '<header class="rm-sheet-head"><div class="rm-sheet-heading"><span class="rm-sheet-overline" lang="en">SNOUNU / RESTAURANT</span>',
@@ -73,6 +74,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   railCount:at(root,'.rm-rail-count'),
   railUp:at(root,'.rm-rail-previous'),railDown:at(root,'.rm-rail-next'),
   info:at(root,'.rm-info'),orderWrap:at(root,'.rm-order-wrap'),rating:at(root,'.rm-info-rating'),title:at(root,'.rm-info-name'),
+  availability:at(root,'.rm-availability'),closureNote:at(root,'.rm-closure-note'),
   desc:at(root,'.rm-info-desc'),price:at(root,'.rm-info-price'),
   details:at(root,'.rm-info-details'),share:at(root,'.rm-share'),fav:at(root,'.rm-info-fav'),
   customize:at(root,'.rm-customize'),sheet:at(root,'.rm-sheet'),
@@ -285,6 +287,13 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   instruction.textContent=isEnglish()?'Swipe left or right for meals, up or down for categories.':'اسحب يمين ويسار للتنقل بين الوجبات، وفوق وتحت لتغيير التصنيفات';
   instruction.dir=isEnglish()?'ltr':'rtl';
   u.title.textContent=getName(m);
+  const unavailable=m.available===false;
+  u.availability.hidden=!unavailable;
+  u.availability.textContent=unavailable?(isEnglish()?'Sold out':'نفدت الكمية'):'';
+  at(u.closureNote,'.rm-closure-note-copy').textContent=isEnglish()
+   ?'Restaurant currently closed. Browse the menu and come back when we reopen!'
+   :'المطعم مغلق حالياً · تقدر تتصفح وجباتنا ونستناك وقت الافتتاح!';
+  u.closureNote.dir=isEnglish()?'ltr':'rtl';
   u.fav.dataset.mealId=String(m.id);u.share.dataset.mealId=String(m.id);
   u.customize.dataset.mealId=String(m.id);
   u.share.title=isEnglish()?'Share meal':'مشاركة الوجبة';
@@ -308,10 +317,15 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
     u.price.append(old);
    }
   }
-  u.details.textContent=isEnglish()?'＋ MEAL DETAILS':'＋ عرض تفاصيل الوجبة';
-  at(u.customize,'.rm-order-en').textContent='ORDER NOW';
-  at(u.customize,'.rm-order-ar').textContent='اطلب الآن';
-  u.customize.setAttribute('aria-label',isEnglish()?'Order now':'اطلب الآن');
+  u.details.textContent=unavailable?(isEnglish()?'CURRENTLY UNAVAILABLE':'غير متوفر حالياً')
+   :(isEnglish()?'＋ MEAL DETAILS':'＋ عرض تفاصيل الوجبة');
+  u.details.disabled=unavailable;
+  at(u.customize,'.rm-order-en').textContent=unavailable?'UNAVAILABLE':'ORDER NOW';
+  at(u.customize,'.rm-order-ar').textContent=unavailable?'غير متوفر':'اطلب الآن';
+  u.customize.disabled=unavailable;
+  u.customize.setAttribute('aria-label',unavailable
+   ?(isEnglish()?'Currently unavailable':'غير متوفر حالياً')
+   :(isEnglish()?'Order now':'اطلب الآن'));
   const saved=!!snapshot.favorites?.has(m.id);
   u.fav.textContent=saved?'♥':'♡';u.fav.setAttribute('aria-pressed',String(saved));
   u.fav.setAttribute('aria-label',saved?'إزالة من المفضلة':'إضافة إلى المفضلة');
@@ -649,7 +663,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    el.append(mark,copy,arrow);return el;
  };
  function openRichSheet(kind,meal){
-   if(destroyed)return;
+   if(destroyed||(kind==='order'&&meal?.available===false))return;
    const english=isEnglish();
    u.sheetTitle.textContent=kind==='order'?(english?'Where to order':'أماكن الطلب'):(english?'Location & contact':'موقعنا و التواصل');
    u.sheetSubtitle.textContent=kind==='order'?(meal?getName(meal):''):(snapshot.settings?.name||'مطعم سنونو');
@@ -675,10 +689,6 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    for(const channel of channels){const link=linkCard(channel,kind==='order'?meal:null);if(link)links.append(link);}
    if(!links.children.length)links.append(mk('p','rm-sheet-empty',english?'Ordering links are not currently available.':'روابط الطلب غير متاحة حالياً.'));
    u.sheetBody.append(links);
-   if(kind==='order'&&meal?.available===false){
-     const note=mk('p','rm-sheet-warning',english?'This meal is marked unavailable. Please confirm with the restaurant before ordering.':'هذه الوجبة محددة كغير متوفرة. تأكد من المطعم قبل الطلب.');
-     u.sheetBody.prepend(note);
-   }
    if(u.sheet.open)return;
    // Restart the entrance animation cleanly for every re-open.
    u.sheet.classList.remove('rm-sheet-entering');
@@ -722,8 +732,8 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
  u.mealPrev.id='rich-desktop-meal-previous';u.mealNext.id='rich-desktop-meal-next';
  u.mealPrev.onclick=()=>step(-1);u.mealNext.onclick=()=>step(1);
  u.details.id='rich-meal-details';u.details.dataset.trackAction='order_now_click';
- u.details.onclick=()=>{if(dish())openRichSheet('order',dish());};
- u.customize.onclick=()=>{if(dish())openRichSheet('order',dish());};
+ u.details.onclick=()=>{if(dish()&&dish().available!==false)openRichSheet('order',dish());};
+ u.customize.onclick=()=>{if(dish()&&dish().available!==false)openRichSheet('order',dish());};
  u.share.onclick=()=>{
   const current=dish();
   if(current?.id&&typeof onShare==='function')void onShare(current);
