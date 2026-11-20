@@ -10,13 +10,20 @@ function syncRestaurantClosure(){
  const closed=isRestaurantClosed(settings.closure_rules);
  document.body.classList.toggle('restaurant-closed',closed);
  const banner=document.getElementById('restaurant-closure-banner');
- if(banner){
-  banner.hidden=!closed;
-  banner.textContent=document.documentElement.lang==='en'
-   ?'The restaurant is currently closed. Feel free to browse the menu.'
-   :'المطعم مغلق الآن. يمكنك تصفح المنيو، ويرجى التأكد من المطعم قبل الطلب.';
- }
+ if(!banner)return;
+ banner.hidden=!closed;
+ if(!closed)return;
+ const english=document.documentElement.lang==='en';
+ const state=english?'en':'ar';
+ if(banner.dataset.language===state)return;
+ banner.dataset.language=state;
+ const icon=make('span','◷');icon.className='restaurant-closure-icon';icon.setAttribute('aria-hidden','true');
+ const words=make('span');words.className='restaurant-closure-content';
+ const title=make('strong',english?'Restaurant currently closed':'المطعم مغلق حالياً');
+ const message=make('small',english?'You can still explore our meals. See you when we reopen!':'تقدر تتصفح وجباتنا، ونستناك وقت الافتتاح!');
+ words.append(title,message);banner.replaceChildren(icon,words);
 }
+let closureUpdatesInstalled=false;
 function installRestaurantClosureUpdates(){
  let banner=document.getElementById('restaurant-closure-banner');
  if(!banner){
@@ -25,7 +32,9 @@ function installRestaurantClosureUpdates(){
   document.getElementById('menu')?.prepend(banner);
  }
  syncRestaurantClosure();
- // Local timers handle time boundaries without repeated network requests.
+ if(closureUpdatesInstalled)return;
+ closureUpdatesInstalled=true;
+ // Timers only update the availability notice; they never reload the menu.
  window.setInterval(syncRestaurantClosure,30000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncRestaurantClosure();});
 }
@@ -1078,7 +1087,13 @@ function mealCard(d,context='regular'){
    open.onclick=()=>detail(d);
    if(d.image){const photo=make('img');photo.loading='lazy';photo.decoding='async';photo.src=asset(d.image);photo.alt=d.seo_alt||displayName(d);open.append(photo);}
    if(d.rating!=null)open.append(startingScore(d.rating));
-   open.append(make('strong',displayName(d)),make('p',displayDescription(d)),price(d));if(!d.available)open.append(make('small',tr('غير متوفر')));
+   const nameRow=make('div');nameRow.className='meal-name-row';
+   nameRow.append(make('strong',displayName(d)));
+   if(d.available===false){
+    const unavailable=make('span',isEnglish()?'Sold out':'نفدت الكمية');
+    unavailable.className='meal-availability-pill';nameRow.append(unavailable);
+   }
+   open.append(nameRow,make('p',displayDescription(d)),price(d));
    article.append(open);
    if(d.badge){const badge=make('span',d.badge);badge.className='badge';if(isEnglish())badge.textContent=tr(d.badge);article.append(badge);}
    const heart=make('button');heart.className='heart';heart.id=(context==='regular'?'heart-meal-':context+'-heart-')+d.id;heart.dataset.mealId=d.id;heart.dataset.trackAction='favorite_toggle';const heartSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');heartSvg.setAttribute('viewBox','0 0 24 24');heartSvg.setAttribute('aria-hidden','true');const heartPath=document.createElementNS(heartSvg.namespaceURI,'path');heartPath.setAttribute('d','M12 20.25c-.4 0-.78-.16-1.09-.42C8.22 17.54 3 13.52 3 9.19 3 6.21 5.21 4.25 7.85 4.25c1.77 0 3.23.88 4.15 2.21.92-1.33 2.38-2.21 4.15-2.21C18.79 4.25 21 6.21 21 9.19c0 4.33-5.22 8.35-7.91 10.64-.31.26-.69.42-1.09.42Z');heartSvg.append(heartPath);heart.append(heartSvg);heart.setAttribute('aria-label',tr('المفضلة')+' · '+displayName(d));heart.setAttribute('aria-pressed',String(favorites.has(d.id)));
@@ -1131,6 +1146,10 @@ function detail(d){
  }
  const content=make('div');content.className='content';
  const lead=make('div');lead.className='dish-lead';lead.append(make('h2',displayName(d)));
+ if(d.available===false){
+  const unavailable=make('span',isEnglish()?'Sold out':'نفدت الكمية');
+  unavailable.className='meal-availability-pill';lead.append(unavailable);
+ }
  if(d.rating!=null)lead.append(startingScore(d.rating));
  content.append(lead);if(d.price!=null)content.append(price(d));
  if(d.description)content.append(make('p',displayDescription(d)));
@@ -1143,7 +1162,13 @@ function detail(d){
  }else if(d.id){
    content.append(make('h3',tr('المكونات')),make('p',tr('لم ينشر المطعم تفاصيل المكونات بعد.')));
  }
- const buttons=make('div');buttons.className='links meal-order';if(d.available)contactLinks(buttons,ordering,d);else buttons.append(tr('غير متوفر'));content.append(buttons);
+ const buttons=make('div');buttons.className='links meal-order';
+ if(d.available===false){
+  const unavailable=make('button',isEnglish()?'Currently unavailable':'غير متوفر حالياً');
+  unavailable.type='button';unavailable.disabled=true;
+  unavailable.className='meal-order-unavailable';buttons.append(unavailable);
+ }else contactLinks(buttons,ordering,d);
+ content.append(buttons);
  if(d.id&&!isPreview){
   const share=make('button');
   share.type='button';share.className='share-meal-link';share.id='share-meal-'+d.id;
