@@ -174,6 +174,32 @@ const fileName=url=>{
 const seoStorageOrigin='https://wknpuzdyemwkllmxehyy.supabase.co';
 const seoStoragePublic=seoStorageOrigin+'/storage/v1/object/public/menu-images/';
 const validImageSlug=value=>/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)&&value.length<=65;
+// Normalize image filenames while typing, including pasted text.
+// Keep a trailing hyphen during typing so users can continue the next word.
+const normalizeImageSlug=value=>String(value??'')
+ .toLowerCase()
+ .replace(/\s+/g,'-')
+ .replace(/[^a-z0-9-]/g,'')
+ .replace(/-+/g,'-')
+ .replace(/^-+/g,'');
+function normalizeImageFilenameInput(input,{final=false}={}){
+ const current=input.value;
+ const from=input.selectionStart;
+ const to=input.selectionEnd;
+ const normalize=value=>{
+  const result=normalizeImageSlug(value);
+  return final?result.replace(/-+$/g,''):result;
+ };
+ const next=normalize(current);
+ if(next===current)return;
+ input.value=next;
+ if(document.activeElement===input&&from!=null&&to!=null){
+  const fromNext=Math.min(normalize(current.slice(0,from)).length,next.length);
+  const toNext=Math.min(normalize(current.slice(0,to)).length,next.length);
+  input.setSelectionRange(fromNext,toNext);
+ }
+}
+
 async function publishRenamedImage(api,currentUrl,slug,variant){
  const url=new URL(currentUrl,baseUrl);
  const isWebsite=url.origin===baseUrl&&url.pathname.startsWith('/assets/');
@@ -370,16 +396,43 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
   const alt=formField(details,'alt-'+dish.id,'ALT · النص البديل',dish.seo_alt||dish.name);
   const filename=formField(details,'filename-'+dish.id,'اسم ملف الصور الحالي والجديد',dish.seo_image_filename||'','text','مثال: snounu-cheese-sticks-gaza — اكتب الاسم بدون امتداد الملف.');
   filename.dir='ltr';filename.placeholder='snounu-meal-gaza';
+  filename.autocomplete='off';filename.spellcheck=false;
+  const filenameCount=el('small',null,'seo-image-filename-count');filename.parentElement.append(filenameCount);
   const changed=()=>updated.set(dish.id,{id:dish.id,seo_title:seoTitle.value.trim(),seo_description:seoDescription.value.trim(),seo_alt:alt.value.trim(),seo_image_filename:filename.value.trim()});
   const filenameError=el('small','','seo-inline-error');
   filenameError.setAttribute('role','alert');
   filename.parentElement.append(filenameError);
   editInputs.set(dish.id,{filename,error:filenameError});
   const onEdit=()=>{
-   if(validImageSlug(filename.value.trim())||!filename.value.trim()){filename.removeAttribute('aria-invalid');filenameError.textContent='';}
+   const slug=filename.value.trim();
+   filenameCount.textContent=slug.length+' / 65 حرفًا';
+   filenameCount.dataset.overLimit=String(slug.length>65);
+   if(slug.length>65){
+    filenameError.textContent='الحد الأقصى 65 حرفًا. اختصر الاسم قبل الحفظ.';
+    filename.setAttribute('aria-invalid','true');
+   }else if(slug&&!validImageSlug(slug)){
+    filenameError.textContent='أكمل الاسم بحرف أو رقم إنجليزي؛ لا يمكن أن ينتهي بشرطة.';
+    filename.setAttribute('aria-invalid','true');
+   }else{
+    filename.removeAttribute('aria-invalid');
+    filenameError.textContent='';
+   }
    changed();
   };
-  for(const input of [seoTitle,seoDescription,alt,filename])input.addEventListener('input',onEdit);
+  for(const input of [seoTitle,seoDescription,alt])input.addEventListener('input',onEdit);
+  filename.addEventListener('input',event=>{
+   if(event.isComposing)return;
+   normalizeImageFilenameInput(filename);
+   onEdit();
+  });
+  filename.addEventListener('compositionend',()=>{
+   normalizeImageFilenameInput(filename);onEdit();
+  });
+  filename.addEventListener('blur',()=>{
+   normalizeImageFilenameInput(filename,{final:true});onEdit();
+  });
+  filenameCount.textContent=filename.value.trim().length+' / 65 حرفًا';
+  filenameCount.dataset.overLimit=String(filename.value.trim().length>65);
   const rename=btn('تطبيق الاسم على الصور الحالية',async()=>{
    const slug=filename.value.trim();
    if(!validImageSlug(slug)){notice('اكتب اسم ملف إنجليزياً صغيراً من أحرف وأرقام وشرطات، بحد أقصى 65 حرفاً. مثال: snounu-cheese-sticks-gaza');return;}
