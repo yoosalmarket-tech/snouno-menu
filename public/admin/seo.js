@@ -30,6 +30,27 @@ function val(form,name){const input=form.elements.namedItem(name);return input?.
 const fileName=url=>{
  try{return decodeURIComponent(new URL(String(url||''),baseUrl).pathname.split('/').pop()||'—')}catch{return '—'}
 };
+const seoStorageOrigin='https://wknpuzdyemwkllmxehyy.supabase.co';
+const seoStoragePublic=seoStorageOrigin+'/storage/v1/object/public/menu-images/';
+const validImageSlug=value=>/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)&&value.length<=65;
+async function publishRenamedImage(api,currentUrl,slug,variant){
+ const url=new URL(currentUrl,baseUrl);
+ const isWebsite=url.origin===baseUrl&&url.pathname.startsWith('/assets/');
+ const isStored=url.origin===seoStorageOrigin&&url.pathname.startsWith('/storage/v1/object/public/menu-images/');
+ if(!isWebsite&&!isStored)throw Error('الصورة خارج استضافة سنونو؛ أعد رفعها من إدارة الأطباق أولاً.');
+ const source=await fetch(url.href);
+ if(!source.ok)throw Error('تعذّر قراءة الصورة الحالية ('+source.status+').');
+ const blob=await source.blob();
+ const contentType=blob.type.split(';')[0].toLowerCase();
+ const extension={'image/webp':'webp','image/png':'png','image/jpeg':'jpg'}[contentType];
+ if(!extension)throw Error('نوع الصورة غير مدعوم. استخدم WebP أو PNG أو JPG.');
+ if(!blob.size||blob.size>5242880)throw Error('حجم الصورة غير صالح أو يزيد عن 5 ميغابايت.');
+ const name=slug+'-'+variant+'-'+crypto.randomUUID().slice(0,8)+'.'+extension;
+ await api('/storage/v1/object/menu-images/'+encodeURIComponent(name),{
+  method:'POST',body:new File([blob],name,{type:contentType})
+ });
+ return seoStoragePublic+encodeURIComponent(name);
+}
 function localCanonical(input,route){
  const url=new URL(input||route,baseUrl);
  if(url.origin!==baseUrl)throw Error('يجب أن يكون رابط Canonical من نفس الموقع');
@@ -142,7 +163,7 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
  actions.append(save,btn('فتح Google Search Console',()=>window.open('https://search.google.com/search-console','_blank','noopener'),'seo-button seo-outline'));
  form.append(actions);form.addEventListener('submit',e=>e.preventDefault());
  root.append(form);form.addEventListener('input',syncVerification);syncVerification();selectPage('menu');
- const box=panel('صور الوجبات · الأسماء والأوصاف البديلة','كل صورة لديها رابط واسم ملف فعلي. يمكنك تعديل نص Alt ووضع اسم إنجليزي وصفي للملفات الجديدة التي سترفعها مستقبلاً. تعديل الاسم هنا لا يعيد تسمية الصور المنشورة حالياً.');
+ const box=panel('صور الوجبات · الأسماء والأوصاف البديلة','أدخل اسماً إنجليزياً وصفياً، ثم اضغط «تطبيق الاسم على الصور الحالية» لإنشاء نسخ بأسماء جديدة وتحديث روابط الوجبة تلقائياً. الصور الأصلية تبقى متاحة للحماية من تعطل الروابط القديمة.');
  const search=formField(box,'image_search','البحث عن وجبة أو اسم صورة','','search');
  const list=el('div',null,'seo-image-list');box.append(list);
  const updated=new Map();
@@ -151,14 +172,48 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
   const item=el('article',null,'seo-image-row');item.dataset.search=(dish.name+' '+fileName(dish.image)+' '+fileName(dish.rich_image)).toLocaleLowerCase();
   const pic=el('img');pic.src=dish.image||'/assets/welcome/2468.webp';pic.alt=dish.name;pic.loading='lazy';
   const details=el('div');details.append(el('strong',dish.name));
-  details.append(el('small','العادي: '+fileName(dish.image)));
-  details.append(el('small','التفاعلي: '+fileName(dish.rich_image)));
+  const regularName=el('small','العادي: '+fileName(dish.image));
+  const interactiveName=el('small','التفاعلي: '+fileName(dish.rich_image));
+  details.append(regularName,interactiveName);
   const seoTitle=formField(details,'title-'+dish.id,'عنوان مشاركة هذه الوجبة',dish.seo_title||'','text','يُستخدم عند فتح رابط الوجبة المباشر (?dish=...).');
   const seoDescription=formField(details,'description-'+dish.id,'وصف الوجبة لمحركات البحث',dish.seo_description||dish.description||'','textarea');
   const alt=formField(details,'alt-'+dish.id,'ALT · النص البديل',dish.seo_alt||dish.name);
-  const filename=formField(details,'filename-'+dish.id,'اسم ملف الصور عند الرفع القادم',dish.seo_image_filename||'','text','مثال: snounu-sharing-box');
+  const filename=formField(details,'filename-'+dish.id,'اسم ملف الصور الحالي والجديد',dish.seo_image_filename||'','text','مثال: snounu-cheese-sticks-gaza — اكتب الاسم بدون امتداد الملف.');
+  filename.dir='ltr';filename.placeholder='snounu-meal-gaza';
   const changed=()=>updated.set(dish.id,{id:dish.id,seo_title:seoTitle.value.trim(),seo_description:seoDescription.value.trim(),seo_alt:alt.value.trim(),seo_image_filename:filename.value.trim()});
   for(const input of [seoTitle,seoDescription,alt,filename])input.addEventListener('input',changed);
+  const rename=btn('تطبيق الاسم على الصور الحالية',async()=>{
+   const slug=filename.value.trim();
+   if(!validImageSlug(slug)){notice('اكتب اسم ملف إنجليزياً صغيراً من أحرف وأرقام وشرطات، بحد أقصى 65 حرفاً. مثال: snounu-cheese-sticks-gaza');return;}
+   if(!dish.image&&!dish.rich_image){notice('هذه الوجبة ليس لها صور منشورة لإعادة تسميتها.');return;}
+   rename.disabled=true;rename.textContent='جارٍ نسخ الصور وتحديث روابطها...';
+   try{
+    const images={};
+    for(const [field,variant] of [['image','regular'],['rich_image','interactive']]){
+     if(dish[field])images[field]=await publishRenamedImage(api,dish[field],slug,variant);
+    }
+    const data={
+     seo_title:seoTitle.value.trim().slice(0,180),
+     seo_description:seoDescription.value.trim().slice(0,350),
+     seo_alt:alt.value.trim().slice(0,200),
+     seo_image_filename:slug,...images
+    };
+    const rows=await api('/rest/v1/dishes?id=eq.'+encodeURIComponent(dish.id),{
+     method:'PATCH',body:data,headers:{Prefer:'return=representation'}
+    });
+    if(!Array.isArray(rows)||!rows.length)throw Error('لم يتم تحديث بيانات الوجبة. لم يتم حذف الصور الأصلية.');
+    Object.assign(dish,data);
+    regularName.textContent='العادي: '+fileName(dish.image);
+    interactiveName.textContent='التفاعلي: '+fileName(dish.rich_image);
+    if(dish.image)pic.src=dish.image;
+    item.dataset.search=(dish.name+' '+fileName(dish.image)+' '+fileName(dish.rich_image)).toLocaleLowerCase();
+    updated.delete(dish.id);
+    notice('تم تحديث أسماء الصور وروابط وجبة «'+dish.name+'». الصور القديمة محفوظة.');
+   }catch(e){notice('تعذر تغيير أسماء صور «'+dish.name+'»: '+e.message)}
+   finally{rename.disabled=false;rename.textContent='تطبيق الاسم على الصور الحالية';}
+  },'seo-button seo-outline');
+  rename.dataset.trackAction='seo_rename_meal_images';
+  details.append(rename);
   item.append(pic,details);list.append(item);itemSearch.push(item);
  }
  const imageSave=btn('حفظ أوصاف الصور',async()=>{
