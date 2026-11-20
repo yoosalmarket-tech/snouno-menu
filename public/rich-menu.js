@@ -216,9 +216,10 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
   g.items.forEach((meal,i)=>{
    const frame=mk('div','rm-dish');
    frame.id='rich-meal-'+meal.id;frame.dataset.mealId=String(meal.id);
+   frame.dataset.unavailable=String(meal.available===false);
    frame.dataset.categoryId=String(g.id);
    frame.dataset.idx=String(i);frame.setAttribute('role','option');
-   frame.setAttribute('aria-label',getName(meal));frame.tabIndex=-1;
+   frame.setAttribute('aria-label',getName(meal)+(meal.available===false?' — غير متوفر':''));frame.tabIndex=-1;
    frame.append(mk('div','rm-dish-shadow'));
    const photo=validImage(meal.rich_image)||validImage(meal.image);
    if(photo){
@@ -244,8 +245,9 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    const thumbnail=mk('button','rm-thumb');thumbnail.type='button';
    thumbnail.id='rich-thumb-'+meal.id;
    thumbnail.dataset.mealId=String(meal.id);thumbnail.dataset.categoryId=String(g.id);
+   thumbnail.dataset.unavailable=String(meal.available===false);
    thumbnail.dataset.trackAction='meal_select';
-   thumbnail.title=getName(meal);thumbnail.setAttribute('aria-label',getName(meal));
+   thumbnail.title=getName(meal)+(meal.available===false?' — غير متوفر':'');thumbnail.setAttribute('aria-label',thumbnail.title);
    if(photo){const img=mk('img');img.dataset.src=photo;img.alt='';img.loading='lazy';img.draggable=false;thumbnail.append(img);}
    else thumbnail.textContent='•';
    const label=mk('span','rm-thumb-name',getName(meal));label.dir=isEnglish()?'ltr':'rtl';
