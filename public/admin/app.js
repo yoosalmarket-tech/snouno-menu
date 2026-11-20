@@ -1,4 +1,5 @@
 import {installActionReporting,menuLink} from '../action-tracking.js?v=links-actions-20261116';
+import {renderClosureManager} from './closures.js?v=closures1-20261120';
 const endpoint = 'https://wknpuzdyemwkllmxehyy.supabase.co';
 const apiKey = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const $ = id => document.getElementById(id);
@@ -1292,7 +1293,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  }
  if(!rows.length)area.append(node('p','لا توجد عناصر بعد.'));
  if(key==='menu_settings'){
-   if(rows[0])await edit('menu_settings',rows[0],true);
+   if(rows[0]){renderClosureManager({api,area,row:rows[0]});await edit('menu_settings',rows[0],true);}
    if(ticket===generation&&sameSection)window.scrollTo({top:previousY,behavior:'instant'});
    return;
  }
