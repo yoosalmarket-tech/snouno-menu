@@ -2582,6 +2582,9 @@ main:has(#body.ga-overview) #tabs .admin-install-app:hover{
 .seo-field .seo-field-visibility{opacity:.78}
 .seo-image-row .seo-field .seo-field-explainer{opacity:.93;font-size:12px}
 .seo-image-row .seo-field .seo-field-visibility{opacity:.78}
+.seo-image-row .seo-image-filename-count{font-size:11px;opacity:.85;font-weight:650;direction:rtl;text-align:start}
+.seo-image-row .seo-image-filename-count[data-over-limit="true"]{color:#b42318;opacity:1}
+
 .seo-hero-panel .seo-field .seo-field-explainer{color:inherit}
 
 .seo-save-message{flex-basis:100%;font-size:13px;line-height:1.65;font-weight:650;margin:8px 0;color:inherit}
