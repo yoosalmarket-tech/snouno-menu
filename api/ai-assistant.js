@@ -132,7 +132,13 @@ function focusPicks(report){
 // Weights: 40% order intent, 30% approved units, 20% detail opens, 10% share clicks.
 function mediaPriority(context){
   const seven=context.performance_7d,twentyEight=context.performance_28d;
-  const active=seven&&Array.isArray(seven.meals)&&seven.meals.length?seven:twentyEight;
+  const hasSignals=report=>Array.isArray(report?.meals) &&
+    report.meals.some(m=>m?.available===true &&
+      (safeNum(m.order_clicks)+safeNum(m.detail_opens)+safeNum(m.share_clicks)+safeNum(m.approved_units)>0));
+  // A quiet week should not hide the previous 28 days of product activity.
+  const active=hasSignals(seven)?seven:
+    hasSignals(twentyEight)?twentyEight:
+    seven&&Array.isArray(seven.meals)&&seven.meals.length?seven:twentyEight;
   if(!active)return {insufficient:true,period_days:0,ranked:[],paid:null,
     reason:'تعذّر تحميل بيانات تفاعل الوجبات؛ لا يمكن حساب أولوية إعلان موثوقة.'};
   const meals=availableProducts(active);
@@ -188,6 +194,7 @@ function mediaPriorityAnswer(context){
  if(result.paid)output.push('مرشح الإعلان المدفوع: «'+result.paid.name+'» لأنه سجّل '+result.paid.approved_units+
    ' وحدة بيع معتمدة خلال الفترة. تحقق من هامش الربح وتكلفة إنتاج الإعلان قبل تحديد ميزانية.');
  else output.push('الإعلان المدفوع: لا توجد وحدات بيع معتمدة للوجبات المتاحة في هذه الفترة؛ يفضّل اختبار محتوى عضوي أولاً.');
+ if(result.period_days===28)output.push('الملاحظة: لا توجد إشارات مفيدة في آخر 7 أيام؛ استُخدمت بيانات آخر 28 يوماً لتحديد أولوية استكشافية.');
  if(result.insufficient)output.push('درجة الثقة: منخفضة — حجم الإشارات المسجلة محدود أو يحتمل أن يشمل اختبارات، لذا الترتيب استكشافي وليس قراراً إعلانياً مؤكداً.');
  if(context.performance_7d?.data_quality?.unattributed_order_clicks>0)
   output.push('تنبيه: '+context.performance_7d.data_quality.unattributed_order_clicks+
