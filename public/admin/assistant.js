@@ -90,6 +90,8 @@ export function renderAssistant({root,getToken}){
         const hint=create('small','snounu-ai-mode',
           'تقارير سنونو المباشرة · لا يستخدم نموذج الذكاء الاصطناعي الآن');
         bubble.append(hint);
+      } else if(result.mode==='report'){
+        bubble.append(create('small','snounu-ai-mode','إجابة مباشرة من قاعدة بيانات سنونو'));
       } else if(result.mode==='unverified_news'){
         bubble.append(create('small','snounu-ai-mode','لا توجد أخبار حديثة متحقق منها · لا تخمين'));
       } else if(result.mode==='ai' && result.provider==='gemini'){

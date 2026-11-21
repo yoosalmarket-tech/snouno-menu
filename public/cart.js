@@ -1219,7 +1219,10 @@ export function installCart({ catalog, name, description, closed, page }) {
   async function notifications() {
     if (checking || document.hidden || dialog.open) return;
     checking = true;
+    let newestUpdate = null;
     try {
+      // Tracking is newest-first. Show one popup for the newest changed order,
+      // keeping all older changes accessible under طلباتي.
       for (const ref of tracking.filter(r => r.status === "pending" ||
         (r.status==="approved"&&r.fulfillment_status!=="completed")).slice(0, 5)) {
         const o = await call({ ...ref, action: "status" });
@@ -1228,8 +1231,9 @@ export function installCart({ catalog, name, description, closed, page }) {
         ref.fulfillment_status = o.fulfillment_status;
         localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
         refresh();
-        announce(ref, o);
+        if (!newestUpdate) newestUpdate = { ref, order: o };
       }
+      if (newestUpdate) announce(newestUpdate.ref, newestUpdate.order);
     } catch {
     } finally {
       checking = false;
