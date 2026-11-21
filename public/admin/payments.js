@@ -70,6 +70,8 @@ export async function orders({ root, api, notice, endpoint }) {
       el("p", o.customer + " · " + o.phone),
       el("p", when(o.created_at) + " · " + labels[o.status]),
       el("p", o.method + " · " + amount(o.total)),
+      el("p", "نوع الطلب: " + (o.service_type === "delivery" ? "توصيل" : o.service_type === "dine_in" ? "تناول بالمطعم" : "غير محدد (طلب قديم)")),
+      ...(o.service_type === "delivery" ? [el("p", "عنوان التوصيل: " + (o.delivery_address || ""))] : []),
       el("p", o.notes),
       el("p", o.reason),
     );
@@ -196,6 +198,7 @@ export async function orders({ root, api, notice, endpoint }) {
             "الطلب",
             "المبلغ",
             "الدفع",
+            "نوع الطلب",
             "الوقت",
             "الحالة",
             "التفاصيل",
@@ -209,6 +212,7 @@ export async function orders({ root, api, notice, endpoint }) {
               o.pay_items.map((i) => i.name + " × " + i.qty).join("، "),
               amount(o.total),
               o.method,
+              o.service_type === "delivery" ? "توصيل" : o.service_type === "dine_in" ? "تناول بالمطعم" : "غير محدد",
               when(o.created_at),
               labels[o.status],
               button("عرض", () => details(o)),
@@ -351,7 +355,7 @@ export async function settings({ root, api, notice, endpoint }) {
     preview.className = "pay-upload-preview";
     const show = (source) => {
       preview.replaceChildren();
-      if (!/^https:\/\//i.test(source || "")) {
+      if (!/^(https:|blob:)\/\//i.test(source || "")) {
         preview.append(el("small", "لم تُرفع صورة بعد"));
         return;
       }
