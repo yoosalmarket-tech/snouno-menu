@@ -6,11 +6,11 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=06";
+} from "../payment-ui.js?v=06-12";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
-  rejected: "مرفوض",
+  rejected: "رفض الدفع",
   cancelled: "ملغي",
   arrived: "حضر العميل",
   completed: "تم تسليم الطلب",
@@ -35,14 +35,40 @@ const table = (headers, rows) => {
     head = el("tr");
   headers.forEach((v) => head.append(el("th", v)));
   t.append(head);
+  const paymentIndex = headers.indexOf("حالة الدفع");
+  const stageIndex = headers.indexOf("مرحلة الطلب");
+  const isOrdersTable = paymentIndex !== -1 && stageIndex !== -1;
+  if (isOrdersTable) t.classList.add("pay-orders-grid");
+  const colorByStatus = (status) => ({
+    "تم التسليم": "completed",
+    "متوقف": "stopped",
+    "قيد المراجعة": "pending",
+    "رفض الدفع": "rejected",
+  })[status] || "";
   for (const row of rows) {
     const tr = el("tr");
-    for (const v of row) {
+    if (isOrdersTable) {
+      const payStatus = String(row[paymentIndex] || "");
+      const stageStatus = String(row[stageIndex] || "");
+      const tone = stageStatus === "تم التسليم" ? "completed"
+        : payStatus === "رفض الدفع" ? "rejected"
+        : stageStatus === "متوقف" ? "stopped"
+        : payStatus === "قيد المراجعة" ? "pending" : "";
+      if (tone) tr.classList.add("pay-order-row--" + tone);
+    }
+    row.forEach((v, index) => {
       const td = el("td");
-      if (v instanceof Node) td.append(v);
+      const tone = isOrdersTable && (index === paymentIndex || index === stageIndex)
+        ? colorByStatus(String(v || "")) : "";
+      if (tone) {
+        const badge = el("span", String(v));
+        badge.className = "pay-status-pill pay-status-pill--" + tone;
+        td.classList.add("pay-status-cell");
+        td.append(badge);
+      } else if (v instanceof Node) td.append(v);
       else td.textContent = v;
       tr.append(td);
-    }
+    });
     t.append(tr);
   }
   return t;
@@ -73,6 +99,10 @@ export async function orders({ root, api, notice, endpoint, canManage = false })
       el("p", when(o.created_at) + " · " + labels[o.status]),
       el("p", "مرحلة الطلب: " + ({awaiting_visit:"بانتظار وصول العميل",awaiting_payment:"بانتظار الدفع في المطعم",awaiting_approval:"بانتظار مراجعة الدفع",preparing:"قيد التحضير",completed:"تم تسليم الطلب",stopped:"متوقف"}[o.fulfillment_status] || "غير محددة")),
       el("p", "طريقة الدفع: " + (o.payment_mode==="at_restaurant"?"الدفع عند الوصول":"دفع إلكتروني")),
+      ...(o.payment_mode==="at_restaurant"&&o.arrival_eta_minutes?[
+        el("p","المدة المتوقعة للوصول: "+o.arrival_eta_minutes+" دقيقة"),
+        ...(o.expected_arrival_at?[el("p","موعد الوصول التقريبي: "+when(o.expected_arrival_at))]:[])
+      ]:[]),
       el("p", o.method + " · " + amount(o.total)),
       el("p", "نوع الطلب: " + (o.service_type === "delivery" ? "توصيل" : o.service_type === "dine_in" ? "تناول بالمطعم" : "غير محدد (طلب قديم)")),
       ...(o.service_type === "delivery" ? [
@@ -223,7 +253,7 @@ export async function orders({ root, api, notice, endpoint, canManage = false })
     const ticket = ++revision;
     const q = new URLSearchParams({
       select:
-        "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,fulfillment_status,arrived_at,completed_at,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
+        "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
       order: "created_at.desc",
       limit: "26",
       offset: String(page * 25),
@@ -252,6 +282,7 @@ export async function orders({ root, api, notice, endpoint, canManage = false })
             "المبلغ",
             "الدفع",
             "نوع الطلب",
+            "وقت الوصول المتوقع",
             "الوقت",
             "حالة الدفع",
             "مرحلة الطلب",
@@ -268,6 +299,7 @@ export async function orders({ root, api, notice, endpoint, canManage = false })
               amount(o.total),
               o.method,
               o.service_type === "delivery" ? "توصيل" : o.service_type === "dine_in" ? "تناول بالمطعم" : "غير محدد",
+              o.expected_arrival_at ? when(o.expected_arrival_at) : "—",
               when(o.created_at),
               labels[o.status],
               ({awaiting_visit:"بانتظار الحضور",awaiting_payment:"بانتظار الدفع",awaiting_approval:"مراجعة الدفع",preparing:"قيد التحضير",completed:"تم التسليم",stopped:"متوقف"}[o.fulfillment_status]||"—"),
