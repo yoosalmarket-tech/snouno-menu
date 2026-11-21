@@ -488,3 +488,26 @@ body.rich-menu-active:not(.has-cart-footer) .pay-orders-link {
 /* Ensure arrival estimate is stacked instead of inheriting radio row flex styling. */
 .pay-dialog .pay-service-choice>.pay-arrival-time:not([hidden]){display:grid!important;gap:8px;align-items:stretch;}
 .pay-dialog .pay-service-choice>.pay-arrival-time[hidden]{display:none!important;}
+
+
+/* EDIT ALL PAYMENT 06.16 — colored orders by current state.
+   A rejected payment is shown RED even if its fulfillment stage is "stopped".
+   The stopped stage itself remains a dark-gray pill. */
+.pay-results table.pay-orders-grid {border-collapse:separate;border-spacing:0 5px;width:max(100%,950px);}
+.pay-results .pay-orders-grid tr.pay-order-row--completed > td {background:#dbf4e3!important;color:#195b32!important;}
+.pay-results .pay-orders-grid tr.pay-order-row--stopped > td {background:#464b54!important;color:#fff!important;}
+.pay-results .pay-orders-grid tr.pay-order-row--pending > td {background:#fff0ba!important;color:#61450c!important;}
+.pay-results .pay-orders-grid tr.pay-order-row--rejected > td {background:#fbe0e0!important;color:#8b2427!important;}
+.pay-results .pay-orders-grid tr[class*="pay-order-row--"] > td:first-child {border-start-start-radius:10px;border-end-start-radius:10px;}
+.pay-results .pay-orders-grid tr[class*="pay-order-row--"] > td:last-child {border-start-end-radius:10px;border-end-end-radius:10px;}
+.pay-results .pay-orders-grid td.pay-status-cell {white-space:nowrap;}
+.pay-results .pay-status-pill {display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:6px 11px;min-width:88px;font-size:12px;font-weight:800;line-height:1.5;white-space:nowrap;}
+.pay-results .pay-status-pill--completed {background:#237547;color:#fff;}
+.pay-results .pay-status-pill--stopped {background:#2d3138;color:#fff;border:1px solid #a1a5ad;}
+.pay-results .pay-status-pill--pending {background:#FDBE2D;color:#3b2708;}
+.pay-results .pay-status-pill--rejected {background:#c9353a;color:#fff;}
+.pay-results .pay-orders-grid tr.pay-order-row--stopped button {color:#252a30;background:#fff;border:1px solid #c9cbd0;}
+.pay-results .pay-orders-grid tr:hover > td {filter:brightness(.975);}
+@media (prefers-contrast:more) {
+  .pay-results .pay-status-pill {border:2px solid currentColor;}
+}

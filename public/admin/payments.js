@@ -10,7 +10,7 @@ import {
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
-  rejected: "مرفوض",
+  rejected: "رفض الدفع",
   cancelled: "ملغي",
   arrived: "حضر العميل",
   completed: "تم تسليم الطلب",
@@ -35,14 +35,40 @@ const table = (headers, rows) => {
     head = el("tr");
   headers.forEach((v) => head.append(el("th", v)));
   t.append(head);
+  const paymentIndex = headers.indexOf("حالة الدفع");
+  const stageIndex = headers.indexOf("مرحلة الطلب");
+  const isOrdersTable = paymentIndex !== -1 && stageIndex !== -1;
+  if (isOrdersTable) t.classList.add("pay-orders-grid");
+  const colorByStatus = (status) => ({
+    "تم التسليم": "completed",
+    "متوقف": "stopped",
+    "قيد المراجعة": "pending",
+    "رفض الدفع": "rejected",
+  })[status] || "";
   for (const row of rows) {
     const tr = el("tr");
-    for (const v of row) {
+    if (isOrdersTable) {
+      const payStatus = String(row[paymentIndex] || "");
+      const stageStatus = String(row[stageIndex] || "");
+      const tone = stageStatus === "تم التسليم" ? "completed"
+        : payStatus === "رفض الدفع" ? "rejected"
+        : stageStatus === "متوقف" ? "stopped"
+        : payStatus === "قيد المراجعة" ? "pending" : "";
+      if (tone) tr.classList.add("pay-order-row--" + tone);
+    }
+    row.forEach((v, index) => {
       const td = el("td");
-      if (v instanceof Node) td.append(v);
+      const tone = isOrdersTable && (index === paymentIndex || index === stageIndex)
+        ? colorByStatus(String(v || "")) : "";
+      if (tone) {
+        const badge = el("span", String(v));
+        badge.className = "pay-status-pill pay-status-pill--" + tone;
+        td.classList.add("pay-status-cell");
+        td.append(badge);
+      } else if (v instanceof Node) td.append(v);
       else td.textContent = v;
       tr.append(td);
-    }
+    });
     t.append(tr);
   }
   return t;
