@@ -85,7 +85,7 @@ const PERFORMANCE_PROMPT=[
  'أنت محلل أداء رقمي واستراتيجي حملات حصرياً لمطعم سنونو في غزة. لا تجب عن الأخبار أو الطقس أو المعرفة العامة أو الترندات الخارجية.',
  'استخدم فقط التقارير الرقمية المجمعة المرفقة. لا تخترع أرقام مشاهدات أو زيارات أو مبيعات أو نفقات إعلانية أو نسب تحويل.',
  'GA4 page_views = مشاهدات صفحات وقد تتكرر للشخص الواحد؛ sessions = جلسات؛ users = مستخدمون. لا تسمي عدد النقرات مشاهدات أو زواراً.',
- 'menu_action_events = أحداث تفاعل وليست مشاهدات صفحات أو زواراً فريدين؛ meal_open = فتح التفاصيل، order_now_click = نية طلب فقط وليس عملية شراء.',
+ 'menu_action_events = أحداث تفاعل وليست مشاهدات صفحات أو زواراً فريدين؛ meal_open = فتح التفاصيل، order_now_click = نية طلب فقط وليس عملية شراء. بعض نقرات الطلب غير منسوبة لوجبات حالية؛ لا تخترع أرقاماً لوجبة بعينها.',
  'favorite_toggle قد يشمل إزالة المفضلة، وshare_meal_click ليس دليلاً على مشاركة مكتملة.',
  'approved_units و approved_sales_ils من الطلبات المعتمدة فقط. لا تستنتج الإيرادات من الطلبات المعلقة أو الملغاة أو النقرات.',
  'اختر منتجات متاحة فقط. استعمل الأسماء الحقيقية من جدول الوجبات، وميّز بين المنتج الذي يبيع والمنتج الذي ينال تفاعلاً ولا يبيع.',
@@ -118,6 +118,17 @@ function focusPicks(report){
  return {featured:[...new Set([proven,interest,gap,...contenders].filter(Boolean))].slice(0,4),
    proven,interest,gap};
 }
+function enrichPerformance(report){
+ if(!report||!Array.isArray(report.meals))return null;
+ const count=safeNum(report.actions?.order_now_click);
+ const attributed=report.meals.reduce((sum,m)=>sum+safeNum(m.order_clicks),0);
+ return {...report,data_quality:{
+  total_order_click_events:count,
+  attributed_order_clicks:attributed,
+  unattributed_order_clicks:Math.max(0,count-attributed),
+  note:'Do not assign unattributed events to a meal. Missing/legacy meal IDs and deleted dishes may account for these.'
+ }};
+}
 function sourceSummary(context){
  const p7=context.performance_7d,p28=context.performance_28d;
  const ga7=context.google_analytics?.periods?.find(x=>x.days===7);
@@ -129,6 +140,7 @@ function sourceSummary(context){
  if(p7){
    const a=p7.actions||{};
    out.push('تفاعل المنيو آخر 7 أيام: '+(a.meal_open||0)+' فتح تفاصيل، '+(a.order_now_click||0)+' نقرة «اطلب الآن»، '+(a.share_meal_click||0)+' نقرة مشاركة.');
+   if(p7.data_quality?.unattributed_order_clicks>0)out.push('نقرات الطلب غير المنسوبة لوجبات حالية: '+p7.data_quality.unattributed_order_clicks+'، لا تُحتسب في ترتيب المنتجات.');
  }
  if(p28)out.push('آخر 28 يوماً: '+(p28.actions?.order_now_click||0)+' نقرة «اطلب الآن» و'+(p28.actions?.meal_open||0)+' فتح تفاصيل.');
  const sales=context.order_windows?.last_7_days;
@@ -173,8 +185,8 @@ async function collectContext(auth){
    as_of:new Date().toISOString(),timezone:'Asia/Gaza',currency:'ILS',
    available_sources:available,unavailable_sources:unavailable,
    google_analytics:source.ga4,
-   performance_7d:source.period7,
-   performance_28d:source.period28,
+   performance_7d:enrichPerformance(source.period7),
+   performance_28d:enrichPerformance(source.period28),
    historical_sales:sale?{
      total_orders:safeNum(sale.total),pending:safeNum(sale.pending),
      approved:safeNum(sale.approved),rejected:safeNum(sale.rejected),
