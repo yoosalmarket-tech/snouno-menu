@@ -131,3 +131,17 @@ CREATE POLICY owner_read ON public.pay_history FOR SELECT TO authenticated
 DROP POLICY IF EXISTS owner_read ON public.pay_proofs;
 CREATE POLICY owner_read ON public.pay_proofs FOR SELECT TO authenticated
  USING ((SELECT private.menu_can('orders')));
+
+-- Staff revocation covers custom roles too, but never the protected owner.
+DROP POLICY IF EXISTS staff_remove ON public.menu_staff;
+CREATE POLICY staff_remove ON public.menu_staff FOR DELETE TO authenticated
+ USING ((role<>'owner') AND ((SELECT private.menu_role())='owner'));
+
+-- Image upload privileges must follow content permissions, not just any staff login.
+DROP POLICY IF EXISTS menu_upload ON storage.objects;
+CREATE POLICY menu_upload ON storage.objects FOR INSERT TO authenticated
+ WITH CHECK (
+   bucket_id='menu-images' AND
+   (SELECT private.menu_can('dishes') OR private.menu_can('categories') OR
+     private.menu_can('menu_ads') OR private.menu_can('menu_settings'))
+ );
