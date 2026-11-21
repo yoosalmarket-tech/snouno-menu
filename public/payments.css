@@ -440,3 +440,12 @@ body.has-cart-footer:not(.rich-menu-active) .pay-orders-link {bottom:calc(139px 
 
 /* A closed delivery-address field must not remain visible after switching to dine-in. */
 .pay-delivery-address[hidden]{display:none!important}
+
+/* EDIT ALL PAYMENT 04.6: settle My Orders lower when the basket is empty.
+   Keep it above the normal menu/contact dock; no obstruction of navigation. */
+body:not(.has-cart-footer):not(.rich-menu-active) .pay-orders-link {
+  bottom: calc(64px + env(safe-area-inset-bottom));
+}
+body.rich-menu-active:not(.has-cart-footer) .pay-orders-link {
+  bottom: calc(14px + env(safe-area-inset-bottom));
+}
