@@ -356,10 +356,7 @@ export default async function handler(req,res){
     catch{return send(res,200,{answer:'تعذر جلب توقعات طقس غزة من MET Norway الآن. لا أستطيع تأكيد الجو دون مصدر حديث.',
       mode:'weather_unavailable',sources:[],data_as_of:now})}
   }
-  try{
-    const allowed=await supa('/rest/v1/rpc/snounu_ai_consume_daily_quota',owner.auth,{method:'POST',body:'{}'});
-    if(allowed!==true)return send(res,429,{error:'daily_limit',message:'بلغت حد 20 سؤالاً يومياً.'});
-  }catch{return send(res,503,{error:'quota_unavailable',message:'تعذر التحقق من الحد اليومي.'})}
+
   if(news){
     // Search grounding is NOT enabled on Gemini 3.x: that could incur charges.
     // Check whether the legacy free Search model is actually available to this key.
@@ -378,6 +375,10 @@ export default async function handler(req,res){
     let catalog=null;
     try{catalog=await availableGeminiModels(key)}catch{}
     if(catalog&&!catalog.has(NEWS_MODEL))return fallbackNews();
+  try{
+    const allowed=await supa('/rest/v1/rpc/snounu_ai_consume_daily_quota',owner.auth,{method:'POST',body:'{}'});
+    if(allowed!==true)return send(res,429,{error:'daily_limit',message:'بلغت حد 20 سؤالاً يومياً.'});
+  }catch{return send(res,503,{error:'quota_unavailable',message:'تعذر التحقق من الحد اليومي.'})}
     const newsQuestion='التاريخ: '+now+'؛ السؤال: '+question+
       '؛ ركز على غزة ومطاعم غزة والمطاعم حول العالم. تأكد من تاريخ النشر الأصلي لكل خبر.';
     try{
@@ -395,6 +396,10 @@ export default async function handler(req,res){
         mode:'unverified_news',provider:'gemini',sources:[],data_as_of:now});
     }
   }
+  try{
+    const allowed=await supa('/rest/v1/rpc/snounu_ai_consume_daily_quota',owner.auth,{method:'POST',body:'{}'});
+    if(allowed!==true)return send(res,429,{error:'daily_limit',message:'بلغت حد 20 سؤالاً يومياً.'});
+  }catch{return send(res,503,{error:'quota_unavailable',message:'تعذر التحقق من الحد اليومي.'})}
   const data={question,history,as_of:now,restaurant_reports:restaurant,gaza_weather:forecast};
   const weatherSources=forecast?[{label:'MET Norway · طقس مدينة غزة',url:forecast.source_url}]:[];
   let catalog=null,catalogStatus=null;

@@ -97,7 +97,8 @@ export function renderAssistant({root,getToken}){
       }
       if(Array.isArray(result.sources)&&result.sources.length){
         const linked=create('div','snounu-ai-sources');
-        linked.append(create('small','','مصادر مباشرة'));
+        linked.append(create('small','',result.mode==='unverified_news'
+          ?'روابط للبحث والتحقق (ليست أخباراً مؤكدة)':'مصادر مباشرة'));
         for(const item of result.sources.slice(0,5)){
           if(typeof item?.url!=='string'||!/^https:\/\//i.test(item.url))continue;
           const a=create('a','snounu-ai-source',String(item.label||'فتح المصدر').slice(0,80));
