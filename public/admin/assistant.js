@@ -27,17 +27,40 @@ export function renderAssistant({root,getToken}){
   log.setAttribute('aria-live','polite');
   const welcome=create('div','snounu-ai-welcome');
   welcome.append(create('h3','','ماذا تريد أن تعرف؟'),
-    create('p','','اختر سؤالاً أو اكتب سؤالك أسفل المحادثة.'));
+    create('p','','اختر سؤالاً للتحضير للاجتماع أو لتحديد وجبة التصوير والإعلان القادم، أو اكتب سؤالك.'));
   const suggestions=create('div','snounu-ai-suggestions');
-  const questions=[
-    ['المشاهدات والزيارات','كم عدد مشاهدات الصفحات والجلسات والمستخدمين في سنونو خلال آخر 7 أيام؟ وقارن بآخر 28 يوماً.'],
-    ['الوجبات الأكثر تفاعلاً','ما الوجبات الأكثر تفاعلاً خلال 7 أيام؟ افصل بين فتح التفاصيل ونقرات الطلب والمشاركات.'],
-    ['المنتجات التي نروّج لها','على أي 3 وجبات نركز التسويق هذا الأسبوع حسب نقرات الطلب والمبيعات المعتمدة؟'],
-    ['حملة هذا الأسبوع','اقترح حملة لمدة 7 أيام لوجبة متاحة، مع فكرة ريلز وعبارة دعوة للطلب وطريقة قياس النتائج.'],
-    ['فجوة الطلب والمبيعات','ما الوجبات التي حصلت على نقرات طلب لكن مبيعاتها المعتمدة قليلة؟ وما الاختبار المناسب؟'],
-    ['المبيعات المعتمدة','قارن المبيعات المعتمدة خلال 7 أيام و30 يوماً واكتب أهم ملاحظة.'],
-    ['الطلبات قيد المراجعة','كم عدد الطلبات التي تنتظر اعتماد الدفع الآن؟']
+  const questionGroups=[
+    {title:'التحضير للاجتماع القادم',items:[
+      ['أفضل وجبة للإعلان','للاجتماع القادم: احسب أفضل وجبة متاحة تستحق التصوير والإعلان القادم، مع ترتيب أول 3 وجبات بالأرقام وأسباب الاختيار وحدود الثقة.'],
+      ['ملخص الأداء','جهّز ملخصاً للاجتماع من مشاهدات GA4 وتفاعل الوجبات والمبيعات المعتمدة خلال 7 أيام وما ينبغي أن نناقشه.'],
+      ['وجبات تحتاج اهتماماً','ما الوجبات التي لديها نقرات طلب أو فتح تفاصيل مرتفع لكن مبيعات معتمدة قليلة؟ وما التفسير الذي نختبره؟'],
+      ['الوجبات الأكثر تفاعلاً','قارن أفضل الوجبات في فتح التفاصيل ونقرات الطلب ونقرات المشاركة خلال آخر أسبوع.'],
+      ['نتائج الأسبوع','ما أهم نتائج سنونو آخر 7 أيام وماذا ينبغي أن يتغير في خطة الأسبوع القادم؟']
+    ]},
+    {title:'التصوير والحملة القادمة',items:[
+      ['اختيار التصوير القادم','ما الوجبة التي نختارها للتصوير القادم؟ احسب الأولوية من المبيعات ونقرات الطلب والتفاعل، ولا تفترض أن النقرات مبيعات.'],
+      ['فكرة ريلز للوجبة','للوَجبة الأعلى أولوية في سنونو، اقترح فكرة ريلز قصيرة وهوك وتصوير خارجي ودعوة واضحة للطلب.'],
+      ['حملة 7 أيام','اقترح حملة لمدة أسبوع للوجبة الأولى في ترتيب الأولوية مع فكرة محتوى وميزانية اختبار افتراضية وطريقة القياس.'],
+      ['منتج يستحق إعلاناً مدفوعاً','أي وجبة متاحة لديها مبيعات معتمدة وتفاعل كافٍ لتستحق اختبار إعلان مدفوع؟ وما المعلومات الناقصة قبل تحديد الميزانية؟'],
+      ['قياس نجاح الإعلان','ما المؤشرات التي نراقبها بعد نشر الريلز لنفرق بين المشاهدات ونقرات الطلب والمبيعات المعتمدة؟']
+    ]},
+    {title:'أسئلة الأرقام',items:[
+      ['المشاهدات والزيارات','كم عدد مشاهدات الصفحات والجلسات والمستخدمين خلال آخر 7 أيام؟ وقارن بالـ 28 يوماً.'],
+      ['المبيعات المعتمدة','قارن مبيعات سنونو المعتمدة خلال 7 أيام و30 يوماً.'],
+      ['الطلبات قيد المراجعة','كم عدد الطلبات التي تنتظر اعتماد الدفع الآن؟']
+    ]}
   ];
+  for(const groupData of questionGroups){
+    const group=create('section','snounu-ai-question-group');
+    group.append(create('h4','',groupData.title));
+    const groupButtons=create('div','snounu-ai-question-buttons');
+    for(const [label,question] of groupData.items){
+      const button=create('button','snounu-ai-suggest',label);
+      button.type='button';button.onclick=()=>void ask(question);
+      groupButtons.append(button);
+    }
+    group.append(groupButtons);suggestions.append(group);
+  }
   welcome.append(suggestions);log.append(welcome);
   const form=create('form','snounu-ai-form');
   const prompt=create('textarea','snounu-ai-prompt');
@@ -88,6 +111,8 @@ export function renderAssistant({root,getToken}){
         bubble.append(hint);
       } else if(result.mode==='report'){
         bubble.append(create('small','snounu-ai-mode','إجابة مباشرة من قاعدة بيانات سنونو'));
+      } else if(result.mode==='media_priority'){
+        bubble.append(create('small','snounu-ai-mode','ترتيب محسوب من بيانات سنونو · لا يستهلك سؤالاً ذكياً'));
       } else if(result.mode==='scope'){
         bubble.append(create('small','snounu-ai-mode','مساعد مختص بأداء سنونو وحملاته فقط'));
       } else if(result.mode==='ai' && result.provider==='groq'){
@@ -104,10 +129,6 @@ export function renderAssistant({root,getToken}){
       for(const b of suggestions.querySelectorAll('button'))b.disabled=false;
       log.scrollTop=log.scrollHeight;
     }
-  }
-  for(const [label,question] of questions){
-    const b=create('button','snounu-ai-suggest',label);
-    b.type='button';b.onclick=()=>void ask(question);suggestions.append(b);
   }
   prompt.addEventListener('input',()=>counter.textContent=prompt.value.length+' / 500');
   prompt.addEventListener('keydown',event=>{
