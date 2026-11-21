@@ -60,30 +60,19 @@ async function gaReport(token,body){
 }
 // Server-only helper for the Snounu analytics assistant. Its caller MUST have
 // already performed owner authorization; never expose the service account.
-export async function snounuAiGa4Summary(){
-  const raw=process.env.GA4_SERVICE_ACCOUNT_JSON;
-  if(!raw || !/^\d{6,}$/.test(PROPERTY_ID))throw Error('GA4 not configured');
-  const account=JSON.parse(raw);
-  if(!account.client_email||!account.private_key)throw Error('GA4 credentials incomplete');
+export async function assistantTraffic(days, breakdown, code){
+  const account=JSON.parse(process.env.GA4_SERVICE_ACCOUNT_JSON);
   const token=await googleToken(account);
-  const names=['sessions','totalUsers','activeUsers','screenPageViews','engagedSessions'];
-  const periods=await Promise.all([7,28].map(async days=>{
-    const report=await gaReport(token,{
-      dateRanges:[{startDate:(days-1)+'daysAgo',endDate:'today'}],
-      metrics:names.map(name=>({name}))
-    });
-    const values=rows(report)[0]?.metrics||[];
-    return {days,sessions:values[0]||0,users:values[1]||0,active_users:values[2]||0,
-      page_views:values[3]||0,engaged_sessions:values[4]||0};
-  }));
-  return {source:'Google Analytics 4',property_id:PROPERTY_ID,as_of:new Date().toISOString(),
-    periods,
-    caveats:[
-      'Page views are repeated page loads/screens, not unique visitors',
-      'Users and sessions are GA4 processed measurements, not meal detail openings',
-      'Analytics may lag or include internal test activity',
-      'This data does not prove that views converted to confirmed purchases'
-    ]};
+  if(breakdown==='tracked_link')return lookupVisitSource(token,days,code);
+  const dimensions=breakdown==='campaigns'?['sessionCampaignName','sessionSourceMedium']:[];
+  const metrics=['sessions','totalUsers','screenPageViews','engagedSessions'];
+  const report=await gaReport(token,{
+    dateRanges:[{startDate:(days-1)+'daysAgo',endDate:'today'}],
+    dimensions:dimensions.map(name=>({name})),metrics:metrics.map(name=>({name})),
+    orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:'30'
+  });
+  return {source:'GA4',days,through:'today',dimensions,metrics,rows:rows(report),
+    truncated:Number(report.rowCount)>30};
 }
 
 // Realtime data is independent of the processed 7/28/90-day history.

@@ -17,7 +17,7 @@ export function renderAssistant({root,getToken}){
   hero.append(heroCopy,create('span','snounu-ai-glyph','✦'));
   const badges=create('div','snounu-ai-meta');
   badges.append(create('span','','قراءة فقط · بدون تعديل البيانات'),
-    create('span','','حتى 100 إجابة ذكية ناجحة يومياً · الإحصاءات المباشرة متاحة دائماً'));
+    create('span','','حتى 100 إجابة ذكية ناجحة يومياً'));
   const briefPanel=create('details','snounu-ai-brief');
   const briefTitle=create('summary','','معلومات ثابتة للمساعد · يحررها مالك المطعم');
   const briefIntro=create('p','','أضف أهداف المطعم، الجمهور المستهدف، هوامش الربح التقريبية، حدود ميزانية التسويق أو قيود التصوير. هذه المعلومات تُرسل إلى Groq ضمن سياق الأسئلة، فلا تكتب بيانات عملاء أو كلمات مرور.');
@@ -73,7 +73,14 @@ export function renderAssistant({root,getToken}){
   });
   const toolbar=create('div','snounu-ai-toolbar');
   const reset=create('button','snounu-ai-reset','محادثة جديدة');
-  reset.type='button';toolbar.append(reset);
+  reset.type='button';
+  const archive=create('details','snounu-ai-history');
+  const archiveLabel=create('summary','','المحادثات السابقة');
+  const archiveList=create('div','snounu-ai-history-list');
+  const archiveStatus=create('small','','');
+  archiveStatus.setAttribute('role','status');
+  archive.append(archiveLabel,archiveList,archiveStatus);
+  toolbar.append(reset,archive);
   const log=create('div','snounu-ai-log');
   log.setAttribute('role','log');
   log.setAttribute('aria-label','محادثة مساعد سنونو');
@@ -82,106 +89,132 @@ export function renderAssistant({root,getToken}){
   welcome.append(create('h3','','ماذا تريد أن تعرف؟'),
     create('p','','هذه أسئلة مقترحة فقط. اكتب أي سؤال أو فكرة تسويقية وسيجيبك المساعد بشكل طبيعي باستخدام بيانات سنونو عند الحاجة.'));
   const suggestions=create('div','snounu-ai-suggestions');
-  const questionGroups=[
-    {title:'التحضير للاجتماع القادم',items:[
-      ['أفضل وجبة للإعلان','للاجتماع القادم: احسب أفضل وجبة متاحة تستحق التصوير والإعلان القادم، مع ترتيب أول 3 وجبات بالأرقام وأسباب الاختيار وحدود الثقة.'],
-      ['ملخص الأداء','جهّز ملخصاً للاجتماع من مشاهدات GA4 وتفاعل الوجبات والمبيعات المعتمدة خلال 7 أيام وما ينبغي أن نناقشه.'],
-      ['وجبات تحتاج اهتماماً','ما الوجبات التي لديها نقرات طلب أو فتح تفاصيل مرتفع لكن مبيعات معتمدة قليلة؟ وما التفسير الذي نختبره؟'],
-      ['الوجبات الأكثر تفاعلاً','قارن أفضل الوجبات في فتح التفاصيل ونقرات الطلب ونقرات المشاركة خلال آخر أسبوع.'],
-      ['نتائج الأسبوع','ما أهم نتائج سنونو آخر 7 أيام وماذا ينبغي أن يتغير في خطة الأسبوع القادم؟']
-    ]},
-    {title:'التصوير والحملة القادمة',items:[
-      ['اختيار التصوير القادم','ما الوجبة التي نختارها للتصوير القادم؟ احسب الأولوية من المبيعات ونقرات الطلب والتفاعل، ولا تفترض أن النقرات مبيعات.'],
-      ['فكرة ريلز للوجبة','للوَجبة الأعلى أولوية في سنونو، اقترح فكرة ريلز قصيرة وهوك وتصوير خارجي ودعوة واضحة للطلب.'],
-      ['حملة 7 أيام','اقترح حملة لمدة أسبوع للوجبة الأولى في ترتيب الأولوية مع فكرة محتوى وميزانية اختبار افتراضية وطريقة القياس.'],
-      ['منتج يستحق إعلاناً مدفوعاً','أي وجبة متاحة لديها مبيعات معتمدة وتفاعل كافٍ لتستحق اختبار إعلان مدفوع؟ وما المعلومات الناقصة قبل تحديد الميزانية؟'],
-      ['قياس نجاح الإعلان','ما المؤشرات التي نراقبها بعد نشر الريلز لنفرق بين المشاهدات ونقرات الطلب والمبيعات المعتمدة؟']
-    ]},
-    {title:'أسئلة الأرقام',items:[
-      ['المشاهدات والزيارات','كم عدد مشاهدات الصفحات والجلسات والمستخدمين خلال آخر 7 أيام؟ وقارن بالـ 28 يوماً.'],
-      ['المبيعات المعتمدة','قارن مبيعات سنونو المعتمدة خلال 7 أيام و30 يوماً.'],
-      ['الطلبات قيد المراجعة','كم عدد الطلبات التي تنتظر اعتماد الدفع الآن؟']
-    ]}
+  const starters=[
+    ['فكرة ريلز','بفكر أصوّر ريلز عن بوكس المشاركة بكرة. شو رأيك؟'],
+    ['الوجبة الجاية للإعلان','أي وجبة بتنصح نعلن عنها هالأسبوع؟ وليش؟'],
+    ['نتيجة حملة','كيف بعرف إذا الريلز جاب طلبات؟']
   ];
-  for(const groupData of questionGroups){
-    const group=create('section','snounu-ai-question-group');
-    group.append(create('h4','',groupData.title));
-    const groupButtons=create('div','snounu-ai-question-buttons');
-    for(const [label,question] of groupData.items){
-      const button=create('button','snounu-ai-suggest',label);
-      button.type='button';button.onclick=()=>void ask(question);
-      groupButtons.append(button);
-    }
-    group.append(groupButtons);suggestions.append(group);
+  const buttons=create('div','snounu-ai-question-buttons');
+  for(const [label,question] of starters){
+    const button=create('button','snounu-ai-suggest',label);
+    button.type='button';button.onclick=()=>void ask(question);
+    buttons.append(button);
   }
+  suggestions.append(buttons);
   welcome.append(suggestions);log.append(welcome);
   const form=create('form','snounu-ai-form');
   const prompt=create('textarea','snounu-ai-prompt');
-  prompt.rows=2;prompt.required=true;prompt.maxLength=500;
+  prompt.rows=2;prompt.required=true;prompt.maxLength=2000;
   prompt.placeholder='اسأل بحرية: فكرة ريلز، تحليل وجبة، ميزانية حملة، نص إعلان أو أي سؤال…';
   prompt.setAttribute('aria-label','السؤال');
   const controls=create('div','snounu-ai-controls');
-  const counter=create('small','','0 / 500');
+  const counter=create('small','','0 / 2000');
   const send=create('button','snounu-ai-submit','إرسال السؤال');
   send.type='submit';controls.append(counter,send);
   form.append(prompt,controls);
   panel.append(hero,badges,briefPanel,toolbar,log,form,
     create('p','snounu-ai-disclaimer',
-      'تُرسل إلى Groq الإحصاءات المجمعة وبيانات المنيو العامة والمعلومات الثابتة التي يضيفها المالك. لا تُرسل أسماء العملاء أو إثباتات الدفع أو الأسرار، ولا تُحفظ المحادثة في قاعدة بيانات المطعم.'));
+      'تُرسل إلى Groq الإحصاءات المجمعة وبيانات المنيو العامة والمعلومات الثابتة التي يضيفها المالك. لا تُرسل أسماء العملاء أو إثباتات الدفع أو الأسرار، وتنحفظ محادثاتك بحسابك. بتقدر ترجع إلها أو تحذفها من المحادثات السابقة.'));
   root.append(panel);
-  let history=[],busy=false;
+  let active=null,busy=false,listVersion=0;
+  function clearChat(){
+    active=null;log.replaceChildren(welcome);
+    prompt.value='';counter.textContent='0 / 2000';
+  }
+  function setBusy(value){
+    busy=value;send.disabled=value;reset.disabled=value;prompt.disabled=value;
+    for(const button of panel.querySelectorAll('.snounu-ai-history button,.snounu-ai-suggest'))button.disabled=value;
+  }
+  async function loadChats(offset=0){
+    const version=++listVersion;
+    archiveStatus.textContent='عم نحمّل المحادثات…';
+    try{
+      const rows=await briefRequest('snounu_chats_list',{p_offset:offset});
+      if(version!==listVersion)return;
+      if(!offset)archiveList.replaceChildren();
+      archiveList.querySelector('.snounu-ai-more')?.remove();
+      for(const chat of rows.slice(0,30)){
+        const row=create('div','snounu-ai-history-row');
+        const open=create('button','snounu-ai-reset',chat.title);
+        open.dir='auto';open.disabled=busy;open.type='button';
+        open.onclick=async()=>{
+          if(busy)return;
+          setBusy(true);
+          try{
+            const saved=await briefRequest('snounu_chat_read',{p_id:chat.id});
+            if(!saved)throw Error('المحادثة مش موجودة.');
+            clearChat();active=saved;log.replaceChildren();
+            for(const turn of saved.turns){addMessage('user',turn.question);addMessage('assistant',turn.answer);}
+            archive.open=false;
+          }catch(e){archiveStatus.textContent=e.message;}
+          finally{setBusy(false);}
+        };
+        const del=create('button','snounu-ai-reset','حذف');
+        del.type='button';del.disabled=busy;del.setAttribute('aria-label','حذف المحادثة '+chat.title);
+        del.onclick=async()=>{
+          if(busy||!window.confirm('تحذف محادثة «'+chat.title+'» بكل رسائلها؟'))return;
+          setBusy(true);
+          try{
+            await briefRequest('snounu_chat_delete',{p_id:chat.id});
+            if(active?.id===chat.id)clearChat();
+            await loadChats();
+          }catch(e){archiveStatus.textContent=e.message;}
+          finally{setBusy(false);}
+        };
+        row.append(open,del);archiveList.append(row);
+      }
+      if(rows.length>30){
+        const more=create('button','snounu-ai-reset snounu-ai-more','محادثات أقدم');
+        more.type='button';more.disabled=busy;more.onclick=()=>{more.disabled=true;void loadChats(offset+30);};
+        archiveList.append(more);
+      }
+      archiveStatus.textContent=archiveList.childElementCount?'':'لسّه ما في محادثات محفوظة.';
+    }catch{if(version===listVersion){
+      archiveStatus.textContent='تعذّر تحميل المحادثات. سكّر السجل وافتحه للمحاولة مرة ثانية.';
+      const more=archiveList.querySelector('.snounu-ai-more');if(more)more.disabled=false;
+    }}
+  }
+  archive.addEventListener('toggle',()=>{if(archive.open)void loadChats();});
   function addMessage(role,text){
     const item=create('div','snounu-ai-message snounu-ai-'+role);
     item.append(create('small','',role==='assistant'?'مساعد سنونو':'أنت'),
       create('div','snounu-ai-text',text));
+    item.lastElementChild.dir='auto';
     log.append(item);log.scrollTop=log.scrollHeight;
     return item;
   }
   async function ask(text){
     const question=String(text||'').trim();
-    if(busy||question.length<3||question.length>500)return;
-    busy=true;send.disabled=true;reset.disabled=true;prompt.disabled=true;
-    for(const b of suggestions.querySelectorAll('button'))b.disabled=true;
+    if(busy||!question||question.length>2000)return;
+    setBusy(true);archive.open=false;
     if(welcome.isConnected)welcome.remove();
     addMessage('user',question);
-    const bubble=addMessage('assistant','أحلّل البيانات المتاحة…');
+    const bubble=addMessage('assistant','لحظة…');
     bubble.classList.add('is-loading');
-    prompt.value='';counter.textContent='0 / 500';
-    const previous=history.slice(-6);
+    prompt.value='';counter.textContent='0 / 2000';
     try{
       const token=await getToken();
       const response=await fetch('/api/ai-assistant',{
         method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-        cache:'no-store',body:JSON.stringify({question,history:previous})
+        cache:'no-store',body:JSON.stringify({question,chatId:active?.id??null,revision:active?.revision??0})
       });
       const result=await response.json().catch(()=>null);
       if(!response.ok)throw new Error(result?.message||'تعذر الاتصال بالمساعد، حاول مرة أخرى.');
       if(typeof result?.answer!=='string'||!result.answer.trim())throw new Error('لم يصل جواب من المساعد.');
       bubble.querySelector('.snounu-ai-text').textContent=result.answer.trim();
-      if(result.mode==='summary'){
-        const hint=create('small','snounu-ai-mode',
-          'تقارير سنونو المباشرة · لا يستخدم نموذج الذكاء الاصطناعي الآن');
-        bubble.append(hint);
-      } else if(result.mode==='report'){
-        bubble.append(create('small','snounu-ai-mode','إجابة مباشرة من قاعدة بيانات سنونو'));
-      } else if(result.mode==='media_priority'){
-        bubble.append(create('small','snounu-ai-mode','ترتيب محسوب من بيانات سنونو · لا يستهلك سؤالاً ذكياً'));
-      } else if(result.mode==='ai' && result.provider==='groq'){
-        bubble.append(create('small','snounu-ai-mode','تحليل تسويقي عبر Groq'));
-      }
-      history.push({role:'user',content:question},{role:'assistant',content:result.answer.trim()});
-      if(history.length>12)history=history.slice(-12);
+      active=result.chat;
+      if(archive.open)void loadChats();
     }catch(e){
       bubble.classList.add('is-error');
+      prompt.value=question;counter.textContent=question.length+' / 2000';
       bubble.querySelector('.snounu-ai-text').textContent=e.message||'حدث خطأ، حاول مجدداً.';
     }finally{
       bubble.classList.remove('is-loading');
-      busy=false;send.disabled=false;reset.disabled=false;prompt.disabled=false;
-      for(const b of suggestions.querySelectorAll('button'))b.disabled=false;
+      setBusy(false);
       log.scrollTop=log.scrollHeight;
     }
   }
-  prompt.addEventListener('input',()=>counter.textContent=prompt.value.length+' / 500');
+  prompt.addEventListener('input',()=>counter.textContent=prompt.value.length+' / 2000');
   prompt.addEventListener('keydown',event=>{
     if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){
       event.preventDefault();
@@ -191,7 +224,6 @@ export function renderAssistant({root,getToken}){
   form.addEventListener('submit',event=>{event.preventDefault();void ask(prompt.value);});
   reset.onclick=()=>{
     if(busy)return;
-    history=[];log.replaceChildren(welcome);
-    prompt.value='';counter.textContent='0 / 500';prompt.focus();
+    clearChat();archive.open=false;prompt.focus();
   };
 }
