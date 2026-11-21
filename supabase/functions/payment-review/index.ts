@@ -17,7 +17,7 @@ const reply = (value: unknown, status = 200) =>
   Response.json(value, { status, headers });
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const summary =
-  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,fulfillment_status,arrived_at,completed_at,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
+  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
 function fileType(b: Uint8Array) {
   const at = (s: string, i = 0) =>
     Array.from(s).every((v, j) => b[i + j] === v.charCodeAt(0));
@@ -173,7 +173,11 @@ Deno.serve(async (req) => {
         !(data.payment_mode==="at_restaurant"&&data.service_type==="dine_in") &&
           !uuid.test(data.method) || 
         !["online","at_restaurant"].includes(data.payment_mode) ||
-        (data.payment_mode==="at_restaurant" && data.service_type!=="dine_in") ||
+        (data.payment_mode==="at_restaurant" &&
+          (data.service_type!=="dine_in" ||
+            ![10,15,20,30,45,60,90,120].includes(data.arrival_eta_minutes))) ||
+        (data.payment_mode==="online" &&
+          data.arrival_eta_minutes!==null && data.arrival_eta_minutes!==undefined) ||
         typeof data.customer !== "string" ||
         !data.customer.trim() ||
         data.customer.length > 100 ||
@@ -239,6 +243,7 @@ Deno.serve(async (req) => {
             p_notes: "SNOUNU_FULFILLMENT_V1:" + JSON.stringify({
               type: data.service_type,
               payment_mode: data.payment_mode,
+              arrival_eta_minutes: data.payment_mode==="at_restaurant" ? data.arrival_eta_minutes : null,
               address: data.service_type === "delivery" ? data.delivery_address.trim() : "",
               landmark: data.service_type === "delivery" ? data.delivery_landmark.trim() : "",
               backup_phone: data.service_type === "delivery" ? data.backup_phone.trim() : "",
