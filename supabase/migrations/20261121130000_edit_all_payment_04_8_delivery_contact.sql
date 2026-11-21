@@ -30,7 +30,14 @@ begin
    if service='delivery' then
      if length(destination) not between 8 and 500 then raise exception 'Delivery address required'; end if;
      if length(landmark) not between 3 and 160 then raise exception 'Nearby landmark required'; end if;
-     if secondary_phone !~ '^([+])?[0-9 ()-]{7,25}
+     if secondary_phone !~ '^([+])?[0-9 ()-]{7,25}$'
+       or length(regexp_replace(secondary_phone,'[^0-9]','','g')) not between 7 and 15
+       then raise exception 'Valid backup phone required'; end if;
+     if regexp_replace(secondary_phone,'[^0-9]','','g') = regexp_replace(p_phone,'[^0-9]','','g')
+       then raise exception 'Backup phone must differ from primary'; end if;
+   else
+     destination := ''; landmark := ''; secondary_phone := '';
+   end if;
  end if;
  if length(customer_note)>1000 then raise exception 'Notes too long'; end if;
  perform pg_advisory_xact_lock(hashtextextended(p_id::text,0));
@@ -53,34 +60,3 @@ begin
  insert into public.pay_proofs(path,order_id) values(p_path,p_id);
  insert into public.pay_history(order_id,status) values(p_id,'pending');
 end $$;
-
-       or length(regexp_replace(secondary_phone,'[^0-9]','','g')) not between 7 and 15
-       then raise exception 'Valid backup phone required'; end if;
-     if regexp_replace(secondary_phone,'[^0-9]','','g') = regexp_replace(p_phone,'[^0-9]','','g')
-       then raise exception 'Backup phone must differ from primary'; end if;
-   else
-     destination := ''; landmark := ''; secondary_phone := '';
-   end if;
- end if;
- if length(customer_note)>1000 then raise exception 'Notes too long'; end if;
- perform pg_advisory_xact_lock(hashtextextended(p_id::text,0));
- select * into existing from public.pay_orders where id=p_id;
- if found then
-  if existing.secret_hash<>p_hash then raise exception 'Invalid tracking key'; end if;
-  return;
- end if;
- select * into strict m from public.pay_methods where id=p_method and enabled for share;
- if jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items) not between 1 and 60 then raise exception 'Invalid cart'; end if;
- insert into public.pay_orders(id,secret_hash,customer,phone,notes,method_id,method,total,service_type,delivery_address)
- values(p_id,p_hash,p_customer,p_phone,customer_note,p_method,m.name,0,service,destination);
- for line in select * from public.pay_price_lines(p_items) loop
-  insert into public.pay_items(order_id,dish_id,name,qty,price,old_price,choices,special_instructions)
-   values(p_id,line.dish_id,line.name,line.qty,line.price,line.old_price,line.choices,line.special_instructions);
-  cost:=cost+line.qty*line.price;
- end loop;
- if cost is distinct from p_total then raise exception 'Total changed'; end if;
- update public.pay_orders set total=cost where id=p_id;
- insert into public.pay_proofs(path,order_id) values(p_path,p_id);
- insert into public.pay_history(order_id,status) values(p_id,'pending');
-end $$;
-
