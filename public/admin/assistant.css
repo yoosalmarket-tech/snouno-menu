@@ -67,3 +67,17 @@
  #body .snounu-ai-message{max-width:95%;}
  #body .snounu-ai-log{max-height:60dvh;}
 }
+
+/* EDIT ALL PAYMENT 11 — meeting / next-media questions grouped on mobile and desktop */
+.snounu-ai-question-group{display:grid;gap:9px;width:100%;padding:12px 0;border-top:1px solid #eee3d2}
+.snounu-ai-question-group:first-child{border-top:0}
+.snounu-ai-question-group h4{font-size:13px;color:#67543b;text-align:right;margin:0;font-weight:850}
+.snounu-ai-question-buttons{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+.snounu-ai-question-buttons .snounu-ai-suggest:first-child{background:#ffe19a;border-color:#e4b343;font-weight:800}
+.snounu-ai-suggestions{width:100%;flex-direction:column;align-items:stretch;text-align:right}
+.snounu-ai-welcome{width:100%;max-width:760px;box-sizing:border-box;justify-items:stretch}
+@media(max-width:600px){
+ .snounu-ai-question-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+ .snounu-ai-question-buttons .snounu-ai-suggest{text-align:center;min-width:0;line-height:1.65;padding:10px 8px}
+ .snounu-ai-welcome{padding:14px 0}
+}

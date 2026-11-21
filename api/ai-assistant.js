@@ -80,6 +80,14 @@ const COUNT_VIEW_QUERY=/(?:كم|عدد|how many|احسب|calculate|اعرض|إج
 const VIEW_WORD=/(?:مشاهدات|المشاهدات|مشاهدة|زيارات|الزيارات|زوار|المستخدمين|الجلسات|page views|pageviews|sessions|users|visits|views|visitor)/i;
 const DIRECT_PENDING=/(?:كم|عدد|how many|count)/i;
 const DIRECT_PENDING_ACTION=/(?:اعتماد|مراجع|معلق|معلّق|منتظر|انتظار|تنتظر|pending|approval|review)/i;
+// A dedicated data-calculated recommendation, not a model-improvised ranking.
+const MEDIA_PRIORITY_QUERY=/(?:التصوير القادم|التصوير المقبل|الميديا القادمة|الإعلان القادم|الاعلان القادم|الاجتماع القادم|الاجتماع المقبل|next (?:shoot|media|meeting)|best meal to advertise|media priority|الأولوية الإعلانية)/i;
+function asksMediaPriority(question){
+  return MEDIA_PRIORITY_QUERY.test(question) ||
+    (/(?:وجبة|وجبات|طبق|الأطباق|صنف|المنتجات|meal|dish|product)/i.test(question) &&
+      /(?:تصوير|إعلان|اعلان|advertis|shoot|media|اجتماع|campaign)/i.test(question) &&
+      /(?:أفضل|افضل|أولوية|تستحق|نختار|القادم|المقبل|next|priority|recommend|أي |اي )/i.test(question));
+}
 
 const PERFORMANCE_PROMPT=[
  'أنت محلل أداء رقمي واستراتيجي حملات حصرياً لمطعم سنونو في غزة. لا تجب عن الأخبار أو الطقس أو المعرفة العامة أو الترندات الخارجية.',
@@ -89,6 +97,7 @@ const PERFORMANCE_PROMPT=[
  'favorite_toggle قد يشمل إزالة المفضلة، وshare_meal_click ليس دليلاً على مشاركة مكتملة.',
  'approved_units و approved_sales_ils من الطلبات المعتمدة فقط. لا تستنتج الإيرادات من الطلبات المعلقة أو الملغاة أو النقرات.',
  'اختر منتجات متاحة فقط. استعمل الأسماء الحقيقية من جدول الوجبات، وميّز بين المنتج الذي يبيع والمنتج الذي ينال تفاعلاً ولا يبيع.',
+ 'إذا كان السياق يحتوي media_priority فهذا ترتيب حسابي استرشادي لأولوية التصوير والإعلان المقبل، مع أوزان معلنة وحدود ثقة. لا تغيّر ترتيبه باعتباره حقيقة حسابية ولا تقدم الرقم كنسبة تحويل أو ربح؛ يمكن اقتراح بديل إذا شرحت سبباً تجارياً لا تقيسه البيانات.',
  'في كل توصية تسويقية حدد: اسم الوجبة، الإشارة الرقمية المؤيدة، فرضية قابلة للاختبار، فكرة فيديو/عرض أو حملة ملموسة، ومؤشر نجاح يمكن قياسه.',
  'إذا كانت البيانات شحيحة أو بها نشاط تجريبي، صرّح بأن التوصيات تجريبية. لا تختلق معدل تحويل عبر GA4 وSupabase لعدم توفر إسناد موحد.',
  'اعرض المقارنة بين 7 أيام و28 يوماً بحذر مع اختلاف طول الفترتين (عند الحاجة قارن متوسط يومي).',
@@ -117,6 +126,81 @@ function focusPicks(report){
    .sort((a,b)=>b.order_clicks-a.order_clicks)[0]||null;
  return {featured:[...new Set([proven,interest,gap,...contenders].filter(Boolean))].slice(0,4),
    proven,interest,gap};
+}
+// Relative decision index for the next photoshoot / promotional test, NOT
+// conversion rate, expected ROAS, profit or a financial forecast.
+// Weights: 40% order intent, 30% approved units, 20% detail opens, 10% share clicks.
+function mediaPriority(context){
+  const seven=context.performance_7d,twentyEight=context.performance_28d;
+  const hasSignals=report=>Array.isArray(report?.meals) &&
+    report.meals.some(m=>m?.available===true &&
+      (safeNum(m.order_clicks)+safeNum(m.detail_opens)+safeNum(m.share_clicks)+safeNum(m.approved_units)>0));
+  // A quiet week should not hide the previous 28 days of product activity.
+  const active=hasSignals(seven)?seven:
+    hasSignals(twentyEight)?twentyEight:
+    seven&&Array.isArray(seven.meals)&&seven.meals.length?seven:twentyEight;
+  if(!active)return {insufficient:true,period_days:0,ranked:[],paid:null,
+    reason:'تعذّر تحميل بيانات تفاعل الوجبات؛ لا يمكن حساب أولوية إعلان موثوقة.'};
+  const meals=availableProducts(active);
+  if(!meals.length)return {insufficient:true,period_days:active.period_days||7,ranked:[],paid:null,
+    reason:'لا توجد وجبات متاحة مع بيانات كافية لحساب الأولوية.'};
+  const maxima={
+    clicks:Math.max(1,...meals.map(x=>x.order_clicks)),
+    units:Math.max(1,...meals.map(x=>x.approved_units)),
+    opens:Math.max(1,...meals.map(x=>x.detail_opens)),
+    shares:Math.max(1,...meals.map(x=>x.share_clicks))
+  };
+  const ranked=meals.map(m=>{
+    const score=40*m.order_clicks/maxima.clicks+
+      30*m.approved_units/maxima.units+
+      20*m.detail_opens/maxima.opens+
+      10*m.share_clicks/maxima.shares;
+    const signals=m.order_clicks+m.detail_opens+m.share_clicks+m.approved_units;
+    return {...m,score:Math.round(score*10)/10,signals,
+      confidence:signals>=15?'متوسطة':signals>=5?'محدودة':'منخفضة'};
+  }).sort((a,b)=>b.score-a.score||b.approved_units-a.approved_units||
+    b.order_clicks-a.order_clicks||a.name.localeCompare(b.name,'ar'));
+  const signals=ranked.reduce((sum,m)=>sum+m.signals,0);
+  const candidates=ranked.filter(m=>m.signals>0);
+  // Only a meal with an approved purchase can be flagged as a candidate for
+  // spending real ad budget. This is still not profitability/ROAS evidence.
+  const paid=candidates.filter(m=>m.approved_units>0)
+    .sort((a,b)=>b.approved_units-a.approved_units||b.order_clicks-a.order_clicks)[0]||null;
+  return {period_days:active.period_days||7,
+    ranked:candidates.slice(0,5),paid,insufficient:signals<15||
+      !candidates.length,signal_count:signals,
+    index_definition:'Relative score among available meals: 40% Order Now clicks, 30% approved units, 20% meal-detail opens, 10% share clicks. Not conversion rate or expected ROI.',
+    limitations:[
+      'Repeated clicks may come from the same visitor or tests',
+      'Unattributed clicks are excluded from individual meal scores',
+      'Approved orders may be influenced by sources outside the menu',
+      'No product margin, ad spend, or unified cross-source attribution'
+    ]};
+}
+function mediaPriorityAnswer(context){
+ const result=context.media_priority;
+ const output=['ترشيح الوجبة للإعلان أو التصوير القادم — بحسب بيانات سنونو'];
+ output.push('آخر تحديث: '+new Date(context.as_of).toLocaleString('ar-PS',{timeZone:'Asia/Gaza'}));
+ if(!result||!result.ranked?.length)return output.concat(
+  result?.reason||'لا توجد بيانات كافية لاختيار وجبة محددة؛ نفذ اختبار محتوى صغيراً أولاً.').join('\n\n');
+ output.push('مؤشر أولوية المحتوى (مقارنة نسبية بين الوجبات المتاحة): 40% نقرات «اطلب الآن»، 30% وحدات البيع المعتمدة، 20% فتح تفاصيل الوجبة، 10% نقرات المشاركة. ليس نسبة تحويل أو توقع ربح.');
+ output.push('أفضل الوجبات لإنتاج المحتوى في آخر '+result.period_days+' أيام:\n'+
+  result.ranked.slice(0,3).map((m,i)=>
+   (i+1)+'. «'+m.name+'» — '+m.score.toFixed(1)+'/100 | فتح تفاصيل: '+m.detail_opens+
+   ' | نقرات طلب: '+m.order_clicks+' | وحدات بيع معتمدة: '+m.approved_units+
+   ' | نقرات مشاركة: '+m.share_clicks+' | ثقة: '+m.confidence).join('\n'));
+ const best=result.ranked[0];
+ output.push('اختيار التصوير القادم: «'+best.name+'». اختبر ريلز قصيراً يُظهر المنتج بوضوح مع السعر ودعوة للطلب؛ قارِن نقرات طلب الوجبة ومبيعاتها المعتمدة قبل النشر وبعده، مع العلم أن المقارنة وحدها لا تثبت تأثير الإعلان.');
+ if(result.paid)output.push('مرشح الإعلان المدفوع: «'+result.paid.name+'» لأنه سجّل '+result.paid.approved_units+
+   ' وحدة بيع معتمدة خلال الفترة. تحقق من هامش الربح وتكلفة إنتاج الإعلان قبل تحديد ميزانية.');
+ else output.push('الإعلان المدفوع: لا توجد وحدات بيع معتمدة للوجبات المتاحة في هذه الفترة؛ يفضّل اختبار محتوى عضوي أولاً.');
+ if(result.period_days===28)output.push('الملاحظة: لا توجد إشارات مفيدة في آخر 7 أيام؛ استُخدمت بيانات آخر 28 يوماً لتحديد أولوية استكشافية.');
+ if(result.insufficient)output.push('درجة الثقة: منخفضة — حجم الإشارات المسجلة محدود أو يحتمل أن يشمل اختبارات، لذا الترتيب استكشافي وليس قراراً إعلانياً مؤكداً.');
+ if(context.performance_7d?.data_quality?.unattributed_order_clicks>0)
+  output.push('تنبيه: '+context.performance_7d.data_quality.unattributed_order_clicks+
+   ' نقرة طلب غير منسوبة لوجبة حالية، ولم تدخل في ترتيب المنتجات.');
+ output.push('أسئلة قبل الاجتماع: هل الوجبة متوفرة باستمرار؟ ما هامش ربحها؟ ما هدف الحملة وميزانيتها؟ وهل يمكن تمييز طلبات الحملة برابط تتبع؟');
+ return output.join('\n\n');
 }
 function enrichPerformance(report){
  if(!report||!Array.isArray(report.meals))return null;
@@ -279,6 +363,13 @@ export default async function handler(req,res){
  try{context=await collectContext(owner.auth)}
  catch{return send(res,503,{error:'reports_unavailable',message:'تعذّرت قراءة تقارير سنونو حالياً.'})}
  const now=context.as_of;
+ context.media_priority=mediaPriority(context);
+ if(asksMediaPriority(question)){
+   return send(res,200,{answer:mediaPriorityAnswer(context),
+     mode:'media_priority',provider:'supabase',data_as_of:now,
+     media_priority:context.media_priority,
+     available_sources:context.available_sources});
+ }
  if(isDirectViews(question))return send(res,200,{answer:directViews(context),
    mode:'report',provider:'ga4_and_supabase',data_as_of:now,available_sources:context.available_sources});
  // Marketing suggestions remain accessible without provider quota, as clearly
