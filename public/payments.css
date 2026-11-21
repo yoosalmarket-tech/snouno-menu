@@ -456,3 +456,23 @@ body.rich-menu-active:not(.has-cart-footer) .pay-orders-link {
 .pay-qr-box .pay-qr-state {font-size:13px;text-align:center;color:var(--soft,#777);}
 .pay-qr-box .pay-qr-download {min-height:44px;width:100%;text-decoration:none;background:#FDBE2D;color:#242018;border:1px solid #b48c24;}
 .pay-qr-box.pay-qr-error {border-style:dashed;}
+
+
+/* EDIT ALL PAYMENT 06 — checkout & reporting layout fixes. */
+.pay-dialog .pay-body,.pay-dialog .pay-body form {min-width:0;max-width:100%;box-sizing:border-box;}
+.pay-dialog .pay-service-choice {width:100%;max-width:100%;min-width:0;min-inline-size:0;box-sizing:border-box;padding:12px;overflow:visible;}
+.pay-dialog .pay-service-choice>label {box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere;}
+.pay-dialog .pay-delivery-address {box-sizing:border-box;min-width:0;max-width:100%;width:100%;padding:8px 0!important;}
+.pay-dialog .pay-delivery-address input,.pay-dialog .pay-delivery-address textarea {min-width:0;width:100%;max-width:100%;box-sizing:border-box;display:block;overflow-wrap:anywhere;}
+.pay-dialog .pay-delivery-address small {min-width:0;max-width:100%;overflow-wrap:anywhere;line-height:1.75;}
+.pay-dialog .pay-arrival-payment[hidden] {display:none!important;}
+.pay-dialog .pay-proof-error:not([hidden]) {display:block!important;color:#bd252c;font-weight:800;font-size:13px;line-height:1.7;padding:8px 10px;border:1px solid #eaa3a4;background:#fff0f0;border-radius:10px;margin-top:8px;}
+.pay-dialog .pay-proof-support:not([hidden]) {display:flex;align-items:center;justify-content:center;min-height:40px;text-decoration:none;color:#503512;background:#fff0cb;border:1px solid #d3a751;border-radius:10px;padding:8px 12px;font-weight:700;margin-top:8px;}
+.pay-order-issue {display:grid;gap:10px;border:1px solid #ddb962;background:#fef6e5;border-radius:15px;padding:13px;}
+.pay-order-issue>button {text-align:center;padding:12px;}
+.pay-order-issue .pay-call-support {display:block;text-align:center;padding:10px 12px;border-radius:10px;border:1px solid #e3bd7a;text-decoration:none;font-weight:bold;color:#67460e;background:#fff;}
+.pay-issue-form {display:grid;gap:10px;min-width:0;max-width:100%;}
+.pay-issue-form label{display:grid;gap:6px;min-width:0;}
+.pay-issue-form textarea,.pay-issue-form select{box-sizing:border-box;max-width:100%;width:100%;min-width:0;}
+.pay-admin-report {display:grid;gap:7px;background:#fff5df;border:1px solid #d7ad5e;padding:12px;border-radius:14px;overflow-wrap:anywhere;margin:10px 0;}
+.pay-admin-report small {opacity:.65;}

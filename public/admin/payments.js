@@ -6,12 +6,14 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=04-7";
+} from "../payment-ui.js?v=06";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
   rejected: "مرفوض",
   cancelled: "ملغي",
+  arrived: "حضر العميل",
+  completed: "تم تسليم الطلب",
 };
 const list = (s) =>
   Object.entries(s).map(([v, k]) => {
@@ -45,7 +47,7 @@ const table = (headers, rows) => {
   }
   return t;
 };
-export async function orders({ root, api, notice, endpoint }) {
+export async function orders({ root, api, notice, endpoint, canManage = false }) {
   const search = input("", "search");
   search.placeholder = "رقم الطلب، الاسم أو الجوال";
   const filter = el("select");
@@ -69,6 +71,8 @@ export async function orders({ root, api, notice, endpoint }) {
       el("h2", "طلب #" + o.number),
       el("p", o.customer + " · " + o.phone),
       el("p", when(o.created_at) + " · " + labels[o.status]),
+      el("p", "مرحلة الطلب: " + ({awaiting_visit:"بانتظار وصول العميل",awaiting_payment:"بانتظار الدفع في المطعم",awaiting_approval:"بانتظار مراجعة الدفع",preparing:"قيد التحضير",completed:"تم تسليم الطلب",stopped:"متوقف"}[o.fulfillment_status] || "غير محددة")),
+      el("p", "طريقة الدفع: " + (o.payment_mode==="at_restaurant"?"الدفع عند الوصول":"دفع إلكتروني")),
       el("p", o.method + " · " + amount(o.total)),
       el("p", "نوع الطلب: " + (o.service_type === "delivery" ? "توصيل" : o.service_type === "dine_in" ? "تناول بالمطعم" : "غير محدد (طلب قديم)")),
       ...(o.service_type === "delivery" ? [
@@ -112,16 +116,29 @@ export async function orders({ root, api, notice, endpoint }) {
       });
       dialog.append(preview);
     }
-    if (o.status === "pending") {
+    if(canManage && o.service_type==="dine_in" && !o.arrived_at &&
+      ["pending","approved"].includes(o.status)){
+      dialog.append(button("تأكيد حضور العميل",async ()=>{
+        if(!confirm("هل حضر العميل بالفعل للطلب #"+o.number+"؟"))return;
+        try{
+          await api(rootPath+"rpc/pay_mark_arrived",{method:"POST",body:{p_id:o.id}});
+          dialog.close();await load();notice("تم تأكيد حضور العميل");
+        }catch(e){notice(e.message);}
+      }));
+    }
+    if (o.status === "pending" && canManage) {
       const reason = input("");
       field(dialog, "سبب الرفض", reason);
       for (const [target, label] of [
-        ["approved", "اعتماد الدفع"],
-        ["rejected", "رفض الدفع"],
-        ["cancelled", "إلغاء الطلب"],
+        ["approved",o.payment_mode==="at_restaurant"?"تأكيد استلام الدفع في المطعم":"اعتماد الدفع"],
+        ["rejected","رفض الدفع"],
+        ["cancelled","إلغاء الطلب"],
       ])
         dialog.append(
           button(label, async (e) => {
+            if(target==="approved"&&o.payment_mode==="at_restaurant"&&!o.arrived_at){
+              notice("أكّد وصول العميل أولاً قبل تسجيل الدفع.");return;
+            }
             if (target === "rejected" && !reason.value.trim()) {
               reason.focus();
               return;
@@ -157,6 +174,37 @@ export async function orders({ root, api, notice, endpoint }) {
             ).then(() => w.print());
         }),
       );
+    if(canManage&&o.status==="approved"&&o.fulfillment_status!=="completed"){
+      const done=button("تأكيد تسليم الطلب للعميل",async()=>{
+        if(!confirm("هل استلم العميل طلبه بالفعل؟ هذه الرسالة ستصل إلى شاشة العميل."))return;
+        try{
+          await api(rootPath+"rpc/pay_mark_completed",{method:"POST",body:{p_id:o.id}});
+          dialog.close();await load();notice("تم تسجيل تسليم الطلب وإخطار العميل");
+        }catch(err){notice(err.message);}
+      });
+      done.className="pay-primary";
+      dialog.append(done);
+    }
+    const reports=(o.pay_order_reports||[]).slice().sort((a,b)=>
+      b.created_at.localeCompare(a.created_at));
+    if(reports.length){
+      dialog.append(el("h3","بلاغات العملاء"));
+      for(const report of reports){
+        const box=el("section");box.className="pay-admin-report";
+        box.append(el("strong",({not_received:"الطلب لم يصل",incorrect_order:"الطلب غير صحيح",other:"مشكلة أخرى"}[report.category]||"بلاغ")+
+          (report.resolved_at?" · تم إغلاقه":" · مفتوح")),
+          el("small",when(report.created_at)),el("p",report.message));
+        if(canManage&&!report.resolved_at){
+          box.append(button("وضع علامة تم حل المشكلة",async()=>{
+            try{
+              await api(rootPath+"rpc/pay_resolve_report",{method:"POST",body:{p_id:report.id}});
+              dialog.close();await load();notice("تم إغلاق البلاغ");
+            }catch(e){notice(e.message);}
+          }));
+        }
+        dialog.append(box);
+      }
+    }
     dialog.append(el("h3", "سجل الطلب"));
     for (const h of o.pay_history.sort((a, b) =>
       a.occurred_at.localeCompare(b.occurred_at),
@@ -175,7 +223,7 @@ export async function orders({ root, api, notice, endpoint }) {
     const ticket = ++revision;
     const q = new URLSearchParams({
       select:
-        "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*)",
+        "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,fulfillment_status,arrived_at,completed_at,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
       order: "created_at.desc",
       limit: "26",
       offset: String(page * 25),
@@ -205,7 +253,9 @@ export async function orders({ root, api, notice, endpoint }) {
             "الدفع",
             "نوع الطلب",
             "الوقت",
-            "الحالة",
+            "حالة الدفع",
+            "مرحلة الطلب",
+            "بلاغ",
             "التفاصيل",
           ],
           rows
@@ -220,6 +270,8 @@ export async function orders({ root, api, notice, endpoint }) {
               o.service_type === "delivery" ? "توصيل" : o.service_type === "dine_in" ? "تناول بالمطعم" : "غير محدد",
               when(o.created_at),
               labels[o.status],
+              ({awaiting_visit:"بانتظار الحضور",awaiting_payment:"بانتظار الدفع",awaiting_approval:"مراجعة الدفع",preparing:"قيد التحضير",completed:"تم التسليم",stopped:"متوقف"}[o.fulfillment_status]||"—"),
+              (o.pay_order_reports||[]).filter(x=>!x.resolved_at).length?"بلاغ مفتوح":"—",
               button("عرض", () => details(o)),
             ]),
         ),

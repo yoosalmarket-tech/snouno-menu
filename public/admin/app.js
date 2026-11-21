@@ -8,6 +8,7 @@ const sections = {
   overview: ['اللوحة الرئيسية', []],
   investment: ['الاستثمار', []],
   assistant: ['مساعد سنونو الذكي', []],
+  roles: ['الأدوار والصلاحيات', []],
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
   menu_settings: ['مطعم السنونو', [
@@ -62,7 +63,7 @@ const adminRouteSlugs={
  menu_settings:'restaurant',menu_links:'links',menu_ads:'ads',
  seo:'seo',seo_queries:'search-queries',
  rankings:'ratings',events:'analytics',submissions:'messages',
- menu_staff:'staff',account:'account',assistant:'assistant'
+ menu_staff:'staff',account:'account',assistant:'assistant',roles:'roles'
 };
 const adminPath=key=>'/admin/'+(adminRouteSlugs[key]||adminRouteSlugs.overview);
 function keyFromAdminLocation(){
@@ -72,8 +73,12 @@ function keyFromAdminLocation(){
  const hash=location.hash.replace(/^#/,'');
  return Object.hasOwn(sections,hash)?hash:null;
 }
+const ownerOnlySections=new Set(['payment_settings','menu_staff','roles','account','overview','investment','seo','seo_queries','assistant']);
+let permissions=[];
 function authorizedAdminSection(key){
- return Object.hasOwn(sections,key)&&(!['orders','payment_settings','menu_staff','account','events','overview','investment','seo_queries','assistant'].includes(key)||role==='owner');
+ if(!Object.hasOwn(sections,key))return false;
+ if(role==='owner')return true;
+ return !ownerOnlySections.has(key)&&permissions.includes(key);
 }
 function closeAdminMobileNav({restoreFocus=false}={}){
  const open=document.body.classList.contains('admin-mobile-open');
@@ -137,7 +142,7 @@ async function api(path, options={}) {
   }
   return request(path,{...options,token:session.access_token});
 }
-function loggedOut(){ generation++;role=null;closeAdminMobileNav();$('admin-page-header').hidden=true;$('admin-page-note').replaceChildren();$('admin-page-note').hidden=true;$('body').classList.remove('ga-overview');$('login').hidden=false;$('tabs').replaceChildren();$('body').replaceChildren();$('admin-title-action').replaceChildren();$('title').textContent='تسجيل الدخول'; }
+function loggedOut(){ generation++;role=null;permissions=[];closeAdminMobileNav();$('admin-page-header').hidden=true;$('admin-page-note').replaceChildren();$('admin-page-note').hidden=true;$('body').classList.remove('ga-overview');$('login').hidden=false;$('tabs').replaceChildren();$('body').replaceChildren();$('admin-title-action').replaceChildren();$('title').textContent='تسجيل الدخول'; }
 function adminSidebarIcon(key){
  const icons={
   investment:'<path d="M3 20h18M5 17V9m7 8V4m7 13v-6"/><path d="m4 7 6-4 4 4 7-5"/>',
@@ -154,6 +159,7 @@ function adminSidebarIcon(key){
   events:'<path d="M3 4h18v16H3zM3 9h18"/><path d="M7 13h4m-4 4h8"/>',
   submissions:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
   menu_staff:'<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M2 20c0-5 3-7 6-7s6 2 6 7M15 14c3 0 6 2 6 6"/>',
+  roles:'<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 9h10M7 15h10M12 6v12"/>',
   account:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'
  };
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -216,10 +222,10 @@ function buildAdminSidebar(email){
   menu_settings:'محتوى المنيو',menu_links:'محتوى المنيو',menu_ads:'محتوى المنيو',
   seo:'تحسين الظهور في Google',seo_queries:'تحسين الظهور في Google',
   rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
-  menu_staff:'إدارة الحساب',account:'إدارة الحساب'
+  menu_staff:'إدارة الحساب',roles:'إدارة الحساب',account:'إدارة الحساب'
  };
  for(const [key,[label]] of Object.entries(sections)){
-  if(['orders','payment_settings','menu_staff','account','events','overview','investment','seo_queries','assistant'].includes(key)&&role!=='owner')continue;
+  if(!authorizedAdminSection(key))continue;
   const group=groups[key]||'المزيد';
   if(group!==prevGroup){const groupLabel=node('span',group);groupLabel.className='admin-sidebar-group';links.append(groupLabel);prevGroup=group;}
   const btn=node('a');btn.href=adminPath(key);btn.id='admin-tab-'+key;
@@ -268,7 +274,12 @@ async function enter(){
   session.user=user;persist(session);
   const own=await api('/rest/v1/menu_staff?select=role&email=eq.'+encodeURIComponent(user.email.toLowerCase()));
   if(!own.length) throw new Error('لا توجد صلاحية لهذا الحساب');
-  role=own[0].role; $('login').hidden=true;
+  role=own[0].role;
+  permissions=[];
+  const capabilities=await api('/rest/v1/rpc/menu_my_capabilities',{method:'POST',body:{}});
+  if(capabilities?.role!==role)throw new Error('تعذر التحقق من صلاحيات الدور');
+  permissions=Array.isArray(capabilities.permissions)?capabilities.permissions:[];
+  $('login').hidden=true;
   // Keep the dashboard's own browser-tab icon synchronized after a future
   // upload from the Restaurant settings page, without delaying sign-in.
   void api('/rest/v1/menu_settings?select=favicon_url&limit=1')
@@ -278,7 +289,9 @@ async function enter(){
    }).catch(()=>{});
   buildAdminSidebar(user.email);
   const requested=keyFromAdminLocation();
-  await openSection(authorizedAdminSection(requested)?requested:(role==='owner'?'overview':'dishes'),{initial:true});
+  const firstAvailable=Object.keys(sections).find(key=>authorizedAdminSection(key));
+  if(!firstAvailable){$('body').textContent='لا توجد أقسام متاحة لصلاحيات حسابك. تواصل مع مالك المطعم.';return;}
+  await openSection(authorizedAdminSection(requested)?requested:firstAvailable,{initial:true});
 }
 $('admin-mobile-menu-toggle').addEventListener('click',toggleAdminMobileNav);
 $('admin-mobile-backdrop').addEventListener('click',()=>closeAdminMobileNav({restoreFocus:true}));
@@ -291,7 +304,8 @@ window.addEventListener('resize',()=>{
 window.addEventListener('popstate',()=>{
  if(!session||!role||!/^\/admin(?:\/|$)/.test(location.pathname))return;
  const requested=keyFromAdminLocation();
- const next=authorizedAdminSection(requested)?requested:(role==='owner'?'overview':'dishes');
+ const next=authorizedAdminSection(requested)?requested:Object.keys(sections).find(key=>authorizedAdminSection(key));
+ if(!next)return;
  void openSection(next,{fromHistory:true}).catch(error=>notice(error.message));
 });
 $('remember-me').checked=rememberMe;
@@ -1001,7 +1015,7 @@ async function renderGaOverview(days=28){
  const status=node('p','جارٍ تحميل الإحصائيات من GA4…');status.id='ga-loading';
  const salesPanel=node('section');
  area.replaceChildren(top,status);
- if(investment){area.prepend(salesPanel);void import('./payments.js?v=04-7').then(m=>m.sales(salesPanel,api));}
+ if(investment){area.prepend(salesPanel);void import('./payments.js?v=06').then(m=>m.sales(salesPanel,api));}
  try{
   // Use the same authenticated session as the menu admin; no GA credentials in the browser.
   if(session?.expires_at*1000<Date.now()+60000)await api('/auth/v1/user');
@@ -1266,7 +1280,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='assistant'){
-   const assistantModule=await import('./assistant.js?v=edit-all-payment-05');
+   const assistantModule=await import('./assistant.js?v=edit-all-payment-06');
    if(ticket!==generation)return;
    assistantModule.renderAssistant({
      root:$('body'),
@@ -1278,8 +1292,14 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
    });
    return;
  }
+ if(key==='roles'){
+  const mod=await import('./roles.js?v=edit-all-payment-06');
+  if(ticket!==generation)return;
+  await mod.renderRoles({root:$('body'),api,notice});
+  return;
+ }
  if(key==='orders'||key==='payment_settings'){
-  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=04-7');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint});return;
+  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=06');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint,canManage:role==='owner'});return;
  }
  if(key==='seo'||key==='seo_queries'){
    $('body').replaceChildren();
@@ -1388,7 +1408,10 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
     copy.id='admin-copy-'+key+'-'+row.id;copy.dataset.trackAction='admin_copy_permalink';
     card.append(copy);
    }
-   if(key==='menu_staff')card.append(node('span',row.role==='owner'?'مالك':'محرر'));
+   if(key==='menu_staff'){
+    card.append(node('span',row.role==='owner'?'مالك':row.role==='editor'?'محرر':row.role));
+    if(row.role!=='owner')card.append(action('تغيير الدور',()=>openSection('roles')));
+   }
    else if(!feedback) card.append(action('تعديل',()=>edit(key,row)));
    if(!['menu_settings','menu_links'].includes(key)&&row.role!=='owner')card.append(action(key==='menu_staff'?'إلغاء الصلاحية':'حذف',async()=>{
      if(!confirm('تأكيد إزالة '+(row.meal_name||row.name||row.email||row.kind)+'؟'))return;

@@ -17,7 +17,7 @@ const reply = (value: unknown, status = 200) =>
   Response.json(value, { status, headers });
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const summary =
-  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
+  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,fulfillment_status,arrived_at,completed_at,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
 function fileType(b: Uint8Array) {
   const at = (s: string, i = 0) =>
     Array.from(s).every((v, j) => b[i + j] === v.charCodeAt(0));
@@ -74,6 +74,14 @@ Deno.serve(async (req) => {
       .select("formats,cancellation,live_updates,max_quantity")
       .single();
     if (cfgError || !cfg) throw new Error();
+    const { data: contact }=await db.from("menu_settings").select("hotline").eq("id",1).single();
+    const hotline=contact?.hotline || "#889";
+    const forCustomer = async (order: Record<string,unknown>) => {
+      const { data: report } = await db.from("pay_order_reports")
+        .select("id").eq("order_id",order.id).is("resolved_at",null).limit(1).maybeSingle();
+      return { ...order, cancellation: cfg.cancellation, live_updates: cfg.live_updates,
+        hotline, report_open: !!report };
+    };
     if (action === "config") {
       const { data: methods, error } = await db
         .from("pay_methods")
@@ -82,7 +90,7 @@ Deno.serve(async (req) => {
         .order("position")
         .order("id");
       if (error) throw new Error();
-      return reply({ ...cfg, methods });
+      return reply({ ...cfg, methods, hotline });
     }
     if (action === "quote") {
       if (
@@ -130,11 +138,19 @@ Deno.serve(async (req) => {
     if (action !== "submit" && !order)
       return reply({ error: "Order unavailable" }, 404);
     if (action === "status" || (action === "submit" && order))
-      return reply({
-        ...order,
-        cancellation: cfg.cancellation,
-        live_updates: cfg.live_updates,
+      return reply(await forCustomer(order));
+    if (action === "report") {
+      if (order?.status!=="approved") return reply({error:"Report available after payment approval"},409);
+      if (!["not_received","incorrect_order","other"].includes(data.category) ||
+          typeof data.message!=="string" || data.message.trim().length<5 ||
+          data.message.trim().length>500)
+        return reply({error:"Invalid report details"},400);
+      const {error: reportError}=await db.from("pay_order_reports").insert({
+        order_id:id,category:data.category,message:data.message.trim()
       });
+      if(reportError) return reply({error:"An unresolved report already exists for this order"},409);
+      return reply({ok:true,message:"تم إرسال بلاغك لإدارة المطعم."});
+    }
     if (action === "cancel") {
       const { error } = await db.rpc("pay_customer_change", {
         p_id: id,
@@ -154,7 +170,10 @@ Deno.serve(async (req) => {
         !Array.isArray(data.items) ||
         !data.items.length ||
         data.items.length > 60 ||
-        !uuid.test(data.method) ||
+        !(data.payment_mode==="at_restaurant"&&data.service_type==="dine_in") &&
+          !uuid.test(data.method) || 
+        !["online","at_restaurant"].includes(data.payment_mode) ||
+        (data.payment_mode==="at_restaurant" && data.service_type!=="dine_in") ||
         typeof data.customer !== "string" ||
         !data.customer.trim() ||
         data.customer.length > 100 ||
@@ -183,28 +202,33 @@ Deno.serve(async (req) => {
       if (error) throw new Error();
       if (isRestaurantClosed(s.closure_rules))
         return reply({ error: "Restaurant closed" }, 409);
-      const method = await db
-        .from("pay_methods")
-        .select("id")
-        .eq("id", data.method)
-        .eq("enabled", true)
-        .maybeSingle();
-      if (!method.data)
-        return reply({ error: "Payment method unavailable" }, 409);
+      if(data.payment_mode!=="at_restaurant"){
+        const method = await db.from("pay_methods").select("id")
+          .eq("id",data.method).eq("enabled",true).maybeSingle();
+        if(!method.data) return reply({error:"Payment method unavailable"},409);
+      } else {
+        // Prevent accidental rapid duplicate arrival orders from a phone number.
+        const hourAgo = new Date(Date.now()-3600000).toISOString();
+        const recent = await db.from("pay_orders").select("id",{count:"exact",head:true})
+          .eq("phone",data.phone).eq("payment_mode","at_restaurant").gte("created_at",hourAgo);
+        if((recent.count||0)>=3)return reply({error:"Too many arrival orders. Call the restaurant."},429);
+      }
     }
-    const f = form?.get("proof");
-    if (!(f instanceof File) || !f.size || f.size > 4194304)
-      return reply({ error: "Choose a file up to 4 MB" }, 400);
-    const bytes = new Uint8Array(await f.arrayBuffer());
-    const [mime, ext] = fileType(bytes);
-    if (!mime || !cfg.formats.includes(mime) || mime !== f.type)
-      return reply({ error: "Unsupported file" }, 415);
-    const path = id + "/" + crypto.randomUUID() + "." + ext;
-    const uploaded = await bucket.upload(path, bytes, {
-      contentType: mime,
-      upsert: false,
-    });
-    if (uploaded.error) throw new Error();
+    const noProof=action==="submit"&&data.payment_mode==="at_restaurant";
+    const f=form?.get("proof");
+    if(!noProof && (!(f instanceof File)||!f.size||f.size>4194304))
+      return reply({error:"Choose a file up to 4 MB"},400);
+    let path: string|null=null;
+    if(!noProof){
+      const file=f as File;
+      const bytes=new Uint8Array(await file.arrayBuffer());
+      const [mime,ext]=fileType(bytes);
+      if(!mime||!cfg.formats.includes(mime)||mime!==file.type)
+        return reply({error:"Unsupported file"},415);
+      path=id+"/"+crypto.randomUUID()+"."+ext;
+      const uploaded=await bucket.upload(path,bytes,{contentType:mime,upsert:false});
+      if(uploaded.error)throw new Error();
+    }
     const result =
       action === "submit"
         ? await db.rpc("pay_submit", {
@@ -214,12 +238,13 @@ Deno.serve(async (req) => {
             p_phone: data.phone,
             p_notes: "SNOUNU_FULFILLMENT_V1:" + JSON.stringify({
               type: data.service_type,
+              payment_mode: data.payment_mode,
               address: data.service_type === "delivery" ? data.delivery_address.trim() : "",
               landmark: data.service_type === "delivery" ? data.delivery_landmark.trim() : "",
               backup_phone: data.service_type === "delivery" ? data.backup_phone.trim() : "",
               notes: String(data.notes || "").trim(),
             }),
-            p_method: data.method,
+            p_method: noProof ? null : data.method,
             p_items: data.items,
             p_total: data.total,
             p_path: path,
@@ -230,12 +255,10 @@ Deno.serve(async (req) => {
             p_target: "pending",
             p_path: path,
           });
-    const linked = await db
-      .from("pay_proofs")
-      .select("path")
-      .eq("path", path)
-      .maybeSingle();
-    if (!linked.error && !linked.data) await bucket.remove([path]);
+    if(path){
+      const linked=await db.from("pay_proofs").select("path").eq("path",path).maybeSingle();
+      if(!linked.error&&!linked.data)await bucket.remove([path]);
+    }
     if (result.error)
       return reply(
         { error: "Order changed. Check your order before retrying." },
@@ -243,11 +266,7 @@ Deno.serve(async (req) => {
       );
     const saved = await lookup();
     if (saved.error || !saved.data) throw new Error();
-    return reply({
-      ...saved.data,
-      cancellation: cfg.cancellation,
-      live_updates: cfg.live_updates,
-    });
+    return reply(await forCustomer(saved.data));
   } catch {
     return reply({ error: "Request could not be processed" }, 400);
   }
