@@ -76,6 +76,10 @@ export function invoice(o) {
     el("p", "طلب #" + o.number + " · " + when(o.approved_at)),
     el("p", o.customer + " · " + o.phone),
     el("p", o.service_type === "delivery" ? "نوع الطلب: توصيل" : o.service_type === "dine_in" ? "نوع الطلب: تناول بالمطعم" : "نوع الطلب: لم يُحدد"),
+    ...(o.payment_mode==="at_restaurant"&&o.arrival_eta_minutes?[
+      el("p","المدة المتوقعة للوصول: "+o.arrival_eta_minutes+" دقيقة"),
+      ...(o.expected_arrival_at?[el("p","موعد الوصول التقريبي: "+when(o.expected_arrival_at))]:[])
+    ]:[]),
     ...(o.service_type === "delivery" ? [
       el("p", "عنوان التوصيل: " + (o.delivery_address || "")),
       ...(o.delivery_landmark ? [el("p", "أقرب معلم أو مبنى معروف: " + o.delivery_landmark)] : []),

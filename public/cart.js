@@ -67,7 +67,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     cleanup = () => {},
     generation = 0,
     locked = false;
-  let draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "", delivery_landmark: "", backup_phone: "", payment_mode: "online" },
+  let draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "", delivery_landmark: "", backup_phone: "", payment_mode: "online", arrival_eta_minutes: null },
     cfg,
     method = "",
     proof = null,
@@ -457,6 +457,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       const payload = {
         ...draft,
         payment_mode: draft.payment_mode === "at_restaurant" ? "at_restaurant" : "online",
+        arrival_eta_minutes: draft.payment_mode === "at_restaurant" ? draft.arrival_eta_minutes : null,
         method: draft.payment_mode === "at_restaurant" ? null : method,
         total: total(),
         items: items(),
@@ -485,7 +486,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       save();
       proof = null;
       draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "",
-        delivery_landmark: "", backup_phone: "", payment_mode: "online" };
+        delivery_landmark: "", backup_phone: "", payment_mode: "online", arrival_eta_minutes: null };
       announce(saved, o);
       await status(saved, o);
   }
@@ -551,20 +552,63 @@ export function installCart({ catalog, name, description, closed, page }) {
       ["online", t("الدفع الإلكتروني الآن", "Pay online now")],
       ["at_restaurant", t("الدفع عند الوصول إلى المطعم", "Pay at the restaurant")]
     ];
+    const ETA_OPTIONS = [10,15,20,30,45,60,90,120];
+    const arrivalLabel=el("label");
+    arrivalLabel.className="pay-arrival-time";
+    const arrivalHeading=el("strong",t("بعد كم دقيقة ستصل إلى المطعم؟ *",
+      "How many minutes until you arrive? *"));
+    const arrivalSelect=el("select");
+    arrivalSelect.name="arrival_eta_minutes";
+    arrivalSelect.setAttribute("aria-label",t("الوقت المتوقع للوصول إلى المطعم",
+      "Estimated time to arrive at the restaurant"));
+    const placeholder=el("option",t("اختر مدة الوصول","Choose arrival time"));
+    placeholder.value="";
+    arrivalSelect.append(placeholder);
+    for(const minutes of ETA_OPTIONS){
+      const option=el("option",t("خلال "+minutes+" دقيقة","In "+minutes+" minutes"));
+      option.value=String(minutes);
+      arrivalSelect.append(option);
+    }
+    arrivalSelect.value=draft.arrival_eta_minutes==null?"":String(draft.arrival_eta_minutes);
+    arrivalSelect.onchange=()=>{
+      draft.arrival_eta_minutes=arrivalSelect.value?Number(arrivalSelect.value):null;
+    };
+    arrivalLabel.append(arrivalHeading,arrivalSelect,
+      el("small",t("موعد وصول تقريبي وليس وقت تجهيز الوجبة. تجهيز الطلب يبدأ بعد تأكيد وصولك والدفع.",
+        "This is an estimated arrival, not a meal preparation time. Preparation starts after your arrival and payment are confirmed.")));
     for(const [value,label] of payOptions){
       const line=el("label");
       const radio=el("input");radio.type="radio";radio.name="payment_mode";radio.value=value;
       radio.checked=(draft.payment_mode||"online")===value;
-      radio.onchange=()=>{draft.payment_mode=value;next.textContent=value==="at_restaurant"?
-        t("تأكيد طلب الحضور", "Place dine-in order"):t("متابعة لطريقة الدفع","Continue to payment");};
+      radio.onchange=()=>{
+        draft.payment_mode=value;
+        if(value!=="at_restaurant"){draft.arrival_eta_minutes=null;arrivalSelect.value="";}
+        arrivalLabel.hidden=value!=="at_restaurant";
+        arrivalSelect.required=value==="at_restaurant";
+        next.textContent=value==="at_restaurant"?
+          t("تأكيد طلب الحضور","Place dine-in order"):
+          t("متابعة لطريقة الدفع","Continue to payment");
+      };
       line.append(radio,el("span",label));payPlace.append(line);
     }
+    payPlace.append(arrivalLabel);
     payPlace.append(el("small",t("عند الدفع في المطعم لا تحتاج رفع إثبات. لن يبدأ تجهيز الطلب حتى تؤكد الإدارة حضورك واستلام الدفع.",
       "No payment proof required on arrival. Preparation starts after the restaurant confirms your arrival and payment.")));
     function updateService(type) {
       draft.service_type = type;
-      if(type!=="dine_in")draft.payment_mode="online";
+      if(type!=="dine_in"){
+        draft.payment_mode="online";
+        draft.arrival_eta_minutes=null;
+        arrivalSelect.value="";
+      }
       payPlace.hidden=type!=="dine_in";
+      const needsEta=type==="dine_in"&&draft.payment_mode==="at_restaurant";
+      arrivalLabel.hidden=!needsEta;
+      arrivalSelect.required=needsEta;
+      const currentNext=f.querySelector("button.pay-primary");
+      if(currentNext)currentNext.textContent=needsEta?
+        t("تأكيد طلب الحضور","Place dine-in order"):
+        t("متابعة لطريقة الدفع","Continue to payment");
       for(const radio of payPlace.querySelectorAll("input[type=radio]"))radio.checked=radio.value===(draft.payment_mode||"online");
       addressLabel.hidden = type !== "delivery";
       deliveryAddress.required = type === "delivery";
@@ -629,6 +673,13 @@ export function installCart({ catalog, name, description, closed, page }) {
       if (!["dine_in","delivery"].includes(draft.service_type)) {
         service.querySelector("input[type=radio]").focus();
         error(Error(t("اختر تناول الطعام في المطعم أو التوصيل أولاً", "Choose dine-in or delivery")));
+        return;
+      }
+      if(draft.service_type==="dine_in"&&draft.payment_mode==="at_restaurant" &&
+        !ETA_OPTIONS.includes(Number(draft.arrival_eta_minutes))){
+        arrivalSelect.focus();
+        error(Error(t("اختر المدة المتوقعة لوصولك قبل تأكيد الطلب.",
+          "Select how many minutes you need to reach the restaurant.")));
         return;
       }
       if (draft.service_type === "delivery") {
@@ -928,7 +979,21 @@ export function installCart({ catalog, name, description, closed, page }) {
           if (o.delivery_landmark) b.append(el("p", t("أقرب معلم: ", "Nearby landmark: ") + o.delivery_landmark));
           if (o.backup_phone) b.append(el("p", t("رقم احتياطي: ", "Backup phone: ") + o.backup_phone));
         }
-        else if (o.service_type === "dine_in") b.append(el("p", t("تناول الطعام في المطعم", "Dine in at the restaurant")));
+        else if (o.service_type === "dine_in"){
+          b.append(el("p", t("تناول الطعام في المطعم", "Dine in at the restaurant")));
+          if(o.payment_mode==="at_restaurant"&&o.arrival_eta_minutes){
+            b.append(el("p",t("المدة التي اخترتها للوصول: ","Your chosen arrival time: ")+
+              o.arrival_eta_minutes+t(" دقيقة"," minutes")));
+            if(o.expected_arrival_at)b.append(el("p",
+              t("موعد الوصول التقريبي: ","Estimated arrival: ")+
+              new Intl.DateTimeFormat(document.documentElement.lang==="en"?"en-GB":"ar-PS",{
+                timeZone:"Asia/Hebron",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"
+              }).format(new Date(o.expected_arrival_at))));
+            if(!o.arrived_at)b.append(el("small",t(
+              "هذا تقديرك أنت للوصول وليس موعداً مضموناً لجهوزية الوجبة.",
+              "This is your arrival estimate, not a promised meal-ready time.")));
+          }
+        }
         if (o.status === "pending") {
           b.append(el("p",o.payment_mode==="at_restaurant"
             ? o.arrived_at

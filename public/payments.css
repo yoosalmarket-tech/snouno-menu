@@ -476,3 +476,11 @@ body.rich-menu-active:not(.has-cart-footer) .pay-orders-link {
 .pay-issue-form textarea,.pay-issue-form select{box-sizing:border-box;max-width:100%;width:100%;min-width:0;}
 .pay-admin-report {display:grid;gap:7px;background:#fff5df;border:1px solid #d7ad5e;padding:12px;border-radius:14px;overflow-wrap:anywhere;margin:10px 0;}
 .pay-admin-report small {opacity:.65;}
+
+
+/* EDIT ALL PAYMENT 06.12 — expected arrival duration for pay-at-restaurant */
+.pay-dialog .pay-arrival-time:not([hidden]) {display:grid;gap:8px;margin:10px 0;padding:12px;min-width:0;max-width:100%;width:100%;box-sizing:border-box;border:1px solid #d8b45c;border-radius:13px;background:#FDBE2D18}
+.pay-dialog .pay-arrival-time[hidden]{display:none!important}
+.pay-dialog .pay-arrival-time strong{font-size:14px;font-weight:800;line-height:1.6}
+.pay-dialog .pay-arrival-time select{display:block;min-width:0;width:100%;max-width:100%;box-sizing:border-box;min-height:46px;padding:9px 12px;border:1px solid #c2ac80;border-radius:10px;background:var(--surface,#fff);font:inherit;color:var(--ink,#252525)}
+.pay-dialog .pay-arrival-time small{font-size:12px;line-height:1.7;color:var(--soft,#776b58)}
