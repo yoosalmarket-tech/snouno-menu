@@ -76,7 +76,11 @@ export function invoice(o) {
     el("p", "طلب #" + o.number + " · " + when(o.approved_at)),
     el("p", o.customer + " · " + o.phone),
     el("p", o.service_type === "delivery" ? "نوع الطلب: توصيل" : o.service_type === "dine_in" ? "نوع الطلب: تناول بالمطعم" : "نوع الطلب: لم يُحدد"),
-    ...(o.service_type === "delivery" ? [el("p", "عنوان التوصيل: " + (o.delivery_address || ""))] : []),
+    ...(o.service_type === "delivery" ? [
+      el("p", "عنوان التوصيل: " + (o.delivery_address || "")),
+      ...(o.delivery_landmark ? [el("p", "أقرب معلم أو مبنى معروف: " + o.delivery_landmark)] : []),
+      ...(o.backup_phone ? [el("p", "رقم الجوال الاحتياطي: " + o.backup_phone)] : []),
+    ] : []),
   );
   const table = el("table"),
     head = el("tr");

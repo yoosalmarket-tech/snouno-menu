@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=04";
+} from "../payment-ui.js?v=04-7";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
@@ -71,7 +71,11 @@ export async function orders({ root, api, notice, endpoint }) {
       el("p", when(o.created_at) + " · " + labels[o.status]),
       el("p", o.method + " · " + amount(o.total)),
       el("p", "نوع الطلب: " + (o.service_type === "delivery" ? "توصيل" : o.service_type === "dine_in" ? "تناول بالمطعم" : "غير محدد (طلب قديم)")),
-      ...(o.service_type === "delivery" ? [el("p", "عنوان التوصيل: " + (o.delivery_address || ""))] : []),
+      ...(o.service_type === "delivery" ? [
+        el("p", "عنوان التوصيل: " + (o.delivery_address || "")),
+        ...(o.delivery_landmark ? [el("p", "أقرب مبنى معروف أو معلم: " + o.delivery_landmark)] : []),
+        ...(o.backup_phone ? [el("p", "رقم الجوال الاحتياطي: " + o.backup_phone)] : [])
+      ] : []),
       el("p", o.notes),
       el("p", o.reason),
     );
@@ -171,7 +175,7 @@ export async function orders({ root, api, notice, endpoint }) {
     const ticket = ++revision;
     const q = new URLSearchParams({
       select:
-        "id,number,customer,phone,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*)",
+        "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*)",
       order: "created_at.desc",
       limit: "26",
       offset: String(page * 25),
@@ -182,6 +186,7 @@ export async function orders({ root, api, notice, endpoint }) {
       const clauses = [
         "customer.ilike.*" + term + "*",
         "phone.ilike.*" + term + "*",
+        "backup_phone.ilike.*" + term + "*",
       ];
       if (/^\d{1,16}$/.test(term)) clauses.push("number.eq." + term);
       q.set("or", "(" + clauses.join(",") + ")");
