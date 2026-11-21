@@ -67,7 +67,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     cleanup = () => {},
     generation = 0,
     locked = false;
-  let draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "", delivery_landmark: "", backup_phone: "" },
+  let draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "", delivery_landmark: "", backup_phone: "", payment_mode: "online" },
     cfg,
     method = "",
     proof = null,
@@ -453,6 +453,43 @@ export function installCart({ catalog, name, description, closed, page }) {
         ),
       );
   }
+  async function submitOrder(receiptFile) {
+      const payload = {
+        ...draft,
+        payment_mode: draft.payment_mode === "at_restaurant" ? "at_restaurant" : "online",
+        method: draft.payment_mode === "at_restaurant" ? null : method,
+        total: total(),
+        items: items(),
+      };
+      const fingerprint = JSON.stringify(payload);
+      let ref = read("snounu-pending-request", null);
+      if (ref?.fingerprint !== fingerprint) {
+        ref = {
+          id: crypto.randomUUID(),
+          secret: Array.from(crypto.getRandomValues(new Uint8Array(32)), (n) =>
+            n.toString(16).padStart(2, "0"),
+          ).join(""),
+          fingerprint,
+        };
+        localStorage.setItem("snounu-pending-request", JSON.stringify(ref));
+      }
+      const o = await call({ ...payload, id: ref.id, secret: ref.secret, action: "submit" }, receiptFile);
+      const saved = {
+        id: ref.id, secret: ref.secret, number: o.number, status: o.status,
+        fulfillment_status: o.fulfillment_status,
+      };
+      tracking = [saved, ...tracking.filter((r) => r.id !== ref.id)];
+      localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
+      localStorage.removeItem("snounu-pending-request");
+      cart = [];
+      save();
+      proof = null;
+      draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "",
+        delivery_landmark: "", backup_phone: "", payment_mode: "online" };
+      announce(saved, o);
+      await status(saved, o);
+  }
+  let proofAttempts=0,proofWarning=null,proofHelp=null;
   function checkout() {
     const b = layout(t("تأكيد الطلب", "Confirm order")),
       f = el("form");
@@ -507,8 +544,28 @@ export function installCart({ catalog, name, description, closed, page }) {
       backupPhoneInput,
       el("small", t("أدخل رقماً مختلفاً عن رقم الجوال الأساسي.", "Must be different from the primary phone number."))
     );
+    const payPlace = el("fieldset");
+    payPlace.className = "pay-service-choice pay-arrival-payment";
+    payPlace.append(el("legend", t("كيف تريد الدفع؟", "How would you like to pay?")));
+    const payOptions = [
+      ["online", t("الدفع الإلكتروني الآن", "Pay online now")],
+      ["at_restaurant", t("الدفع عند الوصول إلى المطعم", "Pay at the restaurant")]
+    ];
+    for(const [value,label] of payOptions){
+      const line=el("label");
+      const radio=el("input");radio.type="radio";radio.name="payment_mode";radio.value=value;
+      radio.checked=(draft.payment_mode||"online")===value;
+      radio.onchange=()=>{draft.payment_mode=value;next.textContent=value==="at_restaurant"?
+        t("تأكيد طلب الحضور", "Place dine-in order"):t("متابعة لطريقة الدفع","Continue to payment");};
+      line.append(radio,el("span",label));payPlace.append(line);
+    }
+    payPlace.append(el("small",t("عند الدفع في المطعم لا تحتاج رفع إثبات. لن يبدأ تجهيز الطلب حتى تؤكد الإدارة حضورك واستلام الدفع.",
+      "No payment proof required on arrival. Preparation starts after the restaurant confirms your arrival and payment.")));
     function updateService(type) {
       draft.service_type = type;
+      if(type!=="dine_in")draft.payment_mode="online";
+      payPlace.hidden=type!=="dine_in";
+      for(const radio of payPlace.querySelectorAll("input[type=radio]"))radio.checked=radio.value===(draft.payment_mode||"online");
       addressLabel.hidden = type !== "delivery";
       deliveryAddress.required = type === "delivery";
       landmarkLabel.hidden = type !== "delivery";
@@ -530,7 +587,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       service.append(label);
     }
     service.append(addressLabel, landmarkLabel, backupLabel);
-    f.append(service);
+    f.append(service,payPlace);
     updateService(draft.service_type);
     for (const [k, label, type] of [
       ["customer", t("الاسم", "Name"), "text"],
@@ -565,6 +622,8 @@ export function installCart({ catalog, name, description, closed, page }) {
     const next = el("button", t("متابعة لطريقة الدفع", "Continue to payment"));
     next.className = "pay-primary";
     f.append(next, button(t("رجوع", "Back"), showCart));
+    if(draft.service_type==="dine_in"&&draft.payment_mode==="at_restaurant")
+      next.textContent=t("تأكيد طلب الحضور","Place dine-in order");
     f.onsubmit = (e) => {
       e.preventDefault();
       if (!["dine_in","delivery"].includes(draft.service_type)) {
@@ -610,7 +669,9 @@ export function installCart({ catalog, name, description, closed, page }) {
               ),
             );
         }
-        payment();
+        if(draft.service_type==="dine_in"&&draft.payment_mode==="at_restaurant")
+          await submitOrder(null);
+        else payment();
       }, next)();
     };
   }
@@ -623,6 +684,17 @@ export function installCart({ catalog, name, description, closed, page }) {
       t("إثبات الدفع · حتى 4 MB", "Payment receipt · up to 4 MB"),
       input,
     );
+    proofWarning=el("small");
+    proofWarning.className="pay-proof-error";
+    proofWarning.hidden=true;
+    proofHelp=el("a",t("تواجه مشكلة في اعتماد الدفع؟ اتصل بالمطعم",
+      "Trouble confirming payment? Call the restaurant"));
+    proofHelp.className="pay-proof-support";
+    proofHelp.href="tel:"+encodeURIComponent(String(cfg?.hotline||"#889").trim());
+    proofHelp.hidden=true;
+    proofHelp.setAttribute("aria-label",t("الاتصال بخدمة المطعم على "+(cfg?.hotline||"#889"),
+      "Call restaurant support at "+(cfg?.hotline||"#889")));
+    input.parentNode.append(proofWarning,proofHelp);
     const preview = el("div");
     b.append(preview);
     let url = "";
@@ -644,6 +716,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     draw();
     input.onchange = () => {
       proof = input.files[0];
+      if(proof){proofAttempts=0;if(proofWarning)proofWarning.hidden=true;if(proofHelp)proofHelp.hidden=true;}
       if (proof && (proof.size > 4194304 || !formats.includes(proof.type))) {
         proof = null;
         input.value = "";
@@ -795,45 +868,19 @@ export function installCart({ catalog, name, description, closed, page }) {
     const submit = button(t("إرسال للمراجعة", "Submit for review"), null);
     submit.className = "pay-primary";
     submit.onclick = task(async () => {
-      if (!proof)
-        throw Error(t("ارفع وصل التحويل أولاً", "Choose a receipt first"));
-      const payload = {
-          ...draft,
-          method,
-          total: total(),
-          items: items(),
-        },
-        fingerprint = JSON.stringify(payload);
-      let ref = read("snounu-pending-request", null);
-      if (ref?.fingerprint !== fingerprint) {
-        ref = {
-          id: crypto.randomUUID(),
-          secret: Array.from(crypto.getRandomValues(new Uint8Array(32)), (n) =>
-            n.toString(16).padStart(2, "0"),
-          ).join(""),
-          fingerprint,
-        };
-        localStorage.setItem("snounu-pending-request", JSON.stringify(ref));
+      if (!proof) {
+        proofAttempts++;
+        if(proofWarning){
+          proofWarning.hidden=false;
+          proofWarning.textContent=t("يرجى رفع صورة أو PDF لإثبات التحويل قبل إرسال طلبك.",
+            "Upload a payment receipt (photo or PDF) before submitting.");
+          proofWarning.setAttribute("role","alert");
+          proofWarning.scrollIntoView({block:"nearest",behavior:"smooth"});
+        }
+        if(proofAttempts>=2 && proofHelp)proofHelp.hidden=false;
+        return;
       }
-      const o = await call(
-        { ...payload, id: ref.id, secret: ref.secret, action: "submit" },
-        proof,
-      );
-      const saved = {
-        id: ref.id,
-        secret: ref.secret,
-        number: o.number,
-        status: o.status,
-      };
-      tracking = [saved, ...tracking.filter((r) => r.id !== ref.id)];
-      localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
-      localStorage.removeItem("snounu-pending-request");
-      cart = [];
-      save();
-      proof = null;
-      draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "", delivery_landmark: "", backup_phone: "" };
-      announce(saved, o);
-      await status(saved, o);
+      await submitOrder(proof);
     }, submit);
     b.append(submit, button(t("رجوع", "Back"), checkout));
   }
