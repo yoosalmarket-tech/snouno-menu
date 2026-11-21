@@ -336,14 +336,13 @@ export async function settings({ root, api, notice, endpoint }) {
         ["account", "رقم الحساب أو المحفظة", m.account],
         ["holder", "صاحب الحساب", m.holder],
         ["instructions", "تعليمات التحويل", m.instructions],
-        ["qr_url", "رابط صورة QR (يُملأ تلقائياً بعد الرفع)", m.qr_url, "url"],
         ["url", "رابط الدفع الرسمي (اختياري)", m.url, "url"],
         ["position", "الترتيب", m.position ?? methods.length + 1, "number"],
         ["enabled", "مفعّلة", m.enabled, "checkbox"],
       ],
       async (body) => {
         if (iconFile.files[0]) body.icon = await uploadPaymentImage(iconFile.files[0], "logo");
-        if (clearQr.checked) body.qr_url = "";
+        body.qr_url = clearQr.checked ? "" : (m.qr_url || "");
         if (qrFile.files[0]) body.qr_url = await uploadPaymentImage(qrFile.files[0], "qr");
         // A payment can only be enabled once Snounu's real receiving account is entered.
         await api(rootPath + "pay_methods" + (m.id ? "?id=eq." + m.id : ""), {

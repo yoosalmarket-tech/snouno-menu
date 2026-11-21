@@ -699,6 +699,7 @@ export function installCart({ catalog, name, description, closed, page }) {
         if (previousStatus && previousStatus !== o.status) announce(ref, o);
         ref.status = o.status;
         localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
+        refresh();
         b.replaceChildren();
         pulse(b);
         b.append(
@@ -869,6 +870,7 @@ export function installCart({ catalog, name, description, closed, page }) {
         if (o.status === ref.status) continue;
         ref.status = o.status;
         localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
+        refresh();
         announce(ref, o);
       }
     } catch {
