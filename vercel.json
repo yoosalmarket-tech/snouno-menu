@@ -18,6 +18,10 @@
   ],
   "rewrites": [
     {
+      "source": "/admin/assistant",
+      "destination": "/admin/index.html"
+    },
+    {
       "source": "/admin/orders",
       "destination": "/admin/index.html"
     },
@@ -134,6 +138,9 @@
   "functions": {
     "api/seo-page.js": {
       "includeFiles": "public/index.html"
+    },
+    "api/ai-assistant.js": {
+      "maxDuration": 30
     }
   }
 }

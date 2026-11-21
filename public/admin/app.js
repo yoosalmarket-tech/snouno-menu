@@ -7,6 +7,7 @@ const sections = {
   orders:['الطلبات والمدفوعات',[]],payment_settings:['إعدادات الدفع',[]],
   overview: ['اللوحة الرئيسية', []],
   investment: ['الاستثمار', []],
+  assistant: ['مساعد سنونو الذكي', []],
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
   menu_settings: ['مطعم السنونو', [
@@ -61,7 +62,7 @@ const adminRouteSlugs={
  menu_settings:'restaurant',menu_links:'links',menu_ads:'ads',
  seo:'seo',seo_queries:'search-queries',
  rankings:'ratings',events:'analytics',submissions:'messages',
- menu_staff:'staff',account:'account'
+ menu_staff:'staff',account:'account',assistant:'assistant'
 };
 const adminPath=key=>'/admin/'+(adminRouteSlugs[key]||adminRouteSlugs.overview);
 function keyFromAdminLocation(){
@@ -72,7 +73,7 @@ function keyFromAdminLocation(){
  return Object.hasOwn(sections,hash)?hash:null;
 }
 function authorizedAdminSection(key){
- return Object.hasOwn(sections,key)&&(!['orders','payment_settings','menu_staff','account','events','overview','investment','seo_queries'].includes(key)||role==='owner');
+ return Object.hasOwn(sections,key)&&(!['orders','payment_settings','menu_staff','account','events','overview','investment','seo_queries','assistant'].includes(key)||role==='owner');
 }
 function closeAdminMobileNav({restoreFocus=false}={}){
  const open=document.body.classList.contains('admin-mobile-open');
@@ -140,6 +141,7 @@ function loggedOut(){ generation++;role=null;closeAdminMobileNav();$('admin-page
 function adminSidebarIcon(key){
  const icons={
   investment:'<path d="M3 20h18M5 17V9m7 8V4m7 13v-6"/><path d="m4 7 6-4 4 4 7-5"/>',
+  assistant:'<rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8 9h.01M16 9h.01M8 14c2.4 2 5.6 2 8 0M12 1v3"/>',
   overview:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   dishes:'<path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="1"/><circle cx="7" cy="12" r="1"/><circle cx="7" cy="18" r="1"/>',
   categories:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
@@ -210,14 +212,14 @@ function buildAdminSidebar(email){
  const links=node('div');links.className='admin-sidebar-links';links.id='admin-sidebar-links';
  let prevGroup='';
  const groups={
-  orders:'الدفع',payment_settings:'الدفع',overview:'نظرة عامة',investment:'نظرة عامة',dishes:'محتوى المنيو',categories:'محتوى المنيو',
+  orders:'الدفع',payment_settings:'الدفع',overview:'نظرة عامة',investment:'نظرة عامة',assistant:'الذكاء الاصطناعي',dishes:'محتوى المنيو',categories:'محتوى المنيو',
   menu_settings:'محتوى المنيو',menu_links:'محتوى المنيو',menu_ads:'محتوى المنيو',
   seo:'تحسين الظهور في Google',seo_queries:'تحسين الظهور في Google',
   rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
   menu_staff:'إدارة الحساب',account:'إدارة الحساب'
  };
  for(const [key,[label]] of Object.entries(sections)){
-  if(['orders','payment_settings','menu_staff','account','events','overview','investment','seo_queries'].includes(key)&&role!=='owner')continue;
+  if(['orders','payment_settings','menu_staff','account','events','overview','investment','seo_queries','assistant'].includes(key)&&role!=='owner')continue;
   const group=groups[key]||'المزيد';
   if(group!==prevGroup){const groupLabel=node('span',group);groupLabel.className='admin-sidebar-group';links.append(groupLabel);prevGroup=group;}
   const btn=node('a');btn.href=adminPath(key);btn.id='admin-tab-'+key;
@@ -1263,6 +1265,19 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  const sameSection=section===key;
  const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
+ if(key==='assistant'){
+   const assistantModule=await import('./assistant.js?v=edit-all-payment-05');
+   if(ticket!==generation)return;
+   assistantModule.renderAssistant({
+     root:$('body'),
+     getToken:async()=>{
+       await api('/auth/v1/user'); // refresh the owner session as needed
+       if(!session?.access_token)throw new Error('يلزم تسجيل الدخول');
+       return session.access_token;
+     }
+   });
+   return;
+ }
  if(key==='orders'||key==='payment_settings'){
   const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=04-7');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint});return;
  }

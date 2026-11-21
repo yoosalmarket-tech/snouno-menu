@@ -1,0 +1,38 @@
+/* EDIT ALL PAYMENT 05 — responsive owner-only assistant */
+.snounu-ai{--a:#FDBE2D;--ink:#25201b;--line:#e3d9c8;direction:rtl;box-sizing:border-box;display:grid;gap:15px;width:100%;max-width:1000px;margin:0 auto 40px;color:var(--ink,#29251f)}
+.snounu-ai-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:clamp(22px,4vw,36px);border-radius:22px;background:linear-gradient(125deg,#24211e,#3b3329);color:#fffaf1;box-shadow:0 12px 40px #27211222}
+.snounu-ai-hero div{display:grid;gap:9px}
+.snounu-ai-hero small{font-size:12px;letter-spacing:.12em;color:#ffd56b;direction:ltr;text-align:right;font-weight:800}
+.snounu-ai-hero h2{font-size:clamp(24px,4vw,34px);color:#fff;margin:0;font-weight:900}
+.snounu-ai-hero p{font-size:14px;line-height:1.8;max-width:650px;color:#e4dcd0;margin:0}
+.snounu-ai-glyph{width:65px;height:65px;min-width:65px;border-radius:19px;background:var(--a);color:#2d2618;font-size:40px;display:grid;place-items:center;transform:rotate(-8deg)}
+.snounu-ai-meta{display:flex;gap:8px;flex-wrap:wrap}
+.snounu-ai-meta span{background:#faf4e8;color:#654c26;border:1px solid #e9d8b7;padding:7px 12px;border-radius:999px;font-size:12px}
+.snounu-ai-toolbar{display:flex;justify-content:flex-end}
+.snounu-ai-reset{border:1px solid var(--line);background:white;color:#493c2b;border-radius:11px;padding:9px 15px;min-height:40px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.snounu-ai-log{display:flex;flex-direction:column;gap:16px;overflow:auto;min-height:320px;max-height:55dvh;background:linear-gradient(180deg,#fffefa,#fcfaf5);border:1px solid var(--line);border-radius:20px;padding:clamp(12px,2vw,22px);scroll-behavior:smooth}
+.snounu-ai-welcome{display:grid;gap:13px;align-content:center;justify-items:center;text-align:center;margin:auto;max-width:700px;padding:24px 6px}
+.snounu-ai-welcome h3{margin:0;font-size:20px;font-weight:850}
+.snounu-ai-welcome p{margin:0;font-size:13px;color:#70685e}
+.snounu-ai-suggestions{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}
+.snounu-ai-suggest{font:inherit;font-size:13px;border:1px solid #e6cb93;background:#fff6e4;color:#533b1b;border-radius:11px;min-height:42px;padding:10px 13px;cursor:pointer;transition:background .15s ease}
+.snounu-ai-suggest:hover{background:#fde7b5}
+.snounu-ai-message{max-width:min(86%,720px);align-self:flex-start;display:grid;gap:5px}
+.snounu-ai-message.snounu-ai-user{align-self:flex-end}
+.snounu-ai-message small{font-size:12px;color:#867b6a;font-weight:750}
+.snounu-ai-text{padding:13px 17px;border:1px solid #e3d7bf;border-radius:17px;background:white;color:#33291e;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;font-size:14px}
+.snounu-ai-user .snounu-ai-text{border-color:#e9b944;background:#ffe5a1}
+.snounu-ai-message.is-error .snounu-ai-text{background:#fff0ee;color:#8c2d26;border-color:#ddaa9c}
+.snounu-ai-message.is-loading .snounu-ai-text{animation:snounu-ai-loading 1.2s ease-in-out infinite}
+@keyframes snounu-ai-loading{50%{opacity:.55}}
+.snounu-ai-form{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px;display:grid;gap:8px;box-shadow:0 5px 24px #46371b10}
+.snounu-ai-prompt{display:block;width:100%;max-width:100%;min-height:65px;box-sizing:border-box;resize:vertical;background:#fff!important;color:var(--ink)!important;border:0!important;box-shadow:none!important;font:inherit;line-height:1.9;font-size:15px;padding:9px 11px}
+.snounu-ai-prompt:focus-visible{outline:2px solid #edbd54!important;outline-offset:-2px;border-radius:8px}
+.snounu-ai-controls{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.snounu-ai-controls small{font-size:11px;color:#9b8972;direction:ltr}
+.snounu-ai-submit{border:0;border-radius:12px;background:var(--a);min-height:44px;padding:10px 19px;color:#221b12;font:inherit;font-weight:850;cursor:pointer}
+.snounu-ai-submit:hover{background:#f5b51e}
+.snounu-ai-submit:disabled,.snounu-ai-reset:disabled,.snounu-ai-suggest:disabled{opacity:.55;cursor:wait}
+.snounu-ai-disclaimer{font-size:12px;line-height:1.8;color:#827568;margin:0 5px}
+@media(max-width:600px){.snounu-ai-hero{padding:20px;border-radius:16px}.snounu-ai-glyph{width:48px;min-width:48px;height:48px;font-size:32px;border-radius:14px}.snounu-ai-hero h2{font-size:23px}.snounu-ai-log{max-height:50dvh;min-height:340px}.snounu-ai-message{max-width:95%}.snounu-ai-prompt{min-height:60px}}
+@media(prefers-reduced-motion:reduce){.snounu-ai-log{scroll-behavior:auto}.snounu-ai-message.is-loading .snounu-ai-text{animation:none}}
