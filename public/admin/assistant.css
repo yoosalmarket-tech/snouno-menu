@@ -36,3 +36,8 @@
 .snounu-ai-disclaimer{font-size:12px;line-height:1.8;color:#827568;margin:0 5px}
 @media(max-width:600px){.snounu-ai-hero{padding:20px;border-radius:16px}.snounu-ai-glyph{width:48px;min-width:48px;height:48px;font-size:32px;border-radius:14px}.snounu-ai-hero h2{font-size:23px}.snounu-ai-log{max-height:50dvh;min-height:340px}.snounu-ai-message{max-width:95%}.snounu-ai-prompt{min-height:60px}}
 @media(prefers-reduced-motion:reduce){.snounu-ai-log{scroll-behavior:auto}.snounu-ai-message.is-loading .snounu-ai-text{animation:none}}
+
+/* EDIT ALL PAYMENT 07.2 — links to external sources for weather and trends */
+.snounu-ai-sources{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:7px 0;}
+.snounu-ai-sources>small{width:100%;font-size:11px;font-weight:700;color:#77674d}
+.snounu-ai-source{display:inline-block;max-width:100%;overflow-wrap:anywhere;border:1px solid #d4c09a;border-radius:10px;padding:7px 10px;color:#553a18;text-decoration:underline;background:#fff7e6;font-size:12px;line-height:1.5}

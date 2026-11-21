@@ -1280,7 +1280,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='assistant'){
-   const assistantModule=await import('./assistant.js?v=edit-all-payment-07');
+   const assistantModule=await import('./assistant.js?v=edit-all-payment-07-2');
    if(ticket!==generation)return;
    assistantModule.renderAssistant({
      root:$('body'),

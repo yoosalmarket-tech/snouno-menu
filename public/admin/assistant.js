@@ -13,7 +13,7 @@ export function renderAssistant({root,getToken}){
   const heroCopy=create('div');
   heroCopy.append(create('small','','SNOUNU  ✦  AI'),
     create('h2','','اسأل عن مطعمك'),
-    create('p','','مساعد يحوّل تقارير المبيعات والطلبات وتفاعل الزوار إلى أفكار عملية.'));
+    create('p','','تابع أخبار غزة وتطورات مطاعمها أولاً، واكتشف أفكار المطاعم حول العالم، مع الطقس وبيانات سنونو والأسئلة العامة.'));
   hero.append(heroCopy,create('span','snounu-ai-glyph','✦'));
   const badges=create('div','snounu-ai-meta');
   badges.append(create('span','','قراءة فقط · بدون تعديل البيانات'),
@@ -34,13 +34,19 @@ export function renderAssistant({root,getToken}){
     ['الوجبات الأكثر مبيعاً','ما الوجبات الأكثر مبيعاً وإيراداتها حسب السجلات المتاحة؟'],
     ['الطلبات قيد المراجعة','كم عدد الطلبات التي تنتظر اعتماد الدفع الآن؟'],
     ['تفاعل الزوار','ما الوجبات الأكثر جذباً للتفاعل خلال الأيام الأخيرة؟'],
-    ['أفكار تسويقية','اقترح ثلاث أفكار قابلة للتنفيذ هذا الأسبوع بناء على تقارير المطعم.']
+    ['أفكار تسويقية','اقترح ثلاث أفكار قابلة للتنفيذ هذا الأسبوع بناء على تقارير المطعم.'],
+    ['طقس غزة','كيف الطقس في غزة الآن؟ وماذا عن الساعات القادمة؟'],
+    ['أخبار غزة','ما أهم أخبار غزة والمستجدات خلال الأيام الأخيرة؟ مع المصادر وتواريخ النشر.'],
+    ['مطاعم غزة','ما أحدث أخبار مطاعم غزة والمشاريع الغذائية المحلية؟ وما الفرص التي تستحق المتابعة؟'],
+    ['مطاعم العالم','ما أحدث الاتجاهات والأخبار في المطاعم حول العالم؟ وكيف يمكن تطبيقها في غزة؟'],
+    ['ترندات التسويق','ما أحدث ترندات تسويق المطاعم عالمياً وما الذي يمكن اختباره في غزة؟'],
+    ['سؤال عام','كم يبلغ عدد سكان الولايات المتحدة تقريباً؟ وما تاريخ تقديرك؟']
   ];
   welcome.append(suggestions);log.append(welcome);
   const form=create('form','snounu-ai-form');
   const prompt=create('textarea','snounu-ai-prompt');
   prompt.rows=2;prompt.required=true;prompt.maxLength=500;
-  prompt.placeholder='اسأل عن المبيعات، الطلبات، الوجبات أو أداء المنيو…';
+  prompt.placeholder='أخبار غزة، مطاعم غزة والعالم، طقس غزة، بيانات سنونو…';
   prompt.setAttribute('aria-label','السؤال');
   const controls=create('div','snounu-ai-controls');
   const counter=create('small','','0 / 500');
@@ -86,6 +92,17 @@ export function renderAssistant({root,getToken}){
         bubble.append(hint);
       } else if(result.mode==='ai' && result.provider==='groq'){
         bubble.append(create('small','snounu-ai-mode','إجابة ذكية عبر Groq'));
+      }
+      if(Array.isArray(result.sources)&&result.sources.length){
+        const linked=create('div','snounu-ai-sources');
+        linked.append(create('small','','مصادر مباشرة'));
+        for(const item of result.sources.slice(0,5)){
+          if(typeof item?.url!=='string'||!/^https:\/\//i.test(item.url))continue;
+          const a=create('a','snounu-ai-source',String(item.label||'فتح المصدر').slice(0,80));
+          a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';
+          linked.append(a);
+        }
+        bubble.append(linked);
       }
       history.push({role:'user',content:question},{role:'assistant',content:result.answer.trim()});
       if(history.length>12)history=history.slice(-12);
