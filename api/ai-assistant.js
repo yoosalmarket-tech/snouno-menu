@@ -286,10 +286,12 @@ export default async function handler(req,res){
     .map(x=>({role:x.role,content:x.content.slice(0,700)})):[];
   const key=process.env.GEMINI_API_KEY?.trim();
   if(!key)return send(res,503,{error:'gemini_not_configured',message:'أضف GEMINI_API_KEY إلى إعدادات Production في Vercel.'});
-  const combined=[question,...history.slice(-2).filter(x=>x.role==='user').map(x=>x.content)].join(' ');
-  const news=WANT_TRENDS.test(combined);
-  const weather=WANT_WEATHER.test(combined);
-  const business=WANT_RESTAURANT.test(combined);
+  // Always classify CURRENT intent. Previous turns are passed to the model
+  // for continuity, but must not force unrelated questions into news search.
+  const combined=question;
+  const news=WANT_TRENDS.test(question);
+  const weather=WANT_WEATHER.test(question);
+  const business=WANT_RESTAURANT.test(question);
   const now=new Date().toISOString();
   let restaurant=null,forecast=null;
   if(business&&!news){

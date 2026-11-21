@@ -41,3 +41,29 @@
 .snounu-ai-sources{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:7px 0;}
 .snounu-ai-sources>small{width:100%;font-size:11px;font-weight:700;color:#77674d}
 .snounu-ai-source{display:inline-block;max-width:100%;overflow-wrap:anywhere;border:1px solid #d4c09a;border-radius:10px;padding:7px 10px;color:#553a18;text-decoration:underline;background:#fff7e6;font-size:12px;line-height:1.5}
+
+/* EDIT ALL PAYMENT 08.4 — global admin "header" has a fixed height.
+   The assistant hero is content-driven and MUST NOT inherit that fixed height. */
+#body .snounu-ai{min-width:0;max-width:100%;gap:16px;}
+#body .snounu-ai-hero{
+ height:auto!important;min-height:140px!important;max-height:none!important;
+ padding:24px!important;margin:0!important;overflow:visible;
+ display:flex!important;align-items:center!important;justify-content:space-between!important;
+ gap:18px;border:1px solid #4c4030;border-bottom:3px solid #FDBE2D!important;
+ border-radius:22px;box-sizing:border-box;
+}
+#body .snounu-ai-hero>div{min-width:0;flex:1;display:grid;gap:9px;}
+#body .snounu-ai-hero h2{margin:0!important;position:static!important;transform:none!important;
+ line-height:1.45!important;color:#fff!important;font-size:clamp(22px,4vw,34px)!important;overflow-wrap:anywhere;}
+#body .snounu-ai-hero p{margin:0!important;line-height:1.8!important;color:#e4dcd0!important;font-size:14px!important;}
+#body .snounu-ai-hero .snounu-ai-glyph{flex:0 0 60px;min-width:60px;width:60px;height:60px;}
+#body .snounu-ai-message{min-width:0;max-width:min(92%,720px);}
+#body .snounu-ai-log{min-width:0;}
+@media(max-width:600px){
+ #body .snounu-ai-hero{min-height:0!important;padding:18px!important;gap:12px;border-radius:18px;}
+ #body .snounu-ai-hero h2{font-size:22px!important;}
+ #body .snounu-ai-hero p{font-size:13px!important;line-height:1.75!important;}
+ #body .snounu-ai-hero .snounu-ai-glyph{flex:0 0 48px;min-width:48px;width:48px;height:48px;}
+ #body .snounu-ai-message{max-width:95%;}
+ #body .snounu-ai-log{max-height:60dvh;}
+}
