@@ -1,4 +1,4 @@
-import {installCart} from './cart.js?v=04-11';
+import {installCart} from './cart.js?v=06';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
