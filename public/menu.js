@@ -1,3 +1,4 @@
+import {installCart} from './cart.js';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
@@ -206,7 +207,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=availability2-20261120')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=edit-all-payment-1')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -262,7 +263,7 @@ async function syncRichMode(){
   const module=await richAssets();
   if(version!==richRevision||!richDesired||currentPage()!=='menu')return;
   richController=module.createRichMenu({
-   host:target,getData:richData,onOpen:detail,
+   cartButton:cartUi?.button,host:target,getData:richData,onOpen:detail,
    onMealView:meal=>trackMealEvent('view_item',meal),
    onSelection:selection=>{
     if(selection?.mealId)noteSelection('meal',selection.mealId);
@@ -836,6 +837,7 @@ function cancelWelcomeReveal(){
  loader.style.visibility='hidden';
  loader.style.pointerEvents='none';
 }
+let cartUi;
 const pages=['welcome','menu','contact'];
 function currentPage(){
  const path=location.pathname.replace(/^\/|\/$/g,'');
@@ -1167,7 +1169,7 @@ function detail(d){
   const unavailable=make('button',isEnglish()?'Currently unavailable':'غير متوفر حالياً');
   unavailable.type='button';unavailable.disabled=true;
   unavailable.className='meal-order-unavailable';buttons.append(unavailable);
- }else contactLinks(buttons,ordering,d);
+ }else {if(cartUi)buttons.append(cartUi.button(d));contactLinks(buttons,ordering,d);}
  content.append(buttons);
  if(d.id&&!isPreview){
   const share=make('button');
@@ -1324,7 +1326,7 @@ async function load(){
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   // The SEO fetch runs after initial menu data, outside the 3-second decision.
   setTimeout(()=>void refreshSeoWelcomeAlts(),3200);
   void syncRichMode();

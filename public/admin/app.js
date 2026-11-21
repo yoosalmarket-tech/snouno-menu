@@ -4,6 +4,7 @@ const endpoint = 'https://wknpuzdyemwkllmxehyy.supabase.co';
 const apiKey = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const $ = id => document.getElementById(id);
 const sections = {
+  orders:['الطلبات والمدفوعات',[]],payment_settings:['إعدادات الدفع',[]],
   overview: ['اللوحة الرئيسية', []],
   investment: ['الاستثمار', []],
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['makook_url','رابط الوجبة المباشر من مكوك (اختياري)','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
@@ -56,7 +57,7 @@ let session=JSON.parse(localStorage.getItem(sessionKey)||sessionStorage.getItem(
 // Clean, refreshable URLs for every dashboard section. Legacy # links are
 // accepted on initial load only and replaced with canonical path URLs.
 const adminRouteSlugs={
- overview:'overview',investment:'investment',dishes:'dishes',categories:'categories',
+ orders:'orders',payment_settings:'payment-settings',overview:'overview',investment:'investment',dishes:'dishes',categories:'categories',
  menu_settings:'restaurant',menu_links:'links',menu_ads:'ads',
  seo:'seo',seo_queries:'search-queries',
  rankings:'ratings',events:'analytics',submissions:'messages',
@@ -71,7 +72,7 @@ function keyFromAdminLocation(){
  return Object.hasOwn(sections,hash)?hash:null;
 }
 function authorizedAdminSection(key){
- return Object.hasOwn(sections,key)&&(!['menu_staff','account','events','overview','investment','seo_queries'].includes(key)||role==='owner');
+ return Object.hasOwn(sections,key)&&(!['orders','payment_settings','menu_staff','account','events','overview','investment','seo_queries'].includes(key)||role==='owner');
 }
 function closeAdminMobileNav({restoreFocus=false}={}){
  const open=document.body.classList.contains('admin-mobile-open');
@@ -209,14 +210,14 @@ function buildAdminSidebar(email){
  const links=node('div');links.className='admin-sidebar-links';links.id='admin-sidebar-links';
  let prevGroup='';
  const groups={
-  overview:'نظرة عامة',investment:'نظرة عامة',dishes:'محتوى المنيو',categories:'محتوى المنيو',
+  orders:'الدفع',payment_settings:'الدفع',overview:'نظرة عامة',investment:'نظرة عامة',dishes:'محتوى المنيو',categories:'محتوى المنيو',
   menu_settings:'محتوى المنيو',menu_links:'محتوى المنيو',menu_ads:'محتوى المنيو',
   seo:'تحسين الظهور في Google',seo_queries:'تحسين الظهور في Google',
   rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
   menu_staff:'إدارة الحساب',account:'إدارة الحساب'
  };
  for(const [key,[label]] of Object.entries(sections)){
-  if(['menu_staff','account','events','overview','investment','seo_queries'].includes(key)&&role!=='owner')continue;
+  if(['orders','payment_settings','menu_staff','account','events','overview','investment','seo_queries'].includes(key)&&role!=='owner')continue;
   const group=groups[key]||'المزيد';
   if(group!==prevGroup){const groupLabel=node('span',group);groupLabel.className='admin-sidebar-group';links.append(groupLabel);prevGroup=group;}
   const btn=node('a');btn.href=adminPath(key);btn.id='admin-tab-'+key;
@@ -996,7 +997,9 @@ async function renderGaOverview(days=28){
  refresh.id='ga-refresh';refresh.dataset.trackAction=investment?'ga_investment_refresh':'ga_overview_refresh';
  top.append(interval,refresh);
  const status=node('p','جارٍ تحميل الإحصائيات من GA4…');status.id='ga-loading';
+ const salesPanel=node('section');
  area.replaceChildren(top,status);
+ if(investment){area.prepend(salesPanel);void import('./payments.js').then(m=>m.sales(salesPanel,api));}
  try{
   // Use the same authenticated session as the menu admin; no GA credentials in the browser.
   if(session?.expires_at*1000<Date.now()+60000)await api('/auth/v1/user');
@@ -1187,7 +1190,7 @@ async function renderGaOverview(days=28){
   area.classList.add('ga-overview');
   if(investment){
    const search=gaVisitSourceSearch(days,ticket);
-   area.replaceChildren(hero,primaryMetrics,...(pendingNote?[pendingNote]:[]),
+   area.replaceChildren(salesPanel,hero,primaryMetrics,...(pendingNote?[pendingNote]:[]),
     search,topSources,sources,estimate,ranks,live,historyTitle,metrics,refTable,eventsTable,foot,...(notes?[notes]:[]));
   }else{
    area.replaceChildren(hero,primaryMetrics,chartsRow,insightsRow,...(pendingNote?[pendingNote]:[]),
@@ -1260,6 +1263,9 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  const sameSection=section===key;
  const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
+ if(key==='orders'||key==='payment_settings'){
+  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint});return;
+ }
  if(key==='seo'||key==='seo_queries'){
    $('body').replaceChildren();
    const ticketNow=generation;

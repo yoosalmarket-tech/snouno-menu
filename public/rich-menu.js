@@ -5,7 +5,7 @@ const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 const validImage=value=>{if(!value)return '';try{const u=new URL(value,location.origin);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
 const categoryWords=name=>{const a=String(name||'SNOUNU').trim().split(/\s+/);return [a.slice(0,Math.ceil(a.length/2)).join(' '),a.slice(Math.ceil(a.length/2)).join(' ')]};
-export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelection,onShare,onMealView}){
+export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit,onSelection,onShare,onMealView}){
  const root=mk('div','rm-app');root.dir='ltr';root.id='rich-interactive-stage';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
@@ -684,6 +684,7 @@ export function createRichMenu({host,getData,onOpen,onFavorite,onExit,onSelectio
    }
    const heading=mk('h3','rm-sheet-links-heading',english?(kind==='order'?'Choose an ordering service':'Order or contact us'):(kind==='order'?'اختار التطبيق المناسب للطلب':'اطلب أو تواصل معنا'));
    u.sheetBody.append(heading);
+   if(kind==='order'&&cartButton)u.sheetBody.append(cartButton(meal));
    const channels=kind==='order'?['sonbol','makook']:['makook','sonbol','whatsapp'];
    const links=mk('div','rm-sheet-links');
    for(const channel of channels){const link=linkCard(channel,kind==='order'?meal:null);if(link)links.append(link);}
