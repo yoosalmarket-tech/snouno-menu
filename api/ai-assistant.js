@@ -5,6 +5,45 @@ const SUPABASE = 'https://wknpuzdyemwkllmxehyy.supabase.co';
 const ANON_KEY = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const MODEL = 'gemini-3.8-flash';
 const NEWS_MODEL = 'gemini-2.5-flash-lite';
+const FREE_TEXT_MODELS=[
+  'gemini-3.8-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3.6-flash',
+  'gemini-2.5-flash-lite'
+];
+let modelCatalogCache=null;
+async function availableGeminiModels(key){
+  if(modelCatalogCache && Date.now()-modelCatalogCache.checkedAt<600000)
+    return modelCatalogCache.models;
+  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',{
+    headers:{'x-goog-api-key':key,'Accept':'application/json'},
+    signal:AbortSignal.timeout(6500)
+  });
+  if(!response.ok){
+    const err=new Error('Model catalog unavailable');
+    err.status=response.status;
+    throw err;
+  }
+  const json=await response.json();
+  const models=new Set((Array.isArray(json.models)?json.models:[])
+    .filter(item=>Array.isArray(item.supportedGenerationMethods)&&
+      item.supportedGenerationMethods.includes('generateContent'))
+    .map(item=>String(item.name||'').split('/').pop()));
+  modelCatalogCache={models,checkedAt:Date.now()};
+  return models;
+}
+function geminiErrorText(status){
+  if(status===400)return 'تعذّر استخدام النموذج أو إعداداته. سنحاول نموذجاً متوافقاً آخر.';
+  if(status===401)return 'مفتاح Gemini غير صالح. راجع مفتاح GEMINI_API_KEY في Vercel.';
+  if(status===403)return 'مفتاح Gemini ليس لديه صلاحية استعمال النموذج في هذا المشروع أو المنطقة.';
+  if(status===404)return 'لم يُعثر على نموذج Gemini يدعم هذا المفتاح. راجع قائمة النماذج في Google AI Studio.';
+  if(status===429)return 'بلغت الحد المجاني اليومي أو حد الطلبات لدى Gemini. جرّب مجدداً بعد تجدد الحصة.';
+  if(status>=500)return 'خدمة Gemini تواجه مشكلة مؤقتة. جرّب مجدداً بعد قليل.';
+  return 'تعذّر الوصول إلى Gemini. راجع صلاحية المفتاح وإعدادات المشروع.';
+}
+
 const DAY_MS = 86400000;
 
 function send(res, status, data) {
