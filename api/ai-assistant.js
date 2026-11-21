@@ -205,7 +205,6 @@ async function callGemini(apiKey,model,system,contents,withSearch=false){
     body:JSON.stringify(body)
   });
   if(!resp.ok){
-    console.warn('Gemini API unavailable:',resp.status,model);
     const error=new Error('Gemini request failed');error.status=resp.status;throw error;
   }
   const payload=await resp.json();
@@ -331,16 +330,18 @@ export default async function handler(req,res){
   const weatherSources=forecast?[{label:'MET Norway · طقس مدينة غزة',url:forecast.source_url}]:[];
   try{
     let result;
+    let modelUsed=MODEL;
     try{
       result=await callGemini(key,MODEL,SYSTEM_PROMPT,[{role:'user',parts:[{text:JSON.stringify(data)}]}]);
     }catch(initial){
       if(initial?.status!==404)throw initial;
       // Some newly created free-tier keys may not have the newest Flash model enabled yet.
-      result=await callGemini(key,'gemini-3.6-flash',SYSTEM_PROMPT,
+      modelUsed='gemini-3.6-flash';
+      result=await callGemini(key,modelUsed,SYSTEM_PROMPT,
         [{role:'user',parts:[{text:JSON.stringify(data)}]}]);
     }
     return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
-      provider:'gemini',model:MODEL,sources:weatherSources,data_as_of:now});
+      provider:'gemini',model:modelUsed,sources:weatherSources,data_as_of:now});
   }catch(e){
     return send(res,e?.status===429?429:502,{
       error:'gemini_unavailable',
