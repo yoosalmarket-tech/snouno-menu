@@ -1,0 +1,30 @@
+/* EDIT ALL PAYMENT 06 — custom roles */
+.roles-manager{display:grid;gap:16px;max-width:1100px;direction:rtl;}
+.roles-manager>p{font-size:14px;color:var(--muted,#71675a);line-height:1.9;}
+.roles-manager>h2{margin:0;}
+.roles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,345px),1fr));gap:14px}
+.role-card,.roles-people{padding:18px;border:1px solid #ddd4be;background:var(--surface,#fff);border-radius:18px;min-width:0;}
+.role-card h3{margin:0 0 15px;}
+.role-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.role-header strong{font-size:17px;}
+.role-header small{font-size:12px;color:#877557;}
+.role-editor{display:grid;gap:14px}
+.role-editor>label{display:grid;gap:7px;font-weight:700;font-size:13px}
+.role-editor>label>input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:10px;font:inherit}
+.roles-permissions{display:grid;gap:8px}
+.roles-permission{display:flex;align-items:flex-start;gap:10px;border:1px solid #e6decf;background:#faf7f1;padding:11px;border-radius:12px;cursor:pointer}
+.roles-permission>input{width:18px;min-width:18px;height:18px;margin-top:3px;accent-color:#dca20a}
+.roles-permission>span{display:grid;gap:4px}
+.roles-permission strong{font-size:13px;}
+.roles-permission small{font-size:12px;line-height:1.65;color:#776a57}
+.roles-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.role-save{background:#FDBE2D;border:0;border-radius:10px;padding:9px 13px;min-height:40px;font:inherit;color:#201a10;font-weight:800;cursor:pointer}
+.role-delete{background:#fff;border:1px solid #d1a0a0;border-radius:10px;padding:8px 12px;color:#a33535;font:inherit;cursor:pointer}
+.roles-feedback{font-size:12px;color:#655a4b;line-height:1.6;}
+.roles-people{display:grid;gap:12px}
+.roles-people h3,.roles-people p{margin:0;}
+.roles-member{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:10px;border-bottom:1px solid #eee}
+.roles-member span{flex:1;min-width:180px;overflow-wrap:anywhere}
+.roles-member select{padding:8px;border:1px solid #ccc;border-radius:9px;min-width:150px;font:inherit}
+.role-save:disabled{opacity:.5;cursor:wait}
+@media(max-width:600px){.role-card,.roles-people{padding:12px}.roles-member select{flex:1;min-width:100px}}
