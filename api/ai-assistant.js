@@ -282,7 +282,18 @@ function reportAnswer(context, question, reason) {
     if(hist)out.push('الإجمالي المسجّل: '+hist.approved+' دفعة معتمدة، بقيمة '+hist.approved_sales_ils.toFixed(2)+' ₪.');
     if(!hist&&!week)out.push('بيانات المبيعات غير متاحة حالياً.');
   };
-  if(/(مبيعات|إيراد|دخل|بيع|sale|revenue|شيكل|مجموع)/.test(q))sales();
+  if(/(تفاعل|زوار|مشاهدة|تصفح|view|visit|engage)/.test(q)){
+    if(events){
+      out.push('أحداث التفاعل المسجلة خلال آخر 14 يوماً: '+events.events_sampled+' حدثاً.');
+      const popular=events.most_interacted_meals||[];
+      if(popular.length)out.push('الوجبات الأكثر تفاعلاً في العيّنة:\n'+
+        popular.slice(0,5).map(x=>x.meal+' ('+x.actions+' تفاعلات)').join('، '));
+      else out.push('لا تتوفر بيانات تفاعل كافية لترتيب الوجبات.');
+      out.push('هذه أحداث تفاعل وليست زيارات فريدة أو مبيعات. لذا لا تعني بالضرورة زيادة المبيعات.');
+      if(events.potentially_truncated)out.push('البيانات عيّنة محدودة إلى 1000 حدث.');
+    }else out.push('بيانات التفاعل غير متاحة حالياً.');
+  }
+  else if(/(مبيعات|إيراد|دخل|بيع|sale|revenue|شيكل|مجموع)/.test(q))sales();
   else if(/(وجبات|الأكثر|أفضل|طبق|صنف|dish|meal|best)/.test(q)){
     const meals=hist?.top_sold_meals||[];
     if(meals.length)out.push('الوجبات الأعلى مبيعاً في الطلبات المعتمدة:\n'+meals.slice(0,5).map((m,i)=>
@@ -350,20 +361,37 @@ export default async function handler(req,res){
     if(allowed!==true)return send(res,429,{error:'daily_limit',message:'بلغت حد 20 سؤالاً يومياً.'});
   }catch{return send(res,503,{error:'quota_unavailable',message:'تعذر التحقق من الحد اليومي.'})}
   if(news){
-    // Gemini 3.8 paid Search is intentionally NOT enabled. Attempt free 2.5 Flash-Lite Search.
-    const newsQuestion='التاريخ: '+now+'؛ السؤال: '+question+'؛ ركز على غزة ومطاعم غزة ثم المطاعم حول العالم عند الملاءمة. تحقّق من تاريخ نشر كل مقال أصلي.';
-    try{
-      const result=await callGemini(key,NEWS_MODEL,NEWS_PROMPT,[{role:'user',parts:[{text:newsQuestion}]}],true);
-      if(!checkNews(result.answer,result.links,question))return send(res,200,{
-        answer:'لم أتمكن من التحقق من أخبار حديثة ذات مصادر وتواريخ نشر موثوقة. لن أعرض مقالات قديمة على أنها أخبار جديدة.',
-        mode:'unverified_news',provider:'gemini',sources:[],data_as_of:now});
-      return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
-        provider:'gemini',model:NEWS_MODEL,sources:result.links,data_as_of:now});
-    }catch(e){
+    // Search grounding is NOT enabled on Gemini 3.x: that could incur charges.
+    // Check whether the legacy free Search model is actually available to this key.
+    const fallbackNews=()=>{
+      const isRestaurant=/(?:مطعم|مطاعم|تسويق|restaurant|foodservice|مقاهي|طعام)/i.test(question);
+      const query=isRestaurant?'مطاعم غزة':'غزة';
+      const url='https://news.google.com/search?q='+encodeURIComponent(query)+
+        '&hl=ar&gl=PS&ceid=PS%3Aar';
       return send(res,200,{
-        answer:[400,403,404,429].includes(e?.status)
-          ?'Google Search Grounding غير متاح مع خطة Gemini أو المفتاح الحالي. لن أختلق أخبار غزة أو أعرض أخباراً قديمة على أنها حديثة.'
-          :'تعذر البحث عن أخبار حديثة موثوقة الآن. حاول مرة أخرى لاحقاً.',
+        answer:'البحث الحي الموثّق غير متاح حالياً للنماذج المجانية الخاصة بمشروعك. لا أستطيع تقديم أخبار غير متحقق منها. يمكنك فتح نتائج البحث من الرابط أدناه والتحقق من تاريخ النشر الأصلي للمقالات.',
+        mode:'unverified_news',provider:'gemini',
+        sources:[{label:'البحث عن '+query+' في Google News',url}],
+        data_as_of:now
+      });
+    };
+    let catalog=null;
+    try{catalog=await availableGeminiModels(key)}catch{}
+    if(catalog&&!catalog.has(NEWS_MODEL))return fallbackNews();
+    const newsQuestion='التاريخ: '+now+'؛ السؤال: '+question+
+      '؛ ركز على غزة ومطاعم غزة والمطاعم حول العالم. تأكد من تاريخ النشر الأصلي لكل خبر.';
+    try{
+      const result=await callGemini(key,NEWS_MODEL,NEWS_PROMPT,
+        [{role:'user',parts:[{text:newsQuestion}]}],true);
+      if(!checkNews(result.answer,result.links,question))
+        return send(res,200,{
+          answer:'تعذّر التحقق من تواريخ النشر الأصلية للأخبار الموجودة في نتائج البحث. لن أعرض خبر 2020 على أنه جديد.',
+          mode:'unverified_news',provider:'gemini',sources:result.links,data_as_of:now});
+      return send(res,200,{answer:result.answer.slice(0,5000),
+        mode:'ai',provider:'gemini',model:NEWS_MODEL,sources:result.links,data_as_of:now});
+    }catch(e){
+      if([400,401,403,404,429].includes(e?.status))return fallbackNews();
+      return send(res,200,{answer:'تعثّر الاتصال بمصدر البحث الحي، ولا توجد أخبار حديثة يمكن تأكيدها حالياً.',
         mode:'unverified_news',provider:'gemini',sources:[],data_as_of:now});
     }
   }
