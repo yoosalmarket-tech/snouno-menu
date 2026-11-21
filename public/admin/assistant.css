@@ -81,3 +81,16 @@
  .snounu-ai-question-buttons .snounu-ai-suggest{text-align:center;min-width:0;line-height:1.65;padding:10px 8px}
  .snounu-ai-welcome{padding:14px 0}
 }
+
+/* EDIT ALL PAYMENT 12 — private, owner-editable business knowledge panel. */
+#body .snounu-ai-brief{border:1px solid #e3d6be;background:#fffdf8;border-radius:18px;padding:14px 16px;}
+#body .snounu-ai-brief summary{cursor:pointer;font-size:14px;font-weight:800;color:#3c2f1f;list-style-position:inside;}
+#body .snounu-ai-brief p{font-size:13px;line-height:1.8;color:#716552;margin:12px 0;}
+#body .snounu-ai-brief-input{display:block;resize:vertical;width:100%;max-width:100%;box-sizing:border-box;
+ border:1px solid #d7cbb7;border-radius:12px;min-height:106px;padding:12px;
+ font:inherit;font-size:14px;line-height:1.8;background:#fff;color:#30271b;direction:rtl;}
+#body .snounu-ai-brief-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px;}
+#body .snounu-ai-brief-save{background:#FDBE2D;border:0;color:#21180a;font:inherit;font-weight:800;
+ border-radius:10px;min-height:42px;padding:8px 16px;cursor:pointer;}
+#body .snounu-ai-brief-save:disabled{opacity:.65;cursor:wait;}
+#body .snounu-ai-brief-status{font-size:12px;line-height:1.5;color:#765c34;}
