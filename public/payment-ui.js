@@ -75,6 +75,8 @@ export function invoice(o) {
     el("h2", "فاتورة " + i.number),
     el("p", "طلب #" + o.number + " · " + when(o.approved_at)),
     el("p", o.customer + " · " + o.phone),
+    el("p", o.service_type === "delivery" ? "نوع الطلب: توصيل" : o.service_type === "dine_in" ? "نوع الطلب: تناول بالمطعم" : "نوع الطلب: لم يُحدد"),
+    ...(o.service_type === "delivery" ? [el("p", "عنوان التوصيل: " + (o.delivery_address || ""))] : []),
   );
   const table = el("table"),
     head = el("tr");
