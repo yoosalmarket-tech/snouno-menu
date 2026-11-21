@@ -33,7 +33,7 @@
 .snounu-ai-message small{font-size:12px;color:var(--muted)}
 .snounu-ai-user{align-self:flex-end;max-width:85%}
 .snounu-ai-user small{display:none}
-.snounu-ai-user .snounu-ai-text{white-space:pre-wrap;background:#f2f1ed;padding:10px 16px;border-radius:18px}
+.snounu-ai-user .snounu-ai-text{white-space:pre-wrap;background:#FDBE2D;padding:10px 16px;border-radius:18px}
 .snounu-ai-assistant .snounu-ai-text{line-height:1.75;text-align:start;margin-top:4px}
 .snounu-ai-assistant :is(p,ol,ul){margin:0}
 .snounu-ai-assistant .snounu-ai-text>*+*{margin-block-start:.65em}
