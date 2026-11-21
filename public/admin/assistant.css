@@ -94,3 +94,10 @@
  border-radius:10px;min-height:42px;padding:8px 16px;cursor:pointer;}
 #body .snounu-ai-brief-save:disabled{opacity:.65;cursor:wait;}
 #body .snounu-ai-brief-status{font-size:12px;line-height:1.5;color:#765c34;}
+
+.snounu-ai-toolbar{flex-wrap:wrap;align-items:start;gap:.6rem}
+.snounu-ai-history{flex:1;min-width:min(15rem,100%);text-align:start}
+.snounu-ai-history summary{cursor:pointer;padding:.55rem;font-weight:bold}
+.snounu-ai-history-list{display:grid;gap:.4rem;max-height:16rem;overflow:auto}
+.snounu-ai-history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.4rem}
+.snounu-ai-history-row button:first-child{text-align:start;white-space:normal;overflow-wrap:anywhere}

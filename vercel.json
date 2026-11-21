@@ -144,7 +144,7 @@
       "includeFiles": "public/index.html"
     },
     "api/ai-assistant.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   }
 }
