@@ -445,13 +445,53 @@ export function installCart({ catalog, name, description, closed, page }) {
           ),
         );
     }
-    for (const ref of tracking)
-      b.append(
-        button(
-          t("متابعة طلب", "Track order") + " #" + (ref.number || "…"),
-          () => status(ref),
-        ),
-      );
+    // Old browser records may still say pending after the restaurant has finished an order.
+    const ticket = generation;
+    let shortcut, checkingBasket = false;
+    const underReview = (order) => order.status === "pending" &&
+      order.payment_mode !== "at_restaurant" &&
+      (!order.fulfillment_status || order.fulfillment_status === "awaiting_approval");
+    async function updateShortcut() {
+      if (checkingBasket || document.hidden || generation !== ticket) return;
+      checkingBasket = true;
+      try {
+        let latest;
+        for (const ref of tracking.filter(underReview)) {
+          const order = await call({ id: ref.id, secret: ref.secret, action: "status" }).catch(() => null);
+          if (ticket !== generation) return;
+          if (!order) continue;
+          const current = tracking.find((r) => r.id === ref.id);
+          if (!current) continue;
+          if (current.status !== order.status || current.fulfillment_status !== order.fulfillment_status ||
+              current.payment_mode !== order.payment_mode) {
+            Object.assign(current, {status: order.status, fulfillment_status: order.fulfillment_status, payment_mode: order.payment_mode});
+            localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
+            refresh();
+          }
+          if (underReview(order)) { latest = current; break; }
+        }
+        if (shortcut?.dataset.orderId === latest?.id) return;
+        shortcut?.remove();
+        shortcut = null;
+        if (latest) {
+          shortcut = button(t("متابعة طلب", "Track order") + " #" + latest.number, () => status(latest));
+          shortcut.dataset.orderId = latest.id;
+          b.append(shortcut);
+        }
+      } catch {
+        shortcut?.remove();
+        shortcut = null;
+      } finally {
+        checkingBasket = false;
+      }
+    }
+    const timer = setInterval(updateShortcut, 15000);
+    document.addEventListener("visibilitychange", updateShortcut);
+    cleanup = () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", updateShortcut);
+    };
+    void updateShortcut();
   }
   async function submitOrder(receiptFile) {
       const payload = {
