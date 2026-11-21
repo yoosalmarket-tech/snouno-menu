@@ -18,6 +18,14 @@
   ],
   "rewrites": [
     {
+      "source": "/admin/orders",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/payment-settings",
+      "destination": "/admin/index.html"
+    },
+    {
       "source": "/admin/seo",
       "destination": "/admin/index.html"
     },
