@@ -35,6 +35,7 @@ AS $$
  );
 $$;
 REVOKE ALL ON FUNCTION private.menu_can(text) FROM public,anon,authenticated;
+GRANT EXECUTE ON FUNCTION private.menu_can(text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.menu_my_capabilities()
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''

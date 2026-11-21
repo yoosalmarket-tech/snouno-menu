@@ -18,6 +18,10 @@
   ],
   "rewrites": [
     {
+      "source": "/admin/roles",
+      "destination": "/admin/index.html"
+    },
+    {
       "source": "/admin/assistant",
       "destination": "/admin/index.html"
     },

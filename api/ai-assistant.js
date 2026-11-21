@@ -145,6 +145,50 @@ const SYSTEM_PROMPT = [
   'استخدم تنسيقاً واضحاً مع نقاط قليلة عند الحاجة، واذكر الوحدة ₪ عند إيراد مبالغ.'
 ].join('\n');
 
+
+function reportAnswer(context, question, reason) {
+  const q=String(question||'').toLowerCase();
+  const hist=context.historical_sales;
+  const week=context.order_windows?.last_7_days;
+  const month=context.order_windows?.last_30_days;
+  const events=context.menu_interactions_last_14_days;
+  const out=['ملاحظة: هذا ملخّص مباشر من بيانات المطعم، وليس رداً من نموذج AI؛ الاتصال بالمزوّد غير متاح حالياً.'];
+  const sales=()=>{
+    if(week)out.push('آخر 7 أيام: '+week.approved_payments+' طلباً معتمداً، بمبيعات '+week.approved_sales_ils.toFixed(2)+' ₪.');
+    if(month)out.push('آخر 30 يوماً: '+month.approved_payments+' طلباً معتمداً، بمبيعات '+month.approved_sales_ils.toFixed(2)+' ₪.');
+    if(hist)out.push('الإجمالي المسجّل: '+hist.approved+' دفعة معتمدة، بقيمة '+hist.approved_sales_ils.toFixed(2)+' ₪.');
+    if(!hist&&!week)out.push('بيانات المبيعات غير متاحة حالياً.');
+  };
+  if(/(مبيعات|إيراد|دخل|بيع|sale|revenue|شيكل|مجموع)/.test(q))sales();
+  else if(/(وجبات|الأكثر|أفضل|طبق|صنف|dish|meal|best)/.test(q)){
+    const meals=hist?.top_sold_meals||[];
+    if(meals.length)out.push('الوجبات الأعلى مبيعاً في الطلبات المعتمدة:\n'+meals.slice(0,5).map((m,i)=>
+       (i+1)+'. '+m.name+' — '+m.units+' وحدة، '+m.approved_sales_ils.toFixed(2)+' ₪').join('\n'));
+    else out.push('لا تتوفر حالياً بيانات كافية لترتيب الوجبات حسب المبيعات المعتمدة.');
+  }else if(/(طلب|مراجعة|معلق|اعتماد|pending|order)/.test(q)){
+    if(hist)out.push('الطلبات الحالية: '+hist.pending+' قيد المراجعة، '+hist.approved+' معتمدة، '+hist.rejected+' مرفوضة، '+hist.cancelled+' ملغاة.');
+    else out.push('بيانات الطلبات غير متاحة.');
+  }else if(/(تفاعل|زوار|مشاهدة|تصفح|view|visit|engage)/.test(q)){
+    if(events){
+      out.push('أحداث التفاعل المسجّلة في العيّنة خلال آخر 14 يوماً: '+events.events_sampled+' حدثاً.');
+      const popular=events.most_interacted_meals||[];
+      if(popular.length)out.push('الوجبات الأكثر تفاعلاً في العينة:\n'+popular.slice(0,5).map(x=>x.meal+' ('+x.actions+')').join('، '));
+      out.push('هذه أحداث تفاعل وليست عدد زوار فريدين أو مبيعات.');
+      if(events.potentially_truncated)out.push('تنبيه: البيانات المعروضة عيّنة بحد أقصى 1000 حدث.');
+    }else out.push('تقرير التفاعل غير متاح حالياً.');
+  }else if(/(تسويق|اقترح|نصيحة|خطة|ترويج|حملة|marketing|idea)/.test(q)){
+    const top=hist?.top_sold_meals?.[0];
+    if(top)out.push('1) اختبر فيديو قصيراً لوجبة «'+top.name+'»؛ هي الأعلى في سجلات الطلبات المعتمدة.');
+    else out.push('1) صوّر فيديو قصيراً لوجبة مختارة، وقارن تفاعلها بوجبة أخرى.');
+    out.push('2) راقب نمو الطلبات المعتمدة أسبوعياً لا عدد فتحات المنيو فقط.');
+    out.push('3) قارن تفاعل الوجبات مع عمليات الشراء قبل التوسع في حملة مدفوعة.');
+  }else{
+    sales();
+    out.push('يمكنك سؤال المساعد عن المبيعات، الطلبات، الوجبات الأكثر مبيعاً، تفاعل الزوار أو اقتراحات تسويقية محددة.');
+  }
+  return out.join('\n\n');
+}
+
 export default async function handler(req,res){
   if(req.method!=='POST') return send(res,405,{error:'method_not_allowed'});
   const length=Number(req.headers['content-length']||0);
@@ -158,11 +202,11 @@ export default async function handler(req,res){
     .filter(x=>x&&['user','assistant'].includes(x.role)&&typeof x.content==='string')
     .map(x=>({role:x.role,content:x.content.slice(0,700)})):[];
   const gatewayToken=process.env.AI_GATEWAY_API_KEY||process.env.VERCEL_OIDC_TOKEN;
-  if(!gatewayToken) return send(res,503,{error:'ai_not_configured',
-    message:'مساعد الذكاء الاصطناعي غير مفعّل على الاستضافة. يجب تفعيل Vercel AI Gateway.'});
   let context;
   try { context=await collectContext(owner.auth); }
   catch {return send(res,503,{error:'reports_unavailable',message:'بيانات التقارير غير متاحة حالياً. حاول مجدداً.'});}
+  if(!gatewayToken) return send(res,200,{answer:reportAnswer(context,question,'not_configured'),mode:'summary',
+    notice:'الرد من التقارير مباشرة؛ نموذج الذكاء الاصطناعي غير مفعّل.',data_as_of:context.now});
   try{
     const permitted=await supa('/rest/v1/rpc/snounu_ai_consume_daily_quota',owner.auth,
       {method:'POST',body:'{}'});
@@ -182,18 +226,16 @@ export default async function handler(req,res){
         ]})
     });
     if(!response.ok){
-      if(response.status===402||response.status===403)return send(res,503,{
-        error:'gateway_billing',message:'يلزم تفعيل رصيد Vercel AI Gateway أو صلاحية الوصول للنموذج.'});
-      if(response.status===429)return send(res,429,{
-        error:'gateway_limit',message:'خدمة الذكاء الاصطناعي مشغولة أو بلغت الحد. حاول لاحقاً.'});
-      return send(res,502,{error:'gateway_unavailable',message:'تعذّر الحصول على رد من مساعد الذكاء الاصطناعي.'});
+      return send(res,200,{answer:reportAnswer(context,question,'gateway_unavailable'),mode:'summary',
+        notice:'خدمة AI غير متاحة الآن؛ عُرض الملخص المبني على بيانات المطعم.',data_as_of:context.now});
     }
     const result=await response.json();
     const answer=result?.choices?.[0]?.message?.content;
     if(typeof answer!=='string'||!answer.trim())throw new Error('Empty model response');
-    return send(res,200,{answer:answer.slice(0,4500),model:MODEL,
+    return send(res,200,{answer:answer.slice(0,4500),mode:'ai',model:MODEL,
       data_as_of:context.now,available_sources:context.available_sources});
   }catch(e){
-    return send(res,502,{error:'generation_failed',message:'تعذّر إكمال الرد حالياً. حاول مجدداً.'});
+    return send(res,200,{answer:reportAnswer(context,question,'generation_failed'),mode:'summary',
+      notice:'تعذّر الاتصال بنموذج AI؛ هذه إحصاءات موثّقة من تقارير المطعم.',data_as_of:context.now});
   }
 }

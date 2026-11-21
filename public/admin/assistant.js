@@ -80,6 +80,10 @@ export function renderAssistant({root,getToken}){
       if(!response.ok)throw new Error(result?.message||'تعذر الاتصال بالمساعد، حاول مرة أخرى.');
       if(typeof result?.answer!=='string'||!result.answer.trim())throw new Error('لم يصل جواب من المساعد.');
       bubble.querySelector('.snounu-ai-text').textContent=result.answer.trim();
+      if(result.mode==='summary'){
+        const hint=create('small','snounu-ai-mode','وضع التقارير المباشرة · نموذج AI غير متصل');
+        bubble.append(hint);
+      }
       history.push({role:'user',content:question},{role:'assistant',content:result.answer.trim()});
       if(history.length>12)history=history.slice(-12);
     }catch(e){
