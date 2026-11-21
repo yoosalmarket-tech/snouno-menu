@@ -185,7 +185,7 @@ const NEWS_PROMPT=[
   'أنت مدقق أخبار لغزة وقطاع المطاعم عالمياً. اعتمد على Google Search grounding فقط للأخبار الحديثة.',
   'ركز على أخبار غزة خلال آخر 7 أيام، أخبار مطاعم ومشاريع الطعام في غزة خلال 30 يوماً، والقطاع العالمي خلال 14 يوماً.',
   'احذر جداً من الأخبار القديمة المعاد نشرها أو فهرستها حديثاً. مثال سابق: خبر عن افتتاح مطاعم غزة في أكتوبر 2020؛ لا تنسبه إلى عام 2026.',
-  'لا تقدّم أي خبر على أنه حديث دون تاريخ نشر أصلي صريح ظاهر في المصدر، ولا تختلق تواريخ.',
+  'لا تقدّم أي خبر على أنه حديث دون تاريخ نشر أصلي صريح ظاهر في المصدر، ولا تختلق تواريخ. لكل خبر صالح اكتب تاريخ النشر الأصلي بتنسيق YYYY-MM-DD؛ إذا لم يوجد تاريخ من المصدر فلا تذكر الخبر.',
   'إذا لم يوجد مصدر بتاريخ نشر حديث موثوق، قل لم أجد تغطية حديثة قابلة للتحقق.',
   'الخبر الصحفي ليس دليلاً على أن الموضوع الأكثر رواجاً في بحث جوجل أو السوشيال ميديا.',
   'صغ الإجابة بالعربية مع روابط وأسماء المصادر وتواريخ النشر الأصلي، وميّز الأخبار عن أفكار يمكن تطبيقها في غزة.',
@@ -217,12 +217,19 @@ async function callGemini(apiKey,model,system,contents,withSearch=false){
     .map(x=>({label:String(x.web.title||'مصدر في بحث Google').slice(0,90),url:x.web.uri}));
   return {answer,links};
 }
-function checkNews(answer,links){
+function checkNews(answer,links,question){
   if(!links.length)return false;
-  // Never allow a 2020 article to be presented as 2026 news.
-  const oldYears=[...answer.matchAll(/\b(?:19|20)\d{2}\b/g)].map(x=>Number(x[0]));
-  if(oldYears.some(year=>year<new Date().getUTCFullYear()-1))return false;
-  return true;
+  // Fail closed if an old article is packaged as fresh or no dated source is listed.
+  const now=Date.now();
+  const currentYear=new Date(now).getUTCFullYear();
+  const years=[...answer.matchAll(/\b(?:19|20)\d{2}\b/g)].map(x=>Number(x[0]));
+  if(years.some(year=>year<currentYear-1))return false;
+  const industry=/(?:مطعم|مطاعم|restaurant|foodservice|تسويق)/i.test(question);
+  const gaza=/(?:غزة|قطاع غزة|gaza)/i.test(question);
+  const maxAge=(industry&&gaza?35:industry?16:9)*86400000;
+  const dates=[...answer.matchAll(/\b20\d{2}-\d{2}-\d{2}\b/g)]
+    .map(x=>Date.parse(x[0]+'T00:00:00Z')).filter(Number.isFinite);
+  return dates.some(d=>d<=now+86400000&&now-d<=maxAge);
 }
 function reportAnswer(context, question, reason) {
   const q=String(question||'').toLowerCase();
@@ -307,7 +314,7 @@ export default async function handler(req,res){
     const newsQuestion='التاريخ: '+now+'؛ السؤال: '+question+'؛ ركز على غزة ومطاعم غزة ثم المطاعم حول العالم عند الملاءمة. تحقّق من تاريخ نشر كل مقال أصلي.';
     try{
       const result=await callGemini(key,NEWS_MODEL,NEWS_PROMPT,[{role:'user',parts:[{text:newsQuestion}]}],true);
-      if(!checkNews(result.answer,result.links))return send(res,200,{
+      if(!checkNews(result.answer,result.links,question))return send(res,200,{
         answer:'لم أتمكن من التحقق من أخبار حديثة ذات مصادر وتواريخ نشر موثوقة. لن أعرض مقالات قديمة على أنها أخبار جديدة.',
         mode:'unverified_news',provider:'gemini',sources:[],data_as_of:now});
       return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
@@ -323,7 +330,15 @@ export default async function handler(req,res){
   const data={question,history,as_of:now,restaurant_reports:restaurant,gaza_weather:forecast};
   const weatherSources=forecast?[{label:'MET Norway · طقس مدينة غزة',url:forecast.source_url}]:[];
   try{
-    const result=await callGemini(key,MODEL,SYSTEM_PROMPT,[{role:'user',parts:[{text:JSON.stringify(data)}]}]);
+    let result;
+    try{
+      result=await callGemini(key,MODEL,SYSTEM_PROMPT,[{role:'user',parts:[{text:JSON.stringify(data)}]}]);
+    }catch(initial){
+      if(initial?.status!==404)throw initial;
+      // Some newly created free-tier keys may not have the newest Flash model enabled yet.
+      result=await callGemini(key,'gemini-3.6-flash',SYSTEM_PROMPT,
+        [{role:'user',parts:[{text:JSON.stringify(data)}]}]);
+    }
     return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
       provider:'gemini',model:MODEL,sources:weatherSources,data_as_of:now});
   }catch(e){
