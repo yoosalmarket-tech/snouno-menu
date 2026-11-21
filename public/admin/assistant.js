@@ -1,4 +1,4 @@
-// EDIT ALL PAYMENT 05 — owner-only read-only assistant.
+// EDIT ALL PAYMENT 10 — owner-only Groq restaurant performance advisor.
 const create=(tag,cls,text)=>{
   const node=document.createElement(tag);
   if(cls)node.className=cls;
@@ -13,11 +13,11 @@ export function renderAssistant({root,getToken}){
   const heroCopy=create('div');
   heroCopy.append(create('small','','SNOUNU  ✦  AI'),
     create('h2','','اسأل عن مطعمك'),
-    create('p','','مساعد Gemini لمتابعة سنونو، طقس غزة والمعرفة العامة، مع أخبار موثّقة عندما يدعم مفتاحك البحث الحي.'));
+    create('p','','مساعد Groq لتحليل مشاهدات المنيو وتفاعل الوجبات والمبيعات المعتمدة، واقتراح حملات ومنتجات تستحق التركيز.'));
   hero.append(heroCopy,create('span','snounu-ai-glyph','✦'));
   const badges=create('div','snounu-ai-meta');
   badges.append(create('span','','قراءة فقط · بدون تعديل البيانات'),
-    create('span','','حتى 20 سؤالاً يومياً'));
+    create('span','','حتى 20 تحليلاً ذكياً يومياً · الإحصاءات المباشرة متاحة دائماً'));
   const toolbar=create('div','snounu-ai-toolbar');
   const reset=create('button','snounu-ai-reset','محادثة جديدة');
   reset.type='button';toolbar.append(reset);
@@ -30,23 +30,19 @@ export function renderAssistant({root,getToken}){
     create('p','','اختر سؤالاً أو اكتب سؤالك أسفل المحادثة.'));
   const suggestions=create('div','snounu-ai-suggestions');
   const questions=[
-    ['المبيعات هذا الأسبوع','كم بلغت المبيعات المعتمدة خلال آخر 7 أيام؟ وكم طلباً تمت الموافقة عليه؟'],
-    ['الوجبات الأكثر مبيعاً','ما الوجبات الأكثر مبيعاً وإيراداتها حسب السجلات المتاحة؟'],
-    ['الطلبات قيد المراجعة','كم عدد الطلبات التي تنتظر اعتماد الدفع الآن؟'],
-    ['تفاعل الزوار','ما الوجبات الأكثر جذباً للتفاعل خلال الأيام الأخيرة؟'],
-    ['أفكار تسويقية','اقترح ثلاث أفكار قابلة للتنفيذ هذا الأسبوع بناء على تقارير المطعم.'],
-    ['طقس غزة','كيف الطقس في غزة الآن؟ وماذا عن الساعات القادمة؟'],
-    ['أخبار غزة','ما أهم أخبار غزة والمستجدات خلال الأيام الأخيرة؟ مع المصادر وتواريخ النشر.'],
-    ['مطاعم غزة','ما أحدث أخبار مطاعم غزة والمشاريع الغذائية المحلية؟ وما الفرص التي تستحق المتابعة؟'],
-    ['مطاعم العالم','ما أحدث الاتجاهات والأخبار في المطاعم حول العالم؟ وكيف يمكن تطبيقها في غزة؟'],
-    ['ترندات التسويق','ما أحدث ترندات تسويق المطاعم عالمياً وما الذي يمكن اختباره في غزة؟'],
-    ['سؤال عام','كم يبلغ عدد سكان الولايات المتحدة تقريباً؟ وما تاريخ تقديرك؟']
+    ['المشاهدات والزيارات','كم عدد مشاهدات الصفحات والجلسات والمستخدمين في سنونو خلال آخر 7 أيام؟ وقارن بآخر 28 يوماً.'],
+    ['الوجبات الأكثر تفاعلاً','ما الوجبات الأكثر تفاعلاً خلال 7 أيام؟ افصل بين فتح التفاصيل ونقرات الطلب والمشاركات.'],
+    ['المنتجات التي نروّج لها','على أي 3 وجبات نركز التسويق هذا الأسبوع حسب نقرات الطلب والمبيعات المعتمدة؟'],
+    ['حملة هذا الأسبوع','اقترح حملة لمدة 7 أيام لوجبة متاحة، مع فكرة ريلز وعبارة دعوة للطلب وطريقة قياس النتائج.'],
+    ['فجوة الطلب والمبيعات','ما الوجبات التي حصلت على نقرات طلب لكن مبيعاتها المعتمدة قليلة؟ وما الاختبار المناسب؟'],
+    ['المبيعات المعتمدة','قارن المبيعات المعتمدة خلال 7 أيام و30 يوماً واكتب أهم ملاحظة.'],
+    ['الطلبات قيد المراجعة','كم عدد الطلبات التي تنتظر اعتماد الدفع الآن؟']
   ];
   welcome.append(suggestions);log.append(welcome);
   const form=create('form','snounu-ai-form');
   const prompt=create('textarea','snounu-ai-prompt');
   prompt.rows=2;prompt.required=true;prompt.maxLength=500;
-  prompt.placeholder='أخبار غزة، مطاعم غزة والعالم، طقس غزة، بيانات سنونو…';
+  prompt.placeholder='اسأل عن المشاهدات، نقرات الطلب، أفضل الوجبات أو أفكار الحملات…';
   prompt.setAttribute('aria-label','السؤال');
   const controls=create('div','snounu-ai-controls');
   const counter=create('small','','0 / 500');
@@ -55,7 +51,7 @@ export function renderAssistant({root,getToken}){
   form.append(prompt,controls);
   panel.append(hero,badges,toolbar,log,form,
     create('p','snounu-ai-disclaimer',
-      'تُرسل الإحصاءات المجمّعة والسؤال فقط إلى خدمة الذكاء الاصطناعي. لا تُرسل أسماء العملاء أو أرقام هواتفهم أو عناوينهم أو إثباتات الدفع، ولا تُحفظ المحادثة في قاعدة بيانات المطعم.'));
+      'مساعد تحليل المطعم فقط. تُرسل إحصاءات GA4 وتفاعل المنيو والمبيعات المعتمدة بشكل مجمّع إلى Groq. لا تُرسل أسماء العملاء أو بيانات الدفع ولا تُحفظ المحادثة في قاعدة بيانات المطعم.'));
   root.append(panel);
   let history=[],busy=false;
   function addMessage(role,text){
@@ -92,22 +88,10 @@ export function renderAssistant({root,getToken}){
         bubble.append(hint);
       } else if(result.mode==='report'){
         bubble.append(create('small','snounu-ai-mode','إجابة مباشرة من قاعدة بيانات سنونو'));
-      } else if(result.mode==='unverified_news'){
-        bubble.append(create('small','snounu-ai-mode','لا توجد أخبار حديثة متحقق منها · لا تخمين'));
-      } else if(result.mode==='ai' && result.provider==='gemini'){
-        bubble.append(create('small','snounu-ai-mode','إجابة ذكية عبر Gemini'));
-      }
-      if(Array.isArray(result.sources)&&result.sources.length){
-        const linked=create('div','snounu-ai-sources');
-        linked.append(create('small','',result.mode==='unverified_news'
-          ?'روابط للبحث والتحقق (ليست أخباراً مؤكدة)':'مصادر مباشرة'));
-        for(const item of result.sources.slice(0,5)){
-          if(typeof item?.url!=='string'||!/^https:\/\//i.test(item.url))continue;
-          const a=create('a','snounu-ai-source',String(item.label||'فتح المصدر').slice(0,80));
-          a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';
-          linked.append(a);
-        }
-        bubble.append(linked);
+      } else if(result.mode==='scope'){
+        bubble.append(create('small','snounu-ai-mode','مساعد مختص بأداء سنونو وحملاته فقط'));
+      } else if(result.mode==='ai' && result.provider==='groq'){
+        bubble.append(create('small','snounu-ai-mode','تحليل تسويقي عبر Groq'));
       }
       history.push({role:'user',content:question},{role:'assistant',content:result.answer.trim()});
       if(history.length>12)history=history.slice(-12);

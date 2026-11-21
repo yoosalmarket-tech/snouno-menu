@@ -62,7 +62,7 @@ async function gaReport(token,body){
 // already performed owner authorization; never expose the service account.
 export async function snounuAiGa4Summary(){
   const raw=process.env.GA4_SERVICE_ACCOUNT_JSON;
-  if(!raw || !/^\\d{6,}$/.test(PROPERTY_ID))throw Error('GA4 not configured');
+  if(!raw || !/^\d{6,}$/.test(PROPERTY_ID))throw Error('GA4 not configured');
   const account=JSON.parse(raw);
   if(!account.client_email||!account.private_key)throw Error('GA4 credentials incomplete');
   const token=await googleToken(account);
