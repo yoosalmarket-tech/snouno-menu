@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "./payment-ui.js?v=06";
+} from "./payment-ui.js?v=06-12";
 const endpoint = "https://wknpuzdyemwkllmxehyy.supabase.co",
   key = "sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip";
 const read = (key, fallback) => {

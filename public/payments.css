@@ -484,3 +484,7 @@ body.rich-menu-active:not(.has-cart-footer) .pay-orders-link {
 .pay-dialog .pay-arrival-time strong{font-size:14px;font-weight:800;line-height:1.6}
 .pay-dialog .pay-arrival-time select{display:block;min-width:0;width:100%;max-width:100%;box-sizing:border-box;min-height:46px;padding:9px 12px;border:1px solid #c2ac80;border-radius:10px;background:var(--surface,#fff);font:inherit;color:var(--ink,#252525)}
 .pay-dialog .pay-arrival-time small{font-size:12px;line-height:1.7;color:var(--soft,#776b58)}
+
+/* Ensure arrival estimate is stacked instead of inheriting radio row flex styling. */
+.pay-dialog .pay-service-choice>.pay-arrival-time:not([hidden]){display:grid!important;gap:8px;align-items:stretch;}
+.pay-dialog .pay-service-choice>.pay-arrival-time[hidden]{display:none!important;}
