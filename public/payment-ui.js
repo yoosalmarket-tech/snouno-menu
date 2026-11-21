@@ -103,7 +103,7 @@ export function invoice(o) {
   root.append(
     table,
     el("h2", "الإجمالي " + amount(o.total)),
-    el("p", o.method + " · تم اعتماد الدفع"),
+    el("p", o.method + " · تم اعتماد الدفع"+(o.fulfillment_status==="completed"?" · تم تسليم الطلب":" · الطلب غير مسلّم بعد")),
   );
   return w;
 }

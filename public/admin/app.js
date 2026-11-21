@@ -1299,7 +1299,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
   return;
  }
  if(key==='orders'||key==='payment_settings'){
-  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=04-7');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint});return;
+  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=04-7');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint,canManage:role==='owner'});return;
  }
  if(key==='seo'||key==='seo_queries'){
    $('body').replaceChildren();
