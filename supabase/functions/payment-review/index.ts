@@ -17,7 +17,7 @@ const reply = (value: unknown, status = 200) =>
   Response.json(value, { status, headers });
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const summary =
-  "id,number,customer,phone,service_type,delivery_address,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
+  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
 function fileType(b: Uint8Array) {
   const at = (s: string, i = 0) =>
     Array.from(s).every((v, j) => b[i + j] === v.charCodeAt(0));
@@ -164,7 +164,15 @@ Deno.serve(async (req) => {
         (data.service_type === "delivery" &&
           (typeof data.delivery_address !== "string" ||
            data.delivery_address.trim().length < 8 ||
-           data.delivery_address.trim().length > 500))
+           data.delivery_address.trim().length > 500 ||
+           typeof data.delivery_landmark !== "string" ||
+           data.delivery_landmark.trim().length < 3 ||
+           data.delivery_landmark.trim().length > 160 ||
+           typeof data.backup_phone !== "string" ||
+           !/^\+?[\d ()-]{7,25}$/.test(data.backup_phone.trim()) ||
+           data.backup_phone.replace(/\D/g, "").length < 7 ||
+           data.backup_phone.replace(/\D/g, "").length > 15 ||
+           data.backup_phone.replace(/\D/g, "") === data.phone.replace(/\D/g, "")))
       )
         return reply({ error: "Invalid order" }, 400);
       const { data: s, error } = await db
@@ -207,6 +215,8 @@ Deno.serve(async (req) => {
             p_notes: "SNOUNU_FULFILLMENT_V1:" + JSON.stringify({
               type: data.service_type,
               address: data.service_type === "delivery" ? data.delivery_address.trim() : "",
+              landmark: data.service_type === "delivery" ? data.delivery_landmark.trim() : "",
+              backup_phone: data.service_type === "delivery" ? data.backup_phone.trim() : "",
               notes: String(data.notes || "").trim(),
             }),
             p_method: data.method,
