@@ -17,7 +17,7 @@ const reply = (value: unknown, status = 200) =>
   Response.json(value, { status, headers });
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const summary =
-  "id,number,customer,phone,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price)";
+  "id,number,customer,phone,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
 function fileType(b: Uint8Array) {
   const at = (s: string, i = 0) =>
     Array.from(s).every((v, j) => b[i + j] === v.charCodeAt(0));
@@ -71,13 +71,13 @@ Deno.serve(async (req) => {
     const { action, id, secret } = data;
     const { data: cfg, error: cfgError } = await db
       .from("pay_settings")
-      .select("formats,cancellation,live_updates")
+      .select("formats,cancellation,live_updates,max_quantity")
       .single();
     if (cfgError || !cfg) throw new Error();
     if (action === "config") {
       const { data: methods, error } = await db
         .from("pay_methods")
-        .select("id,name,icon,holder,account,url,instructions")
+        .select("id,name,icon,holder,account,url,instructions,qr_url")
         .eq("enabled", true)
         .order("position")
         .order("id");
@@ -91,30 +91,21 @@ Deno.serve(async (req) => {
         data.items.length > 60
       )
         return reply({ error: "Invalid cart" }, 400);
-      const ids = data.items.map((i) => i.id);
-      if (new Set(ids).size !== ids.length || !ids.every((v) => uuid.test(v)))
-        return reply({ error: "Invalid meals" }, 400);
-      const { data: menu, error } = await db
-        .from("dishes")
-        .select("id,price,available")
-        .in("id", ids);
-      if (error) throw new Error();
-      let cents = 0;
-      for (const item of data.items) {
-        const d = menu?.find((d) => d.id === item.id);
-        if (
-          !d?.available ||
-          Number(d.price) !== Number(item.price) ||
-          !Number.isInteger(item.qty) ||
-          item.qty < 1 ||
-          item.qty > 99
-        )
-          return reply(
-            { error: "Menu changed. Refresh the menu before transferring." },
-            409,
-          );
-        cents += Math.round(d.price * 100) * item.qty;
-      }
+      const { data: lines, error } = await db.rpc("pay_price_lines", {
+        p_items: data.items,
+      });
+      if (error || !lines)
+        return reply(
+          {
+            error:
+              "Menu changed. Check quantities and choices before transferring.",
+          },
+          409,
+        );
+      const cents = lines.reduce(
+        (sum, line) => sum + Math.round(line.price * 100) * line.qty,
+        0,
+      );
       const { data: s, error: closedError } = await db
         .from("menu_settings")
         .select("closure_rules")

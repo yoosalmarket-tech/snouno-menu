@@ -5,7 +5,7 @@ const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 const validImage=value=>{if(!value)return '';try{const u=new URL(value,location.origin);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
 const categoryWords=name=>{const a=String(name||'SNOUNU').trim().split(/\s+/);return [a.slice(0,Math.ceil(a.length/2)).join(' '),a.slice(Math.ceil(a.length/2)).join(' ')]};
-export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit,onSelection,onShare,onMealView}){
+export function createRichMenu({configureMeal,host,getData,onOpen,onFavorite,onExit,onSelection,onShare,onMealView}){
  const root=mk('div','rm-app');root.dir='ltr';root.id='rich-interactive-stage';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
@@ -37,11 +37,6 @@ export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
  '<p class="rm-closure-note" role="status"><span class="rm-closure-mark" aria-hidden="true">◷</span><span class="rm-closure-note-copy"></span></p>',
  '<small class="rm-instruction" dir="rtl">اسحب يمين ويسار للتنقل بين الوجبات، وفوق وتحت لتغيير التصنيفات</small></section>',
- '<dialog class="rm-sheet" aria-labelledby="rm-sheet-title" dir="rtl"><div class="rm-sheet-grab" aria-hidden="true"></div>',
- '<header class="rm-sheet-head"><div class="rm-sheet-heading"><span class="rm-sheet-overline" lang="en">SNOUNU / RESTAURANT</span>',
- '<h2 id="rm-sheet-title" class="rm-sheet-title"></h2><p class="rm-sheet-subtitle"></p></div>',
- '<button type="button" class="rm-sheet-close" aria-label="إغلاق">×</button></header>',
- '<div class="rm-sheet-body"></div></dialog>',
  '<footer class="rm-interactive-credit" aria-label="حقوق تصميم المنيو">',
  '<button type="button" class="rm-interactive-credit-link" aria-label="انقر مرتين لزيارة موقع وكالة يوصل">تصميم <strong>وكالة يوصل</strong> لتسويق المطاعم</button>',
  '<small class="rm-interactive-credit-hint" role="status" aria-live="polite"></small></footer>'
@@ -77,9 +72,7 @@ export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit
   availability:at(root,'.rm-availability'),closureNote:at(root,'.rm-closure-note'),
   desc:at(root,'.rm-info-desc'),price:at(root,'.rm-info-price'),
   details:at(root,'.rm-info-details'),share:at(root,'.rm-share'),fav:at(root,'.rm-info-fav'),
-  customize:at(root,'.rm-customize'),sheet:at(root,'.rm-sheet'),
-  sheetTitle:at(root,'.rm-sheet-title'),sheetSubtitle:at(root,'.rm-sheet-subtitle'),
-  sheetBody:at(root,'.rm-sheet-body')
+  customize:at(root,'.rm-customize')
  };
  // Anchor the horizontal selector below categories, outside the animated scene.
  root.insertBefore(at(root,'.rm-thumbs'),u.wrap);
@@ -489,7 +482,7 @@ export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit
   if(typeof onSelection==='function')onSelection({categoryId:group()?.id});
  }
  function pointerDown(event){
-  if(event.button!==0||swapping||!active||pointer||u.sheet.open||event.isPrimary===false)return;
+  if(event.button!==0||swapping||!active||pointer||document.querySelector('dialog[open]')||event.isPrimary===false)return;
   const fromInfo=event.currentTarget===u.info;
   // Controls on the information panel must remain ordinary, clickable buttons.
   // Dragging on its text, price, rating or blank space uses the same physics
@@ -586,7 +579,7 @@ export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit
   if(p.axis==='x')goTo(Math.round(k));
  }
  function wheel(event){
-  if(!active||pointer||u.sheet.open||event.ctrlKey)return;
+  if(!active||pointer||document.querySelector('dialog[open]')||event.ctrlKey)return;
   const now=performance.now(),dx=event.deltaX,dy=event.deltaY;
   if(!dx&&!dy)return;
   // A wheel burst (including its inertial tail) owns one axis and one action.
@@ -605,7 +598,7 @@ export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit
   else changeGroup(groupIndex+(wheelDistance>0?1:-1));
  }
  function key(event){
-  if(!active||u.sheet.open||document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
+  if(!active||document.querySelector('dialog[open]')||document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
   if(!['ArrowRight','ArrowLeft','ArrowDown','ArrowUp','Enter',' '].includes(event.key))return;
   event.preventDefault();
   if(swapping||pointer)return;
@@ -613,103 +606,19 @@ export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit
   else if(event.key==='ArrowLeft')step(-1);
   else if(event.key==='ArrowDown'){if(!event.repeat)changeGroup(groupIndex+1);}
   else if(event.key==='ArrowUp'){if(!event.repeat)changeGroup(groupIndex-1);}
-  else if(dish())openRichSheet('order',dish());
+  else if(dish())configureMeal?.(dish());
  }
  at(root,'.rm-exit').addEventListener('click',()=>{if(typeof onExit==='function')onExit();});
- const platformInfo={
-  sonbol:{ar:'سنبل',en:'Sonbol',icon:'/assets/sonbol.svg'},
-  makook:{ar:'مكوك',en:'Makook',icon:'/assets/makook.svg'},
-  whatsapp:{ar:'واتساب',en:'WhatsApp',icon:'/assets/whatsapp.svg'}
- };
- const restaurantLink=channel=>snapshot.links?.find(item=>item.channel===channel)?.url||'';
- const safeLink=url=>{const link=validImage(url);return link&&/^https?:\/\//.test(link)?link:'';};
- let pendingMealOpen=0,lastSheetOpenedAt=0;
- const closeSheet=()=>{
-  if(!u.sheet.open)return;
-  u.sheet.close();
-  u.sheet.classList.remove('rm-sheet-entering');
- };
+ let pendingMealOpen=0;
  // Finish the original burger's pointer/click sequence before opening the
  // modal. Otherwise its synthetic click can hit the newly opened backdrop.
  const scheduleMealOpen=meal=>{
   if(pendingMealOpen)clearTimeout(pendingMealOpen);
   pendingMealOpen=setTimeout(()=>{
    pendingMealOpen=0;
-   if(active&&!destroyed&&!u.sheet.open)openRichSheet('order',meal);
+   if(active&&!destroyed&&!document.querySelector('dialog[open]'))configureMeal?.(meal);
   },0);
  };
- const linkCard=(channel,meal)=>{
-   const info=platformInfo[channel];
-   const direct=meal?.[channel+'_url'];
-   const href=safeLink(direct)||safeLink(restaurantLink(channel))||info.url;
-   if(!href)return null;
-   const isDirect=!!safeLink(direct);
-   const el=mk('a','rm-sheet-link');el.href=href;el.target='_blank';el.rel='noopener noreferrer';
-   el.id='rich-link-'+channel+'-'+(meal?.id||'restaurant');
-   el.dataset.trackAction='order_platform_click';
-   if(meal?.id)el.dataset.mealId=String(meal.id);
-   el.dataset.platform=channel;
-   const mark=mk('span','rm-sheet-link-mark');
-   const img=mk('img');img.src=info.icon;img.alt='';img.loading='lazy';mark.append(img);
-   const copy=mk('span','rm-sheet-link-copy');
-   copy.append(mk('strong',null,isEnglish()?info.en:info.ar));
-   const detail=channel==='whatsapp'
-    ?isEnglish()?'Chat on WhatsApp':'تواصل عبر واتساب'
-    :isDirect
-     ?isEnglish()?'Order this selected meal':'اطلب هذه الوجبة مباشرة'
-     :isEnglish()?'Restaurant ordering page':'صفحة طلبات المطعم';
-   copy.append(mk('small',null,detail));
-   const arrow=mk('span','rm-sheet-link-arrow','↗');arrow.setAttribute('aria-hidden','true');
-   el.append(mark,copy,arrow);return el;
- };
- function openRichSheet(kind,meal){
-   if(destroyed||(kind==='order'&&meal?.available===false))return;
-   const english=isEnglish();
-   u.sheetTitle.textContent=kind==='order'?(english?'Where to order':'أماكن الطلب'):(english?'Location & contact':'موقعنا و التواصل');
-   u.sheetSubtitle.textContent=kind==='order'?(meal?getName(meal):''):(snapshot.settings?.name||'مطعم سنونو');
-   u.sheetBody.replaceChildren();
-   if(kind==='contact'){
-     const place=mk('div','rm-sheet-information');
-     const hours=mk('section','rm-sheet-detail');
-     hours.append(mk('span','rm-sheet-detail-icon','◷'));
-     const hoursBody=mk('div');hoursBody.append(mk('strong',null,english?'Opening hours':'ساعات العمل'));
-     hoursBody.append(mk('p',null,snapshot.settings?.hours|| (english?'Not provided':'غير محددة')));
-     hours.append(hoursBody);place.append(hours);
-     const location=mk('section','rm-sheet-detail');
-     location.append(mk('span','rm-sheet-detail-icon','⌖'));
-     const locationBody=mk('div');locationBody.append(mk('strong',null,english?'Address':'موقعنا'));
-     locationBody.append(mk('p',null,snapshot.settings?.address|| (english?'Not provided':'غير محدد')));
-     location.append(locationBody);place.append(location);
-     u.sheetBody.append(place);
-   }
-   const heading=mk('h3','rm-sheet-links-heading',english?(kind==='order'?'Choose an ordering service':'Order or contact us'):(kind==='order'?'اختار التطبيق المناسب للطلب':'اطلب أو تواصل معنا'));
-   u.sheetBody.append(heading);
-   if(kind==='order'&&cartButton)u.sheetBody.append(cartButton(meal));
-   const channels=kind==='order'?['sonbol','makook']:['makook','sonbol','whatsapp'];
-   const links=mk('div','rm-sheet-links');
-   for(const channel of channels){const link=linkCard(channel,kind==='order'?meal:null);if(link)links.append(link);}
-   if(!links.children.length)links.append(mk('p','rm-sheet-empty',english?'Ordering links are not currently available.':'روابط الطلب غير متاحة حالياً.'));
-   u.sheetBody.append(links);
-   if(u.sheet.open)return;
-   // Restart the entrance animation cleanly for every re-open.
-   u.sheet.classList.remove('rm-sheet-entering');
-   u.sheet.showModal();
-   u.sheetBody.scrollTop=0;
-   void u.sheet.offsetWidth;
-   u.sheet.classList.add('rm-sheet-entering');
-   lastSheetOpenedAt=performance.now();
- }
- at(u.sheet,'.rm-sheet-close').addEventListener('click',closeSheet);
- u.sheet.addEventListener('close',()=>{
-  if(!u.sheet.open)u.sheet.classList.remove('rm-sheet-entering');
- });
- u.sheet.addEventListener('click',event=>{
-  if(event.target!==u.sheet||performance.now()-lastSheetOpenedAt<250)return;
-  const bounds=u.sheet.getBoundingClientRect();
-  if(event.clientX<bounds.left||event.clientX>bounds.right||
-     event.clientY<bounds.top||event.clientY>bounds.bottom)closeSheet();
- });
-
  // Both the food stage and the meal information are gesture surfaces.
  // Reusing the same handlers preserves spring inertia, boundary bounce,
  // vertical category navigation, and the three-outward-swipes transition.
@@ -726,15 +635,14 @@ export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit
  u.catPrev.id='rich-category-previous';u.catNext.id='rich-category-next';
  u.railUp.id='rich-meal-previous';u.railDown.id='rich-meal-next';
  u.customize.id='rich-order-now';u.customize.dataset.trackAction='order_now_click';
- u.sheet.id='rich-order-dialog';at(u.sheet,'.rm-sheet-close').id='rich-popup-close';
  u.catPrev.onclick=()=>changeGroup(groupIndex-1);
  u.catNext.onclick=()=>changeGroup(groupIndex+1);
  u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
  u.mealPrev.id='rich-desktop-meal-previous';u.mealNext.id='rich-desktop-meal-next';
  u.mealPrev.onclick=()=>step(-1);u.mealNext.onclick=()=>step(1);
  u.details.id='rich-meal-details';u.details.dataset.trackAction='order_now_click';
- u.details.onclick=()=>{if(dish()&&dish().available!==false)openRichSheet('order',dish());};
- u.customize.onclick=()=>{if(dish()&&dish().available!==false)openRichSheet('order',dish());};
+ u.details.onclick=()=>{if(dish()&&dish().available!==false)configureMeal?.(dish());};
+ u.customize.onclick=()=>{if(dish()&&dish().available!==false)configureMeal?.(dish());};
  u.share.onclick=()=>{
   const current=dish();
   if(current?.id&&typeof onShare==='function')void onShare(current);
@@ -794,7 +702,7 @@ export function createRichMenu({cartButton,host,getData,onOpen,onFavorite,onExit
   }
  }
  function destroy(){
-  destroyed=true;resetInteractiveCredit();setActive(false);closeSheet();
+  destroyed=true;resetInteractiveCredit();setActive(false);
   window.removeEventListener('offline',handleNetworkChange);
   connection?.removeEventListener?.('change',handleNetworkChange);
   ++swapToken;root.remove();

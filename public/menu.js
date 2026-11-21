@@ -1,4 +1,4 @@
-import {installCart} from './cart.js';
+import {installCart} from './cart.js?v=02';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
@@ -71,46 +71,9 @@ function trackMealEvent(name,meal,params={}){
  }
  window.gtag('event',name,event);
 }
-// Deduplicate referral VALUE separately from raw outbound clicks. There is no
-// visitor ID here: only a short-lived timestamp and a first-referral flag.
-// The 30-minute inactivity window approximates GA4's default session timeout.
-const referralSessionKey='snounu-first-referral-session-v1';
-const referralInactivityMs=30*60*1000;
-let referralMemory=null;
-function registerReferralSession(firstReferral=false){
- if(isPreview)return false;
- const now=Date.now();
- let previous=referralMemory;
- try{previous=JSON.parse(localStorage.getItem(referralSessionKey)||'null');}catch{}
- const active=previous&&Number.isFinite(previous.lastActivity)
-  &&now>=previous.lastActivity&&now-previous.lastActivity<referralInactivityMs;
- const alreadyAttributed=!!(active&&previous.attributed);
- const next={lastActivity:now,attributed:alreadyAttributed||firstReferral};
- referralMemory=next;
- try{localStorage.setItem(referralSessionKey,JSON.stringify(next));}catch{}
- return firstReferral&&!alreadyAttributed;
-}
 function trackMenuAction(action,target,mealId){
  const meal=dishes.find(d=>d.id===mealId);
- if(action!=='order_platform_click')registerReferralSession();
- if(action==='order_platform_click'){
-  const platform=target?.dataset.platform||target?.dataset.channel;
-  if(['sonbol','makook'].includes(platform)){
-   const firstReferral=registerReferralSession(true);
-   // Raw click event remains unchanged for click-through analysis.
-   trackMealEvent('delivery_app_click',meal,{delivery_platform:platform});
-   if(firstReferral){
-    const price=Number(meal?.price);
-    const hasPrice=meal?.price!=null&&meal.price!==''&&Number.isFinite(price)&&price>=0;
-    trackMealEvent('delivery_referral_unique',meal,{
-     delivery_platform:platform,
-     meal_name:meal?.name||'General menu',
-     currency:'ILS',
-     ...(hasPrice?{value:price,referral_value:price}:{})
-    });
-   }
-  }
- }else if(action==='favorite_toggle'&&meal){
+ if(action==='favorite_toggle'&&meal){
   if(!favorites.has(meal.id))trackMealEvent('add_to_wishlist',meal);
  }else if(action==='share_meal_click'&&meal){
   trackMealEvent('meal_share_click',meal);
@@ -207,7 +170,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=edit-all-payment-1')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=edit-all-payment-02')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -263,7 +226,7 @@ async function syncRichMode(){
   const module=await richAssets();
   if(version!==richRevision||!richDesired||currentPage()!=='menu')return;
   richController=module.createRichMenu({
-   cartButton:cartUi?.button,host:target,getData:richData,onOpen:detail,
+   configureMeal:cartUi?.add,host:target,getData:richData,onOpen:detail,
    onMealView:meal=>trackMealEvent('view_item',meal),
    onSelection:selection=>{
     if(selection?.mealId)noteSelection('meal',selection.mealId);
@@ -369,20 +332,17 @@ for(const switcher of document.querySelectorAll('.language-switch')){
 function asset(src){if(!src)return '';if(isPreview&&src.startsWith('blob:'+location.origin+'/'))return src;try{const u=new URL(src,location.origin);return /^(https?:)$/.test(u.protocol)?u.href:'';}catch{return '';}}
 function setText(id,text){$(id).textContent=text||'';}
 function image(src,alt){const img=make('img');img.src=asset(src);img.alt=alt;return img;}
-const ordering=['makook','sonbol'];
-function contactLinks(container,channels,meal) {
+function contactLinks(container,channels) {
  container.replaceChildren();
  for(const channel of channels){
    const link=links.find(row=>row.channel===channel);
-   const url=channel==='sonbol'&&meal?.id?meal.sonbol_url:link?.url;
+   const url=link?.url;
    if(!link||!url||!/^https?:\/\//i.test(url))continue;
    const a=make('a');a.href=url;a.dataset.channel=channel;
    a.setAttribute('aria-label',tr(link.name));
-   a.id='order-'+channel+'-'+(meal?.id||'restaurant');
-   a.dataset.trackAction='order_platform_click';
-   if(meal?.id)a.dataset.mealId=meal.id;
+   a.id='contact-'+channel;
+   a.dataset.trackAction='contact_open';
    a.append(image('/assets/'+channel+'.svg',''),make('span',tr(link.name)));
-   if(ordering.includes(channel))a.classList.add('order-action');
    container.append(a);
  }
 }
@@ -779,7 +739,7 @@ function renderSettings(){
  setText('desktop-welcome-caption',tr(s.welcome_caption||'أهلاً وسهلاً'));
  setText('welcome-subtitle',tr(s.welcome_subtitle||'جاهز تختار وجبتك المفضّلة؟'));
  setText('desktop-welcome-accent',tr(s.welcome_desktop_accent||'على مزاجك.'));
- setText('desktop-welcome-description',tr(s.welcome_description||'اكتشف وجباتنا، اختر اللي بتحبه، واطلب من تطبيق التوصيل المفضل عندك.'));
+ setText('desktop-welcome-description',tr(s.welcome_description||'اكتشف وجباتنا، اختر اللي بتحبه، واطلب مباشرة من سنونو.'));
  setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
  setWelcomeImage($('cover-next'),(mobileWelcomeIndex+1)%3);
  setText('brand',tr(s.name));setText('greeting',tr(s.welcome));setText('quick',s.hotline);
@@ -800,7 +760,7 @@ function renderSettings(){
  renderAds();
  setText('location-name',tr(s.name)+' — '+(isEnglish()?'Gaza':'غزة'));setText('address',tr(s.address));setText('hours',tr(s.hours));setText('hotline',s.hotline);setText('intro',tr(s.contact));const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
  credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit;
- contactLinks($('links'),[...ordering,'whatsapp']);contactLinks($('social-links'),['instagram','facebook']);
+ contactLinks($('links'),['whatsapp']);contactLinks($('social-links'),['instagram','facebook']);
 }
 let creditTimeout;
 function resetCredit() {
@@ -1170,7 +1130,6 @@ function detail(d){
   unavailable.type='button';unavailable.disabled=true;
   unavailable.className='meal-order-unavailable';buttons.append(unavailable);
  }else {
-  contactLinks(buttons,ordering,d);
   if(cartUi)buttons.prepend(cartUi.button(d));
  }
  content.append(buttons);
@@ -1329,7 +1288,7 @@ async function load(){
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   // The SEO fetch runs after initial menu data, outside the 3-second decision.
   setTimeout(()=>void refreshSeoWelcomeAlts(),3200);
   void syncRichMode();
