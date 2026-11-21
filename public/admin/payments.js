@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=02";
+} from "../payment-ui.js?v=04";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
@@ -355,7 +355,7 @@ export async function settings({ root, api, notice, endpoint }) {
     preview.className = "pay-upload-preview";
     const show = (source) => {
       preview.replaceChildren();
-      if (!/^(https:|blob:)\/\//i.test(source || "")) {
+      if (!/^(https:\/\/|blob:)/i.test(source || "")) {
         preview.append(el("small", "لم تُرفع صورة بعد"));
         return;
       }

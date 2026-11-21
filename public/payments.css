@@ -411,3 +411,29 @@ body.has-cart-footer:not(.rich-menu-active) .pay-orders-link {bottom:calc(139px 
 .pay-restaurant-row strong {font-size:16px;overflow-wrap:anywhere;}
 .pay-restaurant-content > .pay-primary {margin-top:4px;min-height:46px;}
 @media(prefers-reduced-motion:reduce){.pay-orders-link,.pay-notification{transition:none;animation:none;}}
+
+
+/* EDIT ALL PAYMENT 04 — validation, PNG logos, QR saving and fulfillment */
+.pay-config .pay-save-feedback {display:block;margin:4px 0;padding:10px 12px;border-radius:12px;background:var(--paper,#f4f4f4);border:1px solid var(--line,#ccc);font-weight:700}
+.pay-config .pay-save-feedback.is-unsaved {border-color:#c99935;background:#fff6dc;color:#694709}
+.pay-config .pay-save-feedback.is-error {border-color:#d66363;background:#ffe7e7;color:#8a1616}
+.pay-config .pay-save-feedback.is-saving {border-color:#9d9182}
+.pay-config .pay-save-feedback.is-saved {border-color:#56a66d;background:#e8f8ea;color:#18572b}
+.pay-save-feedback[role="status"] {font-size:13px;}
+.pay-config [aria-invalid="true"] {border:2px solid #cc3434!important;box-shadow:0 0 0 2px #fba6a65e}
+.pay-config .pay-save-button {width:100%;min-height:44px;background:#242424;color:white;border-radius:11px;border:0;font-weight:bold}
+.pay-config .pay-save-button:disabled {opacity:.65;cursor:wait}
+.pay-config .pay-download-qr,.pay-download-qr {display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #c39c3b;color:var(--ink,#222);background:var(--surface,#fff);border-radius:12px;min-height:40px;padding:8px 14px;font-size:14px;font-weight:bold;cursor:pointer}
+.pay-config .pay-upload-preview img {max-width:160px;max-height:128px;object-fit:contain}
+.pay-method-placeholder {display:inline-flex!important;border:2px solid #d1ad59;background:#f9ecd0;border-radius:10px;position:relative}
+.pay-method-placeholder::after {content:"";width:13px;height:13px;border:2px solid #7a613c;border-radius:4px;display:block}
+.pay-service-choice {display:grid;gap:8px;padding:14px;border:1px solid var(--line,#aaa);border-radius:14px;margin:0;}
+.pay-service-choice legend {font-weight:800;padding:0 6px;}
+.pay-service-choice>label:not(.pay-delivery-address) {display:flex!important;align-items:center;justify-content:flex-start!important;gap:12px;padding:12px!important;border:1px solid var(--line,#ccc);border-radius:10px;cursor:pointer}
+.pay-service-choice label:has(input:checked) {background:#fdbe2d22;border-color:#c79322}
+.pay-service-choice input[type=radio] {width:19px;height:19px;flex:none;accent-color:#e8a900}
+.pay-delivery-address {display:grid!important;gap:6px!important;padding:8px!important;}
+.pay-delivery-address textarea {width:100%;min-height:100px;resize:vertical}
+.pay-delivery-address small {color:var(--soft,#777);font-size:12px}
+.pay-qr-box .pay-download-qr {margin-top:7px}
+@media(prefers-reduced-motion:reduce){.pay-config .pay-save-feedback{transition:none}}
