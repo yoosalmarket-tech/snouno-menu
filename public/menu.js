@@ -1531,7 +1531,9 @@ async function chooseFirstVisitMode(initialMenu){
  }finally{clearTimeout(timer);}
 }
 const initialMenu=load();
-(firstVisitModeCheck?chooseFirstVisitMode(initialMenu):initialMenu).finally(revealPage);
+const modeReady=firstVisitModeCheck?chooseFirstVisitMode(initialMenu):initialMenu;
+// Welcome has its own images. Only the menu needs to wait for the rich-mode decision.
+(currentPage()==='welcome'?initialMenu:modeReady).finally(revealPage);
 /* Install Snounu menu as a standalone home-screen app on phones.
    iOS uses Add to Home Screen; Android supports the native prompt when eligible.
    Installation never affects visitor reporting or dashboard routes. */
