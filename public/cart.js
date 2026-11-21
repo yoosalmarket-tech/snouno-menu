@@ -1185,17 +1185,34 @@ export function installCart({ catalog, name, description, closed, page }) {
     };
     await update(initial);
   }
+  // Only one active order update is ever shown near the basket.
+  // All earlier orders and their latest state remain in tracking / "طلباتي".
+  let latestNotice = null, latestNoticeTimer = null;
+  function clearLatestNotice() {
+    if (latestNoticeTimer !== null) clearTimeout(latestNoticeTimer);
+    latestNoticeTimer = null;
+    latestNotice?.remove();
+    latestNotice = null;
+  }
   function announce(ref, order) {
-    const note = button(t(...(statuses[order.status] || statuses.pending)) + " · #" + order.number, () => {
-      note.remove();
-      if (!dialog.open) dialog.showModal();
-      void status(ref, order);
-    });
-    note.className = "pay-notification";
-    note.setAttribute("aria-label", t("تحديث حالة طلبك", "Order status update"));
-    note.title = t("اضغط لعرض تفاصيل الطلب", "View order details");
+    clearLatestNotice();
+    const note = button(
+      t(...(statuses[order.status] || statuses.pending)) + " · #" + order.number,
+      () => {
+        clearLatestNotice();
+        if (!dialog.open) dialog.showModal();
+        void status(ref, order);
+      },
+    );
+    note.className = "pay-notification pay-notification--latest";
+    note.setAttribute("aria-label", t("آخر تحديث لحالة الطلب", "Latest order update"));
+    note.title = t("اضغط لعرض تفاصيل الطلب، وبقية الطلبات في طلباتي",
+      "Tap for this order; earlier orders are in My Orders");
+    latestNotice = note;
     document.body.append(note);
-    setTimeout(() => note.remove(), 14000);
+    latestNoticeTimer = setTimeout(() => {
+      if (latestNotice === note) clearLatestNotice();
+    }, 14000);
     refresh();
   }
   let checking = false;
