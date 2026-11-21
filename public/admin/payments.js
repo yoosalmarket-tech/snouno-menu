@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js";
+} from "../payment-ui.js?v=02";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
@@ -76,7 +76,7 @@ export async function orders({ root, api, notice, endpoint }) {
     dialog.append(
       table(
         ["الوجبة", "العدد", "السعر"],
-        o.pay_items.map((i) => [i.name, i.qty, amount(i.price)]),
+        o.pay_items.map((i) => [[i.name,...(i.choices||[]).map(c=>c.label),i.special_instructions].filter(Boolean).join(" · "), i.qty, amount(i.price)]),
       ),
     );
     const proof = [...o.pay_proofs].sort((a, b) =>
@@ -303,6 +303,7 @@ export async function settings({ root, api, notice }) {
         ["account", "رقم الحساب أو المحفظة", m.account],
         ["holder", "صاحب الحساب", m.holder],
         ["instructions", "تعليمات التحويل", m.instructions],
+        ["qr_url","رابط صورة رمز QR الخاص بالمطعم",m.qr_url,"url"],
         ["url", "رابط الدفع الرسمي (اختياري)", m.url, "url"],
         ["position", "الترتيب", m.position ?? methods.length + 1, "number"],
         ["enabled", "مفعّلة", m.enabled, "checkbox"],
@@ -325,6 +326,7 @@ export async function settings({ root, api, notice }) {
   form(
     "إعدادات الفاتورة والطلبات",
     [
+      ["max_quantity","الحد الأقصى للكمية لكل بند (١–٩٩)",cfg.max_quantity||99,"number"],
       ["restaurant", "اسم المطعم", cfg.restaurant],
       ["address", "العنوان", cfg.address],
       ["phone", "هاتف المطعم", cfg.phone],

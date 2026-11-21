@@ -7,7 +7,7 @@ const sections = {
   orders:['الطلبات والمدفوعات',[]],payment_settings:['إعدادات الدفع',[]],
   overview: ['اللوحة الرئيسية', []],
   investment: ['الاستثمار', []],
-  dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['sonbol_url','رابط طلب هذا الطبق من سنبل','url'],['makook_url','رابط الوجبة المباشر من مكوك (اختياري)','url'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
+  dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
   categories: ['الأصناف', [['name','اسم الصنف'],['icon','رمز الصنف']]],
   menu_settings: ['مطعم السنونو', [
     ['name','اسم المطعم'],
@@ -35,7 +35,7 @@ const sections = {
     ['address','العنوان'],['hours','ساعات العمل'],
     ['hotline','رقم التواصل السريع']
   ]],
-  menu_links: ['روابط الطلب والتواصل', [['url','الرابط','url']]],
+  menu_links: ['روابط التواصل', [['url','الرابط','url']]],
   menu_ads: ['إدارة الإعلانات', [['name','عنوان الإعلان'],['image','صورة الإعلان','image'],['dish_id','الطبق المرتبط','product']]],
   seo: ['تحسين الظهور SEO', []],
   seo_queries: ['كلمات البحث في Google', []],
@@ -999,7 +999,7 @@ async function renderGaOverview(days=28){
  const status=node('p','جارٍ تحميل الإحصائيات من GA4…');status.id='ga-loading';
  const salesPanel=node('section');
  area.replaceChildren(top,status);
- if(investment){area.prepend(salesPanel);void import('./payments.js').then(m=>m.sales(salesPanel,api));}
+ if(investment){area.prepend(salesPanel);void import('./payments.js?v=02').then(m=>m.sales(salesPanel,api));}
  try{
   // Use the same authenticated session as the menu admin; no GA credentials in the browser.
   if(session?.expires_at*1000<Date.now()+60000)await api('/auth/v1/user');
@@ -1264,7 +1264,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='orders'||key==='payment_settings'){
-  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint});return;
+  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=02');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint});return;
  }
  if(key==='seo'||key==='seo_queries'){
    $('body').replaceChildren();
@@ -1409,7 +1409,7 @@ async function edit(key,row,inline=false){
    input.name=field;if(input.tagName==='INPUT')input.type=({image:'text',integer:'number',optionalRating:'number',optionalPrice:'number',position:'range'}[type]||type);
    if(type==='select')for(const cat of cats){const option=node('option',cat.name);option.value=cat.id;input.append(option);}
    if(type==='product'){
-     const empty=node('option','عرض الإعلان مع روابط الطلب');empty.value='';input.append(empty);
+     const empty=node('option','عرض الإعلان');empty.value='';input.append(empty);
      for(const dish of dishes){const option=node('option',dish.name);option.value=dish.id;input.append(option);}
    }
    if(type==='locked'){input.readOnly=true;input.title='للقراءة فقط';}
@@ -1424,12 +1424,9 @@ async function edit(key,row,inline=false){
    }
    if(type==='number'){input.step='0.01';input.min='0';}
    if(type==='optionalPrice'||type==='optionalRating'){input.step=type==='optionalPrice'?'0.01':'0.1';input.min=0;if(type==='optionalRating')input.max=5;}
-   if(['sonbol_url','makook_url'].includes(field)){input.dir='ltr';input.pattern='https://.+';}
    if(type==='password')input.minLength=12;
    input.required=['name','price','email','password','url','category_id','position'].includes(field);
    label.append(input);
-   if(field==='sonbol_url')label.append(node('small','الصق رابط الوجبة من سنبل ليظهر زر طلبها في نافذة الطبق.'));
-   if(field==='makook_url')label.append(node('small','اختياري: رابط وجبة مباشر من مكوك؛ عند تركه فارغاً يظهر رابط مطعم سنونو العام على مكوك في الوضع التفاعلي.'));
    if(field==='rich_image')label.append(node('small','خاص بالوضع التفاعلي فقط. حمّل صورة PNG/WebP شفافة مع الحفاظ على صورة الطبق العادي كما هي؛ عند تركه فارغاً نعرض الصورة العادية.'));
    if(field==='available')label.append(node('small','عند إيقاف «متوفر» تتحول صورة هذه الوجبة إلى أبيض وأسود في المنيو العادي والتفاعلي دون التأثير على باقي الوجبات.'));
    if(field==='hours')label.append(node('small','هذه ساعات العمل المكتوبة للزوار فقط. لتفعيل الإغلاق التلقائي استخدم قسم «مواعيد الإغلاق» أعلى الصفحة.'));
@@ -1458,6 +1455,7 @@ async function edit(key,row,inline=false){
    }
    form.append(label);
  }
+ const getOptions=key==='dishes'?(await import('./order-options.js')).editOrderOptions(form,row.order_options):null;
  const error=node('p');error.setAttribute('role','alert'); const save=node('button',inline?'حفظ جميع الإعدادات':'حفظ');save.id='admin-save-'+key+'-'+(row.id||'new');save.dataset.trackAction='admin_save_click';
  const footer=node('footer');footer.append(save);
  if(!inline)footer.append(action('إلغاء',()=>$('dialog').close()));
@@ -1483,8 +1481,7 @@ async function edit(key,row,inline=false){
        }
      }
      if(key==='dishes'){
-       if(!data.sonbol_url)data.sonbol_url=null;
-       if(!data.makook_url)data.makook_url=null;
+       data.order_options=getOptions();
        if(!data.rich_image)data.rich_image=null;
        if(!row.id){
          const existing=await api('/rest/v1/dishes?select=position&category_id=eq.'+encodeURIComponent(data.category_id)+'&order=position.desc&limit=1');

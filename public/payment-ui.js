@@ -9,7 +9,7 @@ export const when = (s) =>
     timeZone: "Asia/Gaza",
   });
 export const statuses = {
-  pending: ["قيد مراجعة الدفع", "Payment under review"],
+  pending: ["قيد المراجعة", "Payment under review"],
   approved: ["تم اعتماد الدفع بنجاح!", "Payment approved!"],
   rejected: ["لم يتم اعتماد الدفع", "Payment rejected"],
   cancelled: ["ملغي", "Cancelled"],
@@ -85,7 +85,7 @@ export function invoice(o) {
     const tr = el("tr"),
       list = Math.max(Number(row.old_price || 0), Number(row.price));
     for (const v of [
-      row.name,
+      [row.name,...(row.choices||[]).map(c=>c.label),row.special_instructions].filter(Boolean).join(" · "),
       row.qty,
       amount(list),
       amount((list - row.price) * row.qty),

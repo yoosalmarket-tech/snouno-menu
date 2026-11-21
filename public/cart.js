@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "./payment-ui.js";
+} from "./payment-ui.js?v=02";
 const endpoint = "https://wknpuzdyemwkllmxehyy.supabase.co",
   key = "sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip";
 const read = (key, fallback) => {
@@ -38,14 +38,31 @@ async function call(data, proof) {
   if (!r.ok) throw Error(value.error || t("تعذر الاتصال", "Connection failed"));
   return value;
 }
-export function installCart({ catalog, name, closed, page }) {
+export function installCart({ catalog, name, description, closed, page }) {
   const dialog = el("dialog");
   dialog.className = "pay-dialog";
   dialog.setAttribute("aria-label", t("السلة والطلبات", "Cart and orders"));
-  const badge = button("", () => open());
-  badge.className = "pay-badge";
-  document.body.append(dialog, badge);
-  let cart = read("snounu-cart-v1", {}),
+  const badge = button("", open);
+  badge.className = "pay-footer";
+  const history = button("", () => {
+    if (!dialog.open) dialog.showModal();
+    showHistory();
+  });
+  history.className = "pay-orders-link";
+  document.body.append(dialog, badge, history);
+  const key = "snounu-cart-v2";
+  function restore() {
+    const saved = read(key, null);
+    if (Array.isArray(saved)) return saved;
+    return Object.entries(read("snounu-cart-v1", {})).map(([id, qty]) => ({
+      line: id,
+      id,
+      qty,
+      options: [],
+      note: "",
+    }));
+  }
+  let cart = restore(),
     tracking = read("snounu-orders-v1", []),
     cleanup = () => {},
     generation = 0,
@@ -53,36 +70,235 @@ export function installCart({ catalog, name, closed, page }) {
   let draft = { customer: "", phone: "", notes: "" },
     cfg,
     method = "",
-    proof = null;
+    proof = null,
+    maxQty = 99;
+  const localized = (o) => t(o.label, o.en || o.label);
+  function unit(d, ids) {
+    const options = (d?.order_options || [])
+      .flatMap((g) => g.choices)
+      .filter((o) => ids.includes(o.id));
+    return {
+      price:
+        (Math.round((d?.price || 0) * 100) +
+          options.reduce((c, o) => c + Math.round(o.price * 100), 0)) /
+        100,
+      selected: options,
+    };
+  }
   const lines = () =>
-    Object.entries(cart).map(([id, qty]) => ({
+    cart.map((l) => {
+      const d = catalog().find((d) => d.id === l.id);
+      return { ...l, d, ...unit(d, l.options) };
+    });
+  const items = () =>
+    lines().map(({ id, qty, price, options, note }) => ({
       id,
       qty,
-      d: catalog().find((d) => d.id === id),
+      price,
+      options,
+      note,
     }));
   const total = () =>
-    lines().reduce(
-      (v, { qty, d }) => v + qty * Math.round(100 * (d?.price || 0)),
-      0,
-    ) / 100;
-  const count = () => lines().reduce((v, l) => v + l.qty, 0);
+    lines().reduce((sum, l) => sum + l.qty * Math.round(l.price * 100), 0) /
+    100;
+  const count = () => cart.reduce((v, l) => v + l.qty, 0);
+  const motion = () => !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const pulse = (node) => {
+    if (motion())
+      node.animate(
+        [
+          { opacity: 0.65, transform: "translateY(3px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 200 },
+      );
+  };
   function refresh() {
-    badge.textContent = t("السلة", "Cart") + " · " + count();
-    badge.hidden = page() !== "menu";
+    const show = page() === "menu" && count() > 0;
+    badge.replaceChildren(
+      el("strong", t("عرض السلة", "View cart") + " · " + count()),
+      el("span", amount(total()) + "  ‹"),
+    );
+    badge.firstChild.prepend(el("span", "🛒 "));
+    document.body.classList.toggle("has-cart-footer", show);
+    if (show) {
+      badge.hidden = false;
+      badge.classList.add("visible");
+    } else {
+      const wasVisible = badge.classList.contains("visible");
+      badge.classList.remove("visible");
+      if (wasVisible && motion())
+        setTimeout(() => {
+          if (!badge.classList.contains("visible")) badge.hidden = true;
+        }, 220);
+      else badge.hidden = true;
+    }
+    history.hidden = !tracking.length || page() === "welcome";
+    history.textContent = t("طلباتي", "My orders");
   }
   function save() {
-    localStorage.setItem("snounu-cart-v1", JSON.stringify(cart));
+    localStorage.setItem(key, JSON.stringify(cart));
+    localStorage.removeItem("snounu-cart-v1");
     refresh();
+    pulse(badge);
   }
-  function add(d) {
+  function modal() {
+    if (!dialog.open) dialog.showModal();
+  }
+  async function dismiss() {
+    if (locked || dialog.classList.contains("closing")) return;
+    dialog.classList.add("closing");
+    if (motion())
+      await dialog
+        .animate(
+          [
+            { opacity: 1, transform: "none" },
+            { opacity: 0, transform: "translateY(28px) scale(.98)" },
+          ],
+          { duration: 180, easing: "ease-in" },
+        )
+        .finished.catch(() => {});
+    dialog.close();
+    dialog.classList.remove("closing");
+  }
+  function add(d, existing) {
     if (!d || d.available === false || closed()) return;
-    cart[d.id] = Math.min(99, (cart[d.id] || 0) + 1);
-    save();
-    open();
+    const previous = document.getElementById("dish");
+    if (previous?.open) previous.close();
+    modal();
+    const body = layout(name(d)),
+      form = el("form");
+    const photo = el("img");
+    photo.className = "pay-meal-photo";
+    photo.alt = name(d);
+    photo.src = d.image || d.rich_image || "/assets/logo.webp";
+    body.append(
+      photo,
+      el("p", description(d)),
+      el("strong", amount(d.price)),
+      form,
+    );
+    let qty = existing?.qty || 1;
+    const chosen = new Set(existing?.options || []);
+    for (const group of d.order_options || []) {
+      const section = el("fieldset");
+      section.append(
+        el("legend", localized(group) + (group.required ? " *" : "")),
+      );
+      for (const opt of group.choices) {
+        const selector = el("input");
+        selector.type = group.multiple ? "checkbox" : "radio";
+        selector.name = "option-" + d.order_options.indexOf(group);
+        selector.disabled = opt.available === false;
+        selector.checked = chosen.has(opt.id) && !selector.disabled;
+        if (selector.disabled) chosen.delete(opt.id);
+        selector.onchange = () => {
+          if (!group.multiple)
+            for (const other of group.choices) chosen.delete(other.id);
+          if (selector.checked) chosen.add(opt.id);
+          else chosen.delete(opt.id);
+          draw();
+        };
+        field(
+          section,
+          localized(opt) + (opt.price ? " +" + amount(opt.price) : ""),
+          selector,
+        );
+      }
+      if (!group.multiple && !group.required)
+        section.append(
+          button(t("بدون", "None"), () => {
+            section
+              .querySelectorAll("input")
+              .forEach((i) => (i.checked = false));
+            group.choices.forEach((o) => chosen.delete(o.id));
+            draw();
+          }),
+        );
+      form.append(section);
+    }
+    const note = el("textarea");
+    note.maxLength = 300;
+    note.value = existing?.note || "";
+    field(
+      form,
+      t("تعليمات خاصة (اختياري)", "Special instructions (optional)"),
+      note,
+    );
+    const controls = el("div");
+    controls.className = "pay-controls";
+    const n = el("output");
+    const minus = button("−", () => {
+        qty = Math.max(1, qty - 1);
+        draw();
+      }),
+      plus = button("+", () => {
+        qty = Math.min(maxQty, qty + 1);
+        draw();
+      });
+    controls.append(minus, n, plus);
+    form.append(controls);
+    const confirm = el("button");
+    confirm.className = "pay-primary";
+    form.append(confirm);
+    function draw() {
+      n.textContent = qty;
+      minus.disabled = qty <= 1;
+      plus.disabled = qty >= maxQty;
+      confirm.textContent =
+        (existing
+          ? t("حفظ التعديل", "Save changes")
+          : t("أضف للسلة", "Add to cart")) +
+        " · " +
+        amount(qty * unit(d, [...chosen]).price);
+      pulse(n);
+    }
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      if (confirm.disabled || locked) return;
+      for (const group of d.order_options || [])
+        if (group.required && !group.choices.some((o) => chosen.has(o.id)))
+          return error(Error(t("اختر من ", "Choose from ") + localized(group)));
+      const options = [...chosen].sort(),
+        instruction = note.value.trim();
+      const same = cart.find(
+        (l) =>
+          l.id === d.id &&
+          JSON.stringify(l.options) === JSON.stringify(options) &&
+          l.note === instruction &&
+          l.line !== existing?.line,
+      );
+      if (same && same.qty + qty > maxQty)
+        return error(Error(t("تجاوزت حد الكمية", "Quantity limit exceeded")));
+      if (existing) cart = cart.filter((l) => l.line !== existing.line);
+      if (same) same.qty += qty;
+      else
+        cart.push({
+          line: existing?.line || crypto.randomUUID(),
+          id: d.id,
+          qty,
+          options,
+          note: instruction,
+        });
+      save();
+      confirm.disabled = true;
+      confirm.textContent = t("تمت الإضافة ✓", "Added ✓");
+      if (existing) {
+        showCart();
+        return;
+      }
+      await dismiss();
+    };
+    draw();
   }
   function open() {
-    if (!dialog.open) dialog.showModal();
+    modal();
     showCart();
+  }
+  function showHistory() {
+    const b = layout(t("طلباتي", "My orders"));
+    for (const ref of tracking)
+      b.append(button("#" + ref.number, () => status(ref)));
   }
   function layout(title) {
     cleanup();
@@ -96,7 +312,7 @@ export function installCart({ catalog, name, closed, page }) {
     top.append(
       h,
       button("×", () => {
-        if (!locked) dialog.close();
+        void dismiss();
       }),
     );
     dialog.append(top);
@@ -127,15 +343,45 @@ export function installCart({ catalog, name, closed, page }) {
     };
   }
   dialog.oncancel = (e) => {
-    if (locked) e.preventDefault();
+    e.preventDefault();
+    void dismiss();
   };
+  dialog.addEventListener("click", (e) => {
+    if (e.target !== dialog) return;
+    const r = dialog.getBoundingClientRect();
+    if (
+      e.clientX < r.left ||
+      e.clientX > r.right ||
+      e.clientY < r.top ||
+      e.clientY > r.bottom
+    )
+      void dismiss();
+  });
+  let swipe;
+  dialog.addEventListener(
+    "touchstart",
+    (e) => {
+      swipe = e.target.closest(".pay-top") ? e.touches[0].clientY : null;
+    },
+    { passive: true },
+  );
+  dialog.addEventListener(
+    "touchend",
+    (e) => {
+      if (swipe != null && e.changedTouches[0].clientY - swipe > 60)
+        void dismiss();
+      swipe = null;
+    },
+    { passive: true },
+  );
   dialog.onclose = () => {
     cleanup();
     generation++;
   };
   function showCart() {
     const b = layout(t("سلّتك", "Your cart"));
-    for (const { id, qty, d } of lines()) {
+    for (const l of lines()) {
+      const { line, qty, d, price, selected, note } = l;
       const row = el("section");
       row.className = "pay-row";
       if (d?.image) {
@@ -147,20 +393,27 @@ export function installCart({ catalog, name, closed, page }) {
       const info = el("div");
       info.append(
         el("strong", d ? name(d) : t("وجبة غير متوفرة", "Unavailable meal")),
-        el("small", amount(d?.price || 0)),
+        el("small", amount(price)),
+        el("small", selected.map(localized).join(" · ")),
+        el("small", note),
       );
       const controls = el("div");
       controls.className = "pay-controls";
       const change = (n) => {
-        if (n <= 0) delete cart[id];
-        else cart[id] = Math.min(n, 99);
+        if (n <= 0) cart = cart.filter((i) => i.line !== line);
+        else cart.find((i) => i.line === line).qty = Math.min(n, maxQty);
         save();
+        if (!cart.length) {
+          void dismiss();
+          return;
+        }
         showCart();
       };
       controls.append(
         button("−", () => change(qty - 1)),
         el("span", qty),
         button("+", () => change(qty + 1)),
+        button(t("تعديل", "Edit"), () => add(d, l)),
         button(t("حذف", "Remove"), () => change(0)),
       );
       row.append(info, controls);
@@ -209,8 +462,21 @@ export function installCart({ catalog, name, closed, page }) {
       input.oninput = () => (draft[k] = input.value);
       field(f, label, input);
     }
-    for (const { d, qty } of lines())
-      f.append(el("p", name(d) + " × " + qty + " · " + amount(d.price * qty)));
+    for (const { d, qty, price, selected, note } of lines())
+      f.append(
+        el(
+          "p",
+          name(d) +
+            " × " +
+            qty +
+            " · " +
+            amount(price * qty) +
+            [...selected.map(localized), note]
+              .filter(Boolean)
+              .map((s) => " · " + s)
+              .join(""),
+        ),
+      );
     f.append(el("strong", t("الإجمالي", "Total") + " " + amount(total())));
     const next = el("button", t("متابعة لطريقة الدفع", "Continue to payment"));
     next.className = "pay-primary";
@@ -222,11 +488,7 @@ export function installCart({ catalog, name, closed, page }) {
         if (cfg.methods.length) {
           const q = await call({
             action: "quote",
-            items: lines().map(({ id, qty, d }) => ({
-              id,
-              qty,
-              price: d.price,
-            })),
+            items: items(),
           });
           if (Number(q.total) !== total())
             throw Error(
@@ -295,29 +557,39 @@ export function installCart({ catalog, name, closed, page }) {
         el(
           "p",
           t(
-            "لم يفعّل المطعم الدفع المباشر بعد. يمكنك الطلب من روابط التوصيل في صفحة الوجبة.",
-            "Direct payments are not open yet. Delivery links are available in meal details.",
+            "لم يفعّل المطعم وسيلة دفع بعد. ستبقى اختياراتك محفوظة في السلة.",
+            "Payment methods are not available yet. Your cart is saved.",
           ),
         ),
         button(t("رجوع", "Back"), checkout),
       );
       return;
     }
-    const select = el("select");
-    for (const m of cfg.methods) {
-      const o = el("option", m.icon + " " + m.name);
-      o.value = m.id;
-      select.append(o);
+    if (!cfg.methods.some((m) => m.id === method)) method = cfg.methods[0].id;
+    const methods = el("fieldset");
+    methods.className = "pay-methods";
+    methods.append(el("legend", t("طريقة الدفع", "Payment method")));
+    for (const entry of cfg.methods) {
+      const radio = el("input");
+      radio.type = "radio";
+      radio.name = "method";
+      radio.checked = method === entry.id;
+      radio.onchange = () => {
+        method = entry.id;
+        proof = null;
+        payment();
+      };
+      field(methods, entry.icon + " " + entry.name, radio);
     }
-    if (cfg.methods.some((m) => m.id === method)) select.value = method;
-    method = select.value;
-    field(b, t("طريقة الدفع", "Payment method"), select);
-    select.onchange = () => {
-      method = select.value;
-      proof = null;
-      payment();
-    };
+    b.append(methods);
     const m = cfg.methods.find((m) => m.id === method);
+    if (m.qr_url) {
+      const qr = el("img");
+      qr.src = m.qr_url;
+      qr.alt = t("رمز الدفع", "Payment QR code");
+      qr.className = "pay-qr";
+      b.append(qr);
+    }
     b.append(
       el("strong", m.holder),
       el("code", m.account),
@@ -344,7 +616,7 @@ export function installCart({ catalog, name, closed, page }) {
           ...draft,
           method,
           total: total(),
-          items: lines().map(({ id, qty, d }) => ({ id, qty, price: d.price })),
+          items: items(),
         },
         fingerprint = JSON.stringify(payload);
       let ref = read("snounu-pending-request", null);
@@ -371,7 +643,7 @@ export function installCart({ catalog, name, closed, page }) {
       tracking = [saved, ...tracking.filter((r) => r.id !== ref.id)];
       localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
       localStorage.removeItem("snounu-pending-request");
-      cart = {};
+      cart = [];
       save();
       proof = null;
       draft = { customer: "", phone: "", notes: "" };
@@ -399,6 +671,7 @@ export function installCart({ catalog, name, closed, page }) {
         ref.status = o.status;
         localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
         b.replaceChildren();
+        pulse(b);
         b.append(
           el("h3", t(...statuses[o.status])),
           el("strong", "#" + o.number + " · " + amount(o.total)),
@@ -484,8 +757,8 @@ export function installCart({ catalog, name, closed, page }) {
           el(
             "small",
             t(
-              "يمكنك العودة من السلة على هذا المتصفح.",
-              "Reopen your cart on this browser to track this order.",
+              "يمكنك متابعة الطلب من «طلباتي» على هذا المتصفح.",
+              "Open My orders on this browser to track your order.",
             ),
           ),
           button(t("العودة للسلة", "Back to cart"), showCart),
@@ -574,7 +847,7 @@ export function installCart({ catalog, name, closed, page }) {
   document.addEventListener("visibilitychange", notifications);
   window.addEventListener("pagechange", refresh);
   window.addEventListener("storage", () => {
-    cart = read("snounu-cart-v1", {});
+    cart = restore();
     tracking = read("snounu-orders-v1", []);
     refresh();
   });
@@ -582,6 +855,11 @@ export function installCart({ catalog, name, closed, page }) {
     attributes: true,
     attributeFilter: ["lang"],
   });
+  call({ action: "config" })
+    .then((c) => {
+      maxQty = c.max_quantity || 99;
+    })
+    .catch(() => {});
   refresh();
   return {
     add,
