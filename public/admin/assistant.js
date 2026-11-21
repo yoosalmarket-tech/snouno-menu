@@ -81,8 +81,11 @@ export function renderAssistant({root,getToken}){
       if(typeof result?.answer!=='string'||!result.answer.trim())throw new Error('لم يصل جواب من المساعد.');
       bubble.querySelector('.snounu-ai-text').textContent=result.answer.trim();
       if(result.mode==='summary'){
-        const hint=create('small','snounu-ai-mode','وضع التقارير المباشرة · نموذج AI غير متصل');
+        const hint=create('small','snounu-ai-mode',
+          'تقارير سنونو المباشرة · لا يستخدم نموذج الذكاء الاصطناعي الآن');
         bubble.append(hint);
+      } else if(result.mode==='ai' && result.provider==='groq'){
+        bubble.append(create('small','snounu-ai-mode','إجابة ذكية عبر Groq'));
       }
       history.push({role:'user',content:question},{role:'assistant',content:result.answer.trim()});
       if(history.length>12)history=history.slice(-12);
