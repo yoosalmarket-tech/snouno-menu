@@ -5,6 +5,45 @@ const SUPABASE = 'https://wknpuzdyemwkllmxehyy.supabase.co';
 const ANON_KEY = 'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
 const MODEL = 'gemini-3.8-flash';
 const NEWS_MODEL = 'gemini-2.5-flash-lite';
+const FREE_TEXT_MODELS=[
+  'gemini-3.8-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3.6-flash',
+  'gemini-2.5-flash-lite'
+];
+let modelCatalogCache=null;
+async function availableGeminiModels(key){
+  if(modelCatalogCache && Date.now()-modelCatalogCache.checkedAt<600000)
+    return modelCatalogCache.models;
+  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',{
+    headers:{'x-goog-api-key':key,'Accept':'application/json'},
+    signal:AbortSignal.timeout(6500)
+  });
+  if(!response.ok){
+    const err=new Error('Model catalog unavailable');
+    err.status=response.status;
+    throw err;
+  }
+  const json=await response.json();
+  const models=new Set((Array.isArray(json.models)?json.models:[])
+    .filter(item=>Array.isArray(item.supportedGenerationMethods)&&
+      item.supportedGenerationMethods.includes('generateContent'))
+    .map(item=>String(item.name||'').split('/').pop()));
+  modelCatalogCache={models,checkedAt:Date.now()};
+  return models;
+}
+function geminiErrorText(status){
+  if(status===400)return 'تعذّر استخدام النموذج أو إعداداته. سنحاول نموذجاً متوافقاً آخر.';
+  if(status===401)return 'مفتاح Gemini غير صالح. راجع مفتاح GEMINI_API_KEY في Vercel.';
+  if(status===403)return 'مفتاح Gemini ليس لديه صلاحية استعمال النموذج في هذا المشروع أو المنطقة.';
+  if(status===404)return 'لم يُعثر على نموذج Gemini يدعم هذا المفتاح. راجع قائمة النماذج في Google AI Studio.';
+  if(status===429)return 'بلغت الحد المجاني اليومي أو حد الطلبات لدى Gemini. جرّب مجدداً بعد تجدد الحصة.';
+  if(status>=500)return 'خدمة Gemini تواجه مشكلة مؤقتة. جرّب مجدداً بعد قليل.';
+  return 'تعذّر الوصول إلى Gemini. راجع صلاحية المفتاح وإعدادات المشروع.';
+}
+
 const DAY_MS = 86400000;
 
 function send(res, status, data) {
@@ -200,7 +239,7 @@ async function callGemini(apiKey,model,system,contents,withSearch=false){
   };
   if(withSearch)body.tools=[{googleSearch:{}}];
   const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{
-    method:'POST',signal:AbortSignal.timeout(23000),
+    method:'POST',signal:AbortSignal.timeout(withSearch?20000:9500),
     headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
     body:JSON.stringify(body)
   });
@@ -243,7 +282,18 @@ function reportAnswer(context, question, reason) {
     if(hist)out.push('الإجمالي المسجّل: '+hist.approved+' دفعة معتمدة، بقيمة '+hist.approved_sales_ils.toFixed(2)+' ₪.');
     if(!hist&&!week)out.push('بيانات المبيعات غير متاحة حالياً.');
   };
-  if(/(مبيعات|إيراد|دخل|بيع|sale|revenue|شيكل|مجموع)/.test(q))sales();
+  if(/(تفاعل|زوار|مشاهدة|تصفح|view|visit|engage)/.test(q)){
+    if(events){
+      out.push('أحداث التفاعل المسجلة خلال آخر 14 يوماً: '+events.events_sampled+' حدثاً.');
+      const popular=events.most_interacted_meals||[];
+      if(popular.length)out.push('الوجبات الأكثر تفاعلاً في العيّنة:\n'+
+        popular.slice(0,5).map(x=>x.meal+' ('+x.actions+' تفاعلات)').join('، '));
+      else out.push('لا تتوفر بيانات تفاعل كافية لترتيب الوجبات.');
+      out.push('هذه أحداث تفاعل وليست زيارات فريدة أو مبيعات. لذا لا تعني بالضرورة زيادة المبيعات.');
+      if(events.potentially_truncated)out.push('البيانات عيّنة محدودة إلى 1000 حدث.');
+    }else out.push('بيانات التفاعل غير متاحة حالياً.');
+  }
+  else if(/(مبيعات|إيراد|دخل|بيع|sale|revenue|شيكل|مجموع)/.test(q))sales();
   else if(/(وجبات|الأكثر|أفضل|طبق|صنف|dish|meal|best)/.test(q)){
     const meals=hist?.top_sold_meals||[];
     if(meals.length)out.push('الوجبات الأعلى مبيعاً في الطلبات المعتمدة:\n'+meals.slice(0,5).map((m,i)=>
@@ -286,10 +336,12 @@ export default async function handler(req,res){
     .map(x=>({role:x.role,content:x.content.slice(0,700)})):[];
   const key=process.env.GEMINI_API_KEY?.trim();
   if(!key)return send(res,503,{error:'gemini_not_configured',message:'أضف GEMINI_API_KEY إلى إعدادات Production في Vercel.'});
-  const combined=[question,...history.slice(-2).filter(x=>x.role==='user').map(x=>x.content)].join(' ');
-  const news=WANT_TRENDS.test(combined);
-  const weather=WANT_WEATHER.test(combined);
-  const business=WANT_RESTAURANT.test(combined);
+  // Always classify CURRENT intent. Previous turns are passed to the model
+  // for continuity, but must not force unrelated questions into news search.
+  const combined=question;
+  const news=WANT_TRENDS.test(question);
+  const weather=WANT_WEATHER.test(question);
+  const business=WANT_RESTAURANT.test(question);
   const now=new Date().toISOString();
   let restaurant=null,forecast=null;
   if(business&&!news){
@@ -304,47 +356,79 @@ export default async function handler(req,res){
     catch{return send(res,200,{answer:'تعذر جلب توقعات طقس غزة من MET Norway الآن. لا أستطيع تأكيد الجو دون مصدر حديث.',
       mode:'weather_unavailable',sources:[],data_as_of:now})}
   }
+
+  if(news){
+    // Search grounding is NOT enabled on Gemini 3.x: that could incur charges.
+    // Check whether the legacy free Search model is actually available to this key.
+    const fallbackNews=()=>{
+      const isRestaurant=/(?:مطعم|مطاعم|تسويق|restaurant|foodservice|مقاهي|طعام)/i.test(question);
+      const query=isRestaurant?'مطاعم غزة':'غزة';
+      const url='https://news.google.com/search?q='+encodeURIComponent(query)+
+        '&hl=ar&gl=PS&ceid=PS%3Aar';
+      return send(res,200,{
+        answer:'البحث الحي الموثّق غير متاح حالياً للنماذج المجانية الخاصة بمشروعك. لا أستطيع تقديم أخبار غير متحقق منها. يمكنك فتح نتائج البحث من الرابط أدناه والتحقق من تاريخ النشر الأصلي للمقالات.',
+        mode:'unverified_news',provider:'gemini',
+        sources:[{label:'البحث عن '+query+' في Google News',url}],
+        data_as_of:now
+      });
+    };
+    let catalog=null;
+    try{catalog=await availableGeminiModels(key)}catch{}
+    if(catalog&&!catalog.has(NEWS_MODEL))return fallbackNews();
   try{
     const allowed=await supa('/rest/v1/rpc/snounu_ai_consume_daily_quota',owner.auth,{method:'POST',body:'{}'});
     if(allowed!==true)return send(res,429,{error:'daily_limit',message:'بلغت حد 20 سؤالاً يومياً.'});
   }catch{return send(res,503,{error:'quota_unavailable',message:'تعذر التحقق من الحد اليومي.'})}
-  if(news){
-    // Gemini 3.8 paid Search is intentionally NOT enabled. Attempt free 2.5 Flash-Lite Search.
-    const newsQuestion='التاريخ: '+now+'؛ السؤال: '+question+'؛ ركز على غزة ومطاعم غزة ثم المطاعم حول العالم عند الملاءمة. تحقّق من تاريخ نشر كل مقال أصلي.';
+    const newsQuestion='التاريخ: '+now+'؛ السؤال: '+question+
+      '؛ ركز على غزة ومطاعم غزة والمطاعم حول العالم. تأكد من تاريخ النشر الأصلي لكل خبر.';
     try{
-      const result=await callGemini(key,NEWS_MODEL,NEWS_PROMPT,[{role:'user',parts:[{text:newsQuestion}]}],true);
-      if(!checkNews(result.answer,result.links,question))return send(res,200,{
-        answer:'لم أتمكن من التحقق من أخبار حديثة ذات مصادر وتواريخ نشر موثوقة. لن أعرض مقالات قديمة على أنها أخبار جديدة.',
-        mode:'unverified_news',provider:'gemini',sources:[],data_as_of:now});
-      return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
-        provider:'gemini',model:NEWS_MODEL,sources:result.links,data_as_of:now});
+      const result=await callGemini(key,NEWS_MODEL,NEWS_PROMPT,
+        [{role:'user',parts:[{text:newsQuestion}]}],true);
+      if(!checkNews(result.answer,result.links,question))
+        return send(res,200,{
+          answer:'تعذّر التحقق من تواريخ النشر الأصلية للأخبار الموجودة في نتائج البحث. لن أعرض خبر 2020 على أنه جديد.',
+          mode:'unverified_news',provider:'gemini',sources:result.links,data_as_of:now});
+      return send(res,200,{answer:result.answer.slice(0,5000),
+        mode:'ai',provider:'gemini',model:NEWS_MODEL,sources:result.links,data_as_of:now});
     }catch(e){
-      return send(res,200,{
-        answer:[400,403,404,429].includes(e?.status)
-          ?'Google Search Grounding غير متاح مع خطة Gemini أو المفتاح الحالي. لن أختلق أخبار غزة أو أعرض أخباراً قديمة على أنها حديثة.'
-          :'تعذر البحث عن أخبار حديثة موثوقة الآن. حاول مرة أخرى لاحقاً.',
+      if([400,401,403,404,429].includes(e?.status))return fallbackNews();
+      return send(res,200,{answer:'تعثّر الاتصال بمصدر البحث الحي، ولا توجد أخبار حديثة يمكن تأكيدها حالياً.',
         mode:'unverified_news',provider:'gemini',sources:[],data_as_of:now});
     }
   }
+  try{
+    const allowed=await supa('/rest/v1/rpc/snounu_ai_consume_daily_quota',owner.auth,{method:'POST',body:'{}'});
+    if(allowed!==true)return send(res,429,{error:'daily_limit',message:'بلغت حد 20 سؤالاً يومياً.'});
+  }catch{return send(res,503,{error:'quota_unavailable',message:'تعذر التحقق من الحد اليومي.'})}
   const data={question,history,as_of:now,restaurant_reports:restaurant,gaza_weather:forecast};
   const weatherSources=forecast?[{label:'MET Norway · طقس مدينة غزة',url:forecast.source_url}]:[];
-  try{
-    let result;
-    let modelUsed=MODEL;
+  let catalog=null,catalogStatus=null;
+  try{catalog=await availableGeminiModels(key);}
+  catch(e){catalogStatus=e?.status||503;}
+  // The catalog excludes retired models and those unavailable to this API key.
+  // When discovery fails temporarily, only try our known free-tier candidates.
+  const candidates=FREE_TEXT_MODELS.filter(model=>!catalog||catalog.has(model)).slice(0,3);
+  const contents=[{role:'user',parts:[{text:JSON.stringify(data)}]}];
+  let failedStatus=catalogStatus||404;
+  for(const candidate of candidates){
     try{
-      result=await callGemini(key,MODEL,SYSTEM_PROMPT,[{role:'user',parts:[{text:JSON.stringify(data)}]}]);
-    }catch(initial){
-      if(initial?.status!==404)throw initial;
-      // Some newly created free-tier keys may not have the newest Flash model enabled yet.
-      modelUsed='gemini-3.6-flash';
-      result=await callGemini(key,modelUsed,SYSTEM_PROMPT,
-        [{role:'user',parts:[{text:JSON.stringify(data)}]}]);
+      const result=await callGemini(key,candidate,SYSTEM_PROMPT,contents);
+      return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
+        provider:'gemini',model:candidate,sources:weatherSources,data_as_of:now});
+    }catch(e){
+      failedStatus=e?.status||502;
+      // A bad key or permission restriction is not fixed by trying more models.
+      if(failedStatus===401||failedStatus===403)break;
+      if(![400,404,429,500,502,503].includes(failedStatus))break;
     }
-    return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
-      provider:'gemini',model:modelUsed,sources:weatherSources,data_as_of:now});
-  }catch(e){
-    return send(res,e?.status===429?429:502,{
-      error:'gemini_unavailable',
-      message:e?.status===429?'بلغت الحد المتاح لمكالمات Gemini. حاول لاحقاً.':'تعذّر الحصول على إجابة من Gemini. تحقّق من صلاحية المفتاح وحدود المشروع.'});
   }
+  if(restaurant){
+    return send(res,200,{answer:reportAnswer(restaurant,question,'gemini_unavailable'),
+      mode:'summary',provider:'local_reports',
+      notice:geminiErrorText(failedStatus),sources:[],data_as_of:now});
+  }
+  return send(res,failedStatus===429?429:503,{
+    error:'gemini_unavailable',provider_status:failedStatus,
+    message:geminiErrorText(failedStatus)
+  });
 }
