@@ -511,3 +511,27 @@ body.rich-menu-active:not(.has-cart-footer) .pay-orders-link {
 @media (prefers-contrast:more) {
   .pay-results .pay-status-pill {border:2px solid currentColor;}
 }
+
+/* EDIT ALL PAYMENT 09 — show only the latest order update; older orders are in طلباتي. */
+.pay-notification--latest {
+  z-index: 656;
+  box-sizing: border-box;
+  max-width: min(calc(100vw - 24px), 340px);
+  overflow-wrap: anywhere;
+  bottom: calc(112px + env(safe-area-inset-bottom));
+  inset-inline-end: max(12px, env(safe-area-inset-right));
+  white-space: normal;
+}
+body.has-cart-footer .pay-notification--latest {
+  bottom: calc(194px + env(safe-area-inset-bottom));
+}
+body.rich-menu-active:not(.has-cart-footer) .pay-notification--latest {
+  bottom: calc(74px + env(safe-area-inset-bottom));
+}
+@media (max-width: 620px) {
+  .pay-notification--latest {
+    max-width: min(78vw, 310px);
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
