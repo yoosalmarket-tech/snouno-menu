@@ -185,9 +185,8 @@ async function recentNews(question){
  const gaza=MENTION_GAZA.test(question),marketing=MENTION_MARKETING.test(question);
  const q=gaza?(marketing?'تسويق المطاعم غزة when:7d':'غزة when:7d')
    :marketing?'restaurant marketing trends when:7d':'world news trending topics when:2d';
- const url=new URL('https://news.google.com/rss/search');
- url.searchParams.set('q',q);url.searchParams.set('hl',gaza?'ar':'en-US');
- url.searchParams.set('gl',gaza?'PS':'US');url.searchParams.set('ceid',gaza?'PS:ar':'US:en');
+ const url='https://news.google.com/rss/search?q='+encodeURIComponent(q)
+   +'&hl='+(gaza?'ar':'en-US')+'&gl='+(gaza?'PS':'US')+'&ceid='+(gaza?'PS%3Aar':'US%3Aen');
  const resp=await fetch(url,{signal:AbortSignal.timeout(6500),headers:{Accept:'application/rss+xml'}});
  if(!resp.ok)throw Error('News unavailable');
  const xml=await resp.text();
@@ -200,7 +199,7 @@ async function recentNews(question){
  if(!items.length)throw Error('No news results');
  return {type:'recent_news',provider:'Google News RSS',retrieved_at:new Date().toISOString(),
   scope:gaza?'Gaza / Palestine':marketing?'Restaurant marketing':'Global',
-  note:'Recent headlines, not a measured popularity ranking',source_url:url.toString(),items};
+  note:'Recent headlines, not a measured popularity ranking',source_url:url,items};
 }
 function externalFallback(live){
  const weather=live.find(x=>x.type==='weather'),news=live.find(x=>x.type==='recent_news');
