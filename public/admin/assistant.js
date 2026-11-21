@@ -43,17 +43,9 @@ export function renderAssistant({root,getToken}){
   root.replaceChildren();
   const panel=create('section','snounu-ai');
   panel.setAttribute('aria-label','مساعد سنونو الذكي');
-  const hero=create('header','snounu-ai-hero');
-  const heroCopy=create('div');
-  heroCopy.append(create('small','','SNOUNU  ✦  AI'),
-    create('h2','','اسأل عن مطعمك'),
-    create('p','','تحدث مع Groq بحرية، واستفد من بيانات المنيو والمبيعات والمشاهدات ومعلومات المطعم في أي فكرة أو قرار.'));
-  hero.append(heroCopy,create('span','snounu-ai-glyph','✦'));
-  const badges=create('div','snounu-ai-meta');
-  badges.append(create('span','','قراءة فقط · بدون تعديل البيانات'),
-    create('span','','حتى 100 إجابة ذكية ناجحة يومياً'));
+  const title=create('h2','snounu-ai-title','مساعد سنونو');
   const briefPanel=create('details','snounu-ai-brief');
-  const briefTitle=create('summary','','معلومات ثابتة للمساعد · يحررها مالك المطعم');
+  const briefTitle=create('summary','','تعليمات المطعم');
   const briefIntro=create('p','','أضف أهداف المطعم، الجمهور المستهدف، هوامش الربح التقريبية، حدود ميزانية التسويق أو قيود التصوير. هذه المعلومات تُرسل إلى Groq ضمن سياق الأسئلة، فلا تكتب بيانات عملاء أو كلمات مرور.');
   const briefInput=create('textarea','snounu-ai-brief-input');
   briefInput.rows=5;briefInput.maxLength=3000;
@@ -114,14 +106,31 @@ export function renderAssistant({root,getToken}){
   const archiveStatus=create('small','','');
   archiveStatus.setAttribute('role','status');
   archive.append(archiveLabel,archiveList,archiveStatus);
-  toolbar.append(reset,archive);
+  const tools=create('div','snounu-ai-actions');
+  tools.append(briefPanel,reset);
+  toolbar.append(title,tools);
+  const rail=create('div','snounu-ai-rail');
+  rail.append(archive);
+  const wide=()=>window.matchMedia?.('(min-width: 1050px)').matches??false;
+  archive.open=wide();
+  panel.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){
+      const open=event.target.closest('details[open]');
+      if(open){open.open=false;open.querySelector('summary').focus();}
+    }
+  });
+  panel.addEventListener('click',event=>{
+    if(!briefPanel.contains(event.target))briefPanel.open=false;
+    if(!wide()&&!archive.contains(event.target))archive.open=false;
+  });
   const log=create('div','snounu-ai-log');
   log.setAttribute('role','log');
   log.setAttribute('aria-label','محادثة مساعد سنونو');
   log.setAttribute('aria-live','polite');
   const welcome=create('div','snounu-ai-welcome');
-  welcome.append(create('h3','','ماذا تريد أن تعرف؟'),
-    create('p','','هذه أسئلة مقترحة فقط. اكتب أي سؤال أو فكرة تسويقية وسيجيبك المساعد بشكل طبيعي باستخدام بيانات سنونو عند الحاجة.'));
+  const mark=create('span','snounu-ai-mark','✦');
+  mark.setAttribute('aria-hidden','true');
+  welcome.append(mark,create('h3','','شو بدّك نشتغل عليه اليوم؟'));
   const suggestions=create('div','snounu-ai-suggestions');
   const starters=[
     ['فكرة ريلز','بفكر أصوّر ريلز عن بوكس المشاركة بكرة. شو رأيك؟'],
@@ -138,22 +147,28 @@ export function renderAssistant({root,getToken}){
   welcome.append(suggestions);log.append(welcome);
   const form=create('form','snounu-ai-form');
   const prompt=create('textarea','snounu-ai-prompt');
-  prompt.rows=2;prompt.required=true;prompt.maxLength=2000;
-  prompt.placeholder='اسأل بحرية: فكرة ريلز، تحليل وجبة، ميزانية حملة، نص إعلان أو أي سؤال…';
+  prompt.rows=1;prompt.required=true;prompt.maxLength=2000;
+  prompt.placeholder='اكتب رسالتك…';
   prompt.setAttribute('aria-label','السؤال');
   const controls=create('div','snounu-ai-controls');
   const counter=create('small','','0 / 2000');
-  const send=create('button','snounu-ai-submit','إرسال السؤال');
+  const send=create('button','snounu-ai-submit','↑');
+  send.setAttribute('aria-label','إرسال السؤال');send.title='إرسال السؤال';
   send.type='submit';controls.append(counter,send);
   form.append(prompt,controls);
-  panel.append(hero,badges,briefPanel,toolbar,log,form,
-    create('p','snounu-ai-disclaimer',
-      'تُرسل إلى Groq الإحصاءات المجمعة وبيانات المنيو العامة والمعلومات الثابتة التي يضيفها المالك. لا تُرسل أسماء العملاء أو إثباتات الدفع أو الأسرار، وتنحفظ محادثاتك بحسابك. بتقدر ترجع إلها أو تحذفها من المحادثات السابقة.'));
+  const privacy=create('p','snounu-ai-privacy','تُرسل رسائلك وتعليمات المطعم إلى Groq. المحادثات محفوظة بحسابك. حدّك اليومي ١٠٠ إجابة.');
+  briefPanel.append(privacy);
+  const chat=create('div','snounu-ai-chat');
+  chat.append(log,form);
+  panel.append(toolbar,rail,chat);
   root.append(panel);
   let active=null,busy=false,listVersion=0;
+  function resizePrompt(){
+    prompt.style.height='auto';prompt.style.height=Math.min(prompt.scrollHeight,112)+'px';
+  }
   function clearChat(){
     active=null;log.replaceChildren(welcome);
-    prompt.value='';counter.textContent='0 / 2000';
+    prompt.value='';counter.textContent='0 / 2000';resizePrompt();
   }
   function setBusy(value){
     busy=value;send.disabled=value;reset.disabled=value;prompt.disabled=value;
@@ -179,7 +194,7 @@ export function renderAssistant({root,getToken}){
             if(!saved)throw Error('المحادثة مش موجودة.');
             clearChat();active=saved;log.replaceChildren();
             for(const turn of saved.turns){addMessage('user',turn.question);addMessage('assistant',turn.answer);}
-            archive.open=false;
+            if(!wide())archive.open=false;
           }catch(e){archiveStatus.textContent=e.message;}
           finally{setBusy(false);}
         };
@@ -221,12 +236,12 @@ export function renderAssistant({root,getToken}){
   async function ask(text,isStarter=false){
     const question=String(text||'').trim();
     if(busy||!question||question.length>2000)return;
-    setBusy(true);archive.open=false;
+    setBusy(true);if(!wide())archive.open=false;
     if(welcome.isConnected)welcome.remove();
     addMessage('user',question);
     const bubble=addMessage('assistant','لحظة…');
     bubble.classList.add('is-loading');
-    if(!isStarter){prompt.value='';counter.textContent='0 / 2000';}
+    if(!isStarter){prompt.value='';counter.textContent='0 / 2000';resizePrompt();}
     try{
       const token=await getToken();
       const response=await fetch('/api/ai-assistant',{
@@ -248,7 +263,7 @@ export function renderAssistant({root,getToken}){
       log.scrollTop=log.scrollHeight;
     }
   }
-  prompt.addEventListener('input',()=>counter.textContent=prompt.value.length+' / 2000');
+  prompt.addEventListener('input',()=>{counter.textContent=prompt.value.length+' / 2000';resizePrompt();});
   prompt.addEventListener('keydown',event=>{
     if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){
       event.preventDefault();
@@ -258,6 +273,6 @@ export function renderAssistant({root,getToken}){
   form.addEventListener('submit',event=>{event.preventDefault();void ask(prompt.value);});
   reset.onclick=()=>{
     if(busy)return;
-    clearChat();archive.open=false;prompt.focus();
+    clearChat();if(!wide())archive.open=false;prompt.focus();
   };
 }
