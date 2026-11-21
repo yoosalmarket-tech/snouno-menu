@@ -720,36 +720,59 @@ export function installCart({ catalog, name, description, closed, page }) {
     }
     b.append(methods);
     const m = cfg.methods.find((m) => m.id === method);
-    if (/^https:\/\//i.test(m.qr_url || "")) {
+    // Only render actual images uploaded for this payment method.
+    // Never lazy-load an image inside a hidden container: Safari and Chromium
+    // can defer that request forever, so an onload-controlled parent stays hidden.
+    const qrLink = String(m.qr_url || "").trim();
+    const qrUrl = (() => {
+      try {
+        const u = new URL(qrLink);
+        if (u.protocol !== "https:" ||
+            !/^\/storage\/v1\/object\/public\/menu-images\/payment-qr\/[\w-]+\.(?:png|jpg|jpeg|webp)$/i.test(u.pathname))
+          return null;
+        return u;
+      } catch { return null; }
+    })();
+    if (qrUrl) {
       const qrBox = el("figure");
       qrBox.className = "pay-qr-box";
+      const caption = el("figcaption", t("امسح QR لإتمام التحويل", "Scan the QR code to pay"));
       const qr = el("img");
-      qr.alt = "";
-      qr.loading = "lazy";
       qr.className = "pay-qr";
-      qr.onload = () => { qrBox.hidden = false; };
-      qr.onerror = () => qrBox.remove(); // Never show a broken image or its alt text.
-      qrBox.hidden = true;
-      qr.src = m.qr_url;
-      const download = button(t("تنزيل رمز QR", "Download QR"), async () => {
-        try {
-          const response = await fetch(m.qr_url, { mode: "cors", cache: "no-store" });
-          if (!response.ok) throw Error();
-          const blob = await response.blob();
-          if (!blob.type.startsWith("image/")) throw Error();
-          const local = URL.createObjectURL(blob);
-          const anchor = el("a");
-          anchor.href = local;
-          anchor.download = "snounu-payment-qr." +
-            (blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg");
-          document.body.append(anchor); anchor.click(); anchor.remove();
-          setTimeout(() => URL.revokeObjectURL(local), 30000);
-        } catch {
-          error(Error(t("تعذّر تنزيل صورة QR، حاول مجدداً", "QR download failed. Try again.")));
-        }
-      });
-      download.className = "pay-download-qr";
-      qrBox.append(qr, el("figcaption", t("امسح رمز QR للدفع", "Scan QR to pay")), download);
+      qr.alt = t("رمز QR الخاص بطريقة الدفع المحددة", "QR for selected payment method");
+      qr.loading = "eager";
+      qr.decoding = "async";
+      const state = el("small", t("جارٍ تحميل رمز QR…", "Loading QR code…"));
+      state.className = "pay-qr-state";
+      qr.onload = () => {
+        state.remove();
+        qrBox.classList.add("pay-qr-ready");
+      };
+      qr.onerror = () => {
+        qr.remove();
+        state.textContent = t(
+          "تعذر عرض صورة QR حالياً. يمكنك محاولة تنزيلها أو استخدام رقم الحساب.",
+          "QR preview unavailable. Try downloading it or use the account number."
+        );
+        qrBox.classList.add("pay-qr-error");
+      };
+      const fileName = "snounu-payment-qr." +
+        (qrUrl.pathname.toLowerCase().endsWith(".png") ? "png" :
+        qrUrl.pathname.toLowerCase().endsWith(".webp") ? "webp" : "jpg");
+      const download = new URL(qrUrl.href);
+      // Supabase Storage returns Content-Disposition: attachment for this query.
+      // A normal anchor is reliable on mobile Safari, where a fetch/Blob click
+      // after an await may lose its user activation.
+      download.searchParams.set("download", fileName);
+      const link = el("a", t("تنزيل صورة QR", "Download QR image"));
+      link.className = "pay-download-qr pay-qr-download";
+      link.href = download.href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.download = fileName;
+      link.setAttribute("aria-label", t("تنزيل رمز QR لهذه المحفظة أو طريقة الدفع", "Download this payment method's QR code"));
+      qr.src = qrUrl.href;
+      qrBox.append(caption, qr, state, link);
       b.append(qrBox);
     }
     b.append(
