@@ -5,6 +5,40 @@ const create=(tag,cls,text)=>{
   if(text!==undefined)node.textContent=text;
   return node;
 };
+function renderReply(target,text){
+  target.replaceChildren();
+  // Earlier transcripts sometimes place an entire numbered sequence on one line.
+  let list=null;
+  for(const raw of text.split(/\r?\n/)){
+    const line=raw.trim();
+    const inline=/(?:^|\s)[1١]\)\s/u.test(line)&&/\s[2٢]\)\s/u.test(line);
+    const parts=inline?line.split(/\s+(?=[0-9٠-٩]+\)\s)/u):[line];
+    if(inline){
+      const tail=parts.at(-1).match(/^(.+?[.!؟])\s+(.+)$/u);
+      if(tail)parts.splice(-1,1,tail[1],tail[2]);
+    }
+    for(const part of parts){
+      if(!part){list=null;continue;}
+      const item=part.match(/^(?:([0-9٠-٩]+)[.)]|([-*•]))\s+(.+)$/u);
+      let block;
+      if(item){
+        const tag=item[1]?'ol':'ul';
+        if(list?.localName!==tag){list=create(tag);target.append(list);}
+        block=create('li');list.append(block);
+        if(item[1])block.value=Number(item[1].replace(/[٠-٩]/g,c=>c.charCodeAt(0)-1632));
+      }else{
+        list=null;block=create('p');target.append(block);
+      }
+      const content=item?item[3]:part;
+      for(const token of content.split(/(\*\*[^*]+\*\*)/g)){
+        if(token.startsWith('**')&&token.endsWith('**')&&token.length>4)
+          block.append(create('strong','',token.slice(2,-2)));
+        else block.append(document.createTextNode(token));
+      }
+    }
+  }
+}
+
 export function renderAssistant({root,getToken}){
   root.replaceChildren();
   const panel=create('section','snounu-ai');
@@ -180,6 +214,7 @@ export function renderAssistant({root,getToken}){
     item.append(create('small','',role==='assistant'?'مساعد سنونو':'أنت'),
       create('div','snounu-ai-text',text));
     item.lastElementChild.dir='auto';
+    if(role==='assistant')renderReply(item.lastElementChild,text);
     log.append(item);log.scrollTop=log.scrollHeight;
     return item;
   }
@@ -201,7 +236,7 @@ export function renderAssistant({root,getToken}){
       const result=await response.json().catch(()=>null);
       if(!response.ok)throw new Error(result?.message||'تعذر الاتصال بالمساعد، حاول مرة أخرى.');
       if(typeof result?.answer!=='string'||!result.answer.trim())throw new Error('لم يصل جواب من المساعد.');
-      bubble.querySelector('.snounu-ai-text').textContent=result.answer.trim();
+      renderReply(bubble.querySelector('.snounu-ai-text'),result.answer.trim());
       active=result.chat;
       if(archive.open)void loadChats();
     }catch(e){
