@@ -239,7 +239,7 @@ async function callGemini(apiKey,model,system,contents,withSearch=false){
   };
   if(withSearch)body.tools=[{googleSearch:{}}];
   const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{
-    method:'POST',signal:AbortSignal.timeout(23000),
+    method:'POST',signal:AbortSignal.timeout(withSearch?20000:9500),
     headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
     body:JSON.stringify(body)
   });
@@ -369,23 +369,33 @@ export default async function handler(req,res){
   }
   const data={question,history,as_of:now,restaurant_reports:restaurant,gaza_weather:forecast};
   const weatherSources=forecast?[{label:'MET Norway · طقس مدينة غزة',url:forecast.source_url}]:[];
-  try{
-    let result;
-    let modelUsed=MODEL;
+  let catalog=null,catalogStatus=null;
+  try{catalog=await availableGeminiModels(key);}
+  catch(e){catalogStatus=e?.status||503;}
+  // The catalog excludes retired models and those unavailable to this API key.
+  // When discovery fails temporarily, only try our known free-tier candidates.
+  const candidates=FREE_TEXT_MODELS.filter(model=>!catalog||catalog.has(model)).slice(0,3);
+  const contents=[{role:'user',parts:[{text:JSON.stringify(data)}]}];
+  let failedStatus=catalogStatus||404;
+  for(const candidate of candidates){
     try{
-      result=await callGemini(key,MODEL,SYSTEM_PROMPT,[{role:'user',parts:[{text:JSON.stringify(data)}]}]);
-    }catch(initial){
-      if(initial?.status!==404)throw initial;
-      // Some newly created free-tier keys may not have the newest Flash model enabled yet.
-      modelUsed='gemini-3.6-flash';
-      result=await callGemini(key,modelUsed,SYSTEM_PROMPT,
-        [{role:'user',parts:[{text:JSON.stringify(data)}]}]);
+      const result=await callGemini(key,candidate,SYSTEM_PROMPT,contents);
+      return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
+        provider:'gemini',model:candidate,sources:weatherSources,data_as_of:now});
+    }catch(e){
+      failedStatus=e?.status||502;
+      // A bad key or permission restriction is not fixed by trying more models.
+      if(failedStatus===401||failedStatus===403)break;
+      if(![400,404,429,500,502,503].includes(failedStatus))break;
     }
-    return send(res,200,{answer:result.answer.slice(0,5000),mode:'ai',
-      provider:'gemini',model:modelUsed,sources:weatherSources,data_as_of:now});
-  }catch(e){
-    return send(res,e?.status===429?429:502,{
-      error:'gemini_unavailable',
-      message:e?.status===429?'بلغت الحد المتاح لمكالمات Gemini. حاول لاحقاً.':'تعذّر الحصول على إجابة من Gemini. تحقّق من صلاحية المفتاح وحدود المشروع.'});
   }
+  if(restaurant){
+    return send(res,200,{answer:reportAnswer(restaurant,question,'gemini_unavailable'),
+      mode:'summary',provider:'local_reports',
+      notice:geminiErrorText(failedStatus),sources:[],data_as_of:now});
+  }
+  return send(res,failedStatus===429?429:503,{
+    error:'gemini_unavailable',provider_status:failedStatus,
+    message:geminiErrorText(failedStatus)
+  });
 }
