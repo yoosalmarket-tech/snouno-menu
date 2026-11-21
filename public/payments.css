@@ -437,3 +437,6 @@ body.has-cart-footer:not(.rich-menu-active) .pay-orders-link {bottom:calc(139px 
 .pay-delivery-address small {color:var(--soft,#777);font-size:12px}
 .pay-qr-box .pay-download-qr {margin-top:7px}
 @media(prefers-reduced-motion:reduce){.pay-config .pay-save-feedback{transition:none}}
+
+/* A closed delivery-address field must not remain visible after switching to dine-in. */
+.pay-delivery-address[hidden]{display:none!important}
