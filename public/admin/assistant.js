@@ -97,7 +97,7 @@ export function renderAssistant({root,getToken}){
   const buttons=create('div','snounu-ai-question-buttons');
   for(const [label,question] of starters){
     const button=create('button','snounu-ai-suggest',label);
-    button.type='button';button.onclick=()=>void ask(question);
+    button.type='button';button.onclick=()=>void ask(question,true);
     buttons.append(button);
   }
   suggestions.append(buttons);
@@ -183,7 +183,7 @@ export function renderAssistant({root,getToken}){
     log.append(item);log.scrollTop=log.scrollHeight;
     return item;
   }
-  async function ask(text){
+  async function ask(text,isStarter=false){
     const question=String(text||'').trim();
     if(busy||!question||question.length>2000)return;
     setBusy(true);archive.open=false;
@@ -191,7 +191,7 @@ export function renderAssistant({root,getToken}){
     addMessage('user',question);
     const bubble=addMessage('assistant','لحظة…');
     bubble.classList.add('is-loading');
-    prompt.value='';counter.textContent='0 / 2000';
+    if(!isStarter){prompt.value='';counter.textContent='0 / 2000';}
     try{
       const token=await getToken();
       const response=await fetch('/api/ai-assistant',{
@@ -206,7 +206,6 @@ export function renderAssistant({root,getToken}){
       if(archive.open)void loadChats();
     }catch(e){
       bubble.classList.add('is-error');
-      prompt.value=question;counter.textContent=question.length+' / 2000';
       bubble.querySelector('.snounu-ai-text').textContent=e.message||'حدث خطأ، حاول مجدداً.';
     }finally{
       bubble.classList.remove('is-loading');
