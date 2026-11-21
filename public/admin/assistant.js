@@ -1,4 +1,4 @@
-// EDIT ALL PAYMENT 10 — owner-only Groq restaurant performance advisor.
+// EDIT ALL PAYMENT 12 — owner-only natural Groq assistant with private restaurant context.
 const create=(tag,cls,text)=>{
   const node=document.createElement(tag);
   if(cls)node.className=cls;
@@ -13,11 +13,64 @@ export function renderAssistant({root,getToken}){
   const heroCopy=create('div');
   heroCopy.append(create('small','','SNOUNU  ✦  AI'),
     create('h2','','اسأل عن مطعمك'),
-    create('p','','مساعد Groq لتحليل مشاهدات المنيو وتفاعل الوجبات والمبيعات المعتمدة، واقتراح حملات ومنتجات تستحق التركيز.'));
+    create('p','','تحدث مع Groq بحرية، واستفد من بيانات المنيو والمبيعات والمشاهدات ومعلومات المطعم في أي فكرة أو قرار.'));
   hero.append(heroCopy,create('span','snounu-ai-glyph','✦'));
   const badges=create('div','snounu-ai-meta');
   badges.append(create('span','','قراءة فقط · بدون تعديل البيانات'),
     create('span','','حتى 20 تحليلاً ذكياً يومياً · الإحصاءات المباشرة متاحة دائماً'));
+  const briefPanel=create('details','snounu-ai-brief');
+  const briefTitle=create('summary','','معلومات ثابتة للمساعد · يحررها مالك المطعم');
+  const briefIntro=create('p','','أضف أهداف المطعم، الجمهور المستهدف، هوامش الربح التقريبية، حدود ميزانية التسويق أو قيود التصوير. هذه المعلومات تُرسل إلى Groq ضمن سياق الأسئلة، فلا تكتب بيانات عملاء أو كلمات مرور.');
+  const briefInput=create('textarea','snounu-ai-brief-input');
+  briefInput.rows=5;briefInput.maxLength=3000;
+  briefInput.placeholder='مثال: هدفنا زيادة طلبات البرجر، الجمهور طلاب وعائلات، ميزانية التجربة 100 شيكل، لا يمكن التصوير داخل المطعم...';
+  briefInput.setAttribute('aria-label','الحقائق والأهداف الثابتة للمطعم');
+  const briefSave=create('button','snounu-ai-brief-save','حفظ معلومات المطعم');
+  briefSave.type='button';
+  const briefStatus=create('small','snounu-ai-brief-status','');
+  const briefActions=create('div','snounu-ai-brief-actions');
+  briefActions.append(briefSave,briefStatus);
+  briefPanel.append(briefTitle,briefIntro,briefInput,briefActions);
+  const briefEndpoint='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/rpc/';
+  const briefApiKey='sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip';
+  async function briefRequest(functionName,params){
+    const token=await getToken();
+    const response=await fetch(briefEndpoint+functionName,{
+      method:'POST',
+      headers:{Authorization:'Bearer '+token,apikey:briefApiKey,'Content-Type':'application/json'},
+      cache:'no-store',body:JSON.stringify(params)
+    });
+    if(!response.ok)throw new Error('تعذّر الوصول إلى معلومات المالك. تحقق من تسجيل الدخول.');
+    return response.json();
+  }
+  let briefLoaded=false,briefLoading=false;
+  async function loadBrief(){
+    if(briefLoaded||briefLoading)return;
+    briefLoading=true;
+    briefStatus.textContent='تحميل معلومات المطعم…';
+    try{
+      const text=await briefRequest('snounu_ai_get_brief',{});
+      if(typeof text!=='string')throw new Error('لم يتم استلام نص المعلومات الثابتة.');
+      briefInput.value=text;briefLoaded=true;
+      briefStatus.textContent=text?'المعلومات محفوظة ويمكن تعديلها.':'لم تُضف معلومات ثابتة بعد.';
+    }catch(e){briefStatus.textContent=e.message;}
+    finally{briefLoading=false;}
+  }
+  briefPanel.addEventListener('toggle',()=>{
+    if(briefPanel.open)void loadBrief();
+  });
+  briefSave.addEventListener('click',async()=>{
+    if(briefLoading)return;
+    if(!briefLoaded){await loadBrief();return;}
+    const old=briefSave.textContent;
+    briefSave.disabled=true;briefSave.textContent='جارٍ الحفظ…';
+    briefStatus.textContent='';
+    try{
+      await briefRequest('snounu_ai_set_brief',{p_brief:briefInput.value});
+      briefStatus.textContent='تم حفظ المعلومات. سيستخدمها المساعد في الأسئلة التالية.';
+    }catch(e){briefStatus.textContent=e.message;}
+    finally{briefSave.disabled=false;briefSave.textContent=old;}
+  });
   const toolbar=create('div','snounu-ai-toolbar');
   const reset=create('button','snounu-ai-reset','محادثة جديدة');
   reset.type='button';toolbar.append(reset);
@@ -27,7 +80,7 @@ export function renderAssistant({root,getToken}){
   log.setAttribute('aria-live','polite');
   const welcome=create('div','snounu-ai-welcome');
   welcome.append(create('h3','','ماذا تريد أن تعرف؟'),
-    create('p','','اختر سؤالاً للتحضير للاجتماع أو لتحديد وجبة التصوير والإعلان القادم، أو اكتب سؤالك.'));
+    create('p','','هذه أسئلة مقترحة فقط. اكتب أي سؤال أو فكرة تسويقية وسيجيبك المساعد بشكل طبيعي باستخدام بيانات سنونو عند الحاجة.'));
   const suggestions=create('div','snounu-ai-suggestions');
   const questionGroups=[
     {title:'التحضير للاجتماع القادم',items:[
@@ -65,16 +118,16 @@ export function renderAssistant({root,getToken}){
   const form=create('form','snounu-ai-form');
   const prompt=create('textarea','snounu-ai-prompt');
   prompt.rows=2;prompt.required=true;prompt.maxLength=500;
-  prompt.placeholder='اسأل عن المشاهدات، نقرات الطلب، أفضل الوجبات أو أفكار الحملات…';
+  prompt.placeholder='اسأل بحرية: فكرة ريلز، تحليل وجبة، ميزانية حملة، نص إعلان أو أي سؤال…';
   prompt.setAttribute('aria-label','السؤال');
   const controls=create('div','snounu-ai-controls');
   const counter=create('small','','0 / 500');
   const send=create('button','snounu-ai-submit','إرسال السؤال');
   send.type='submit';controls.append(counter,send);
   form.append(prompt,controls);
-  panel.append(hero,badges,toolbar,log,form,
+  panel.append(hero,badges,briefPanel,toolbar,log,form,
     create('p','snounu-ai-disclaimer',
-      'مساعد تحليل المطعم فقط. تُرسل إحصاءات GA4 وتفاعل المنيو والمبيعات المعتمدة بشكل مجمّع إلى Groq. لا تُرسل أسماء العملاء أو بيانات الدفع ولا تُحفظ المحادثة في قاعدة بيانات المطعم.'));
+      'تُرسل إلى Groq الإحصاءات المجمعة وبيانات المنيو العامة والمعلومات الثابتة التي يضيفها المالك. لا تُرسل أسماء العملاء أو إثباتات الدفع أو الأسرار، ولا تُحفظ المحادثة في قاعدة بيانات المطعم.'));
   root.append(panel);
   let history=[],busy=false;
   function addMessage(role,text){
@@ -113,8 +166,6 @@ export function renderAssistant({root,getToken}){
         bubble.append(create('small','snounu-ai-mode','إجابة مباشرة من قاعدة بيانات سنونو'));
       } else if(result.mode==='media_priority'){
         bubble.append(create('small','snounu-ai-mode','ترتيب محسوب من بيانات سنونو · لا يستهلك سؤالاً ذكياً'));
-      } else if(result.mode==='scope'){
-        bubble.append(create('small','snounu-ai-mode','مساعد مختص بأداء سنونو وحملاته فقط'));
       } else if(result.mode==='ai' && result.provider==='groq'){
         bubble.append(create('small','snounu-ai-mode','تحليل تسويقي عبر Groq'));
       }
