@@ -67,7 +67,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     cleanup = () => {},
     generation = 0,
     locked = false;
-  let draft = { customer: "", phone: "", notes: "" },
+  let draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "" },
     cfg,
     method = "",
     proof = null,
@@ -457,6 +457,42 @@ export function installCart({ catalog, name, description, closed, page }) {
     const b = layout(t("تأكيد الطلب", "Confirm order")),
       f = el("form");
     b.append(f);
+    const service = el("fieldset");
+    service.className = "pay-service-choice";
+    service.append(el("legend", t("كيف تريد استلام طلبك؟ *", "How would you like your meal? *")));
+    const deliveryAddress = el("textarea");
+    deliveryAddress.name = "delivery_address";
+    deliveryAddress.maxLength = 500;
+    deliveryAddress.minLength = 8;
+    deliveryAddress.placeholder = t("المنطقة، الشارع، أقرب معلم، رقم المبنى", "Area, street, landmark and building");
+    deliveryAddress.value = draft.delivery_address || "";
+    deliveryAddress.oninput = () => { draft.delivery_address = deliveryAddress.value; };
+    const addressLabel = el("label");
+    addressLabel.className = "pay-delivery-address";
+    addressLabel.append(el("strong", t("عنوان التوصيل *", "Delivery address *")), deliveryAddress,
+      el("small", t("رسوم التوصيل الإضافية غير مشمولة، وسيؤكد المطعم توفر الخدمة والرسوم.",
+        "Delivery fees are not included. The restaurant confirms availability and fees.")));
+    function updateService(type) {
+      draft.service_type = type;
+      addressLabel.hidden = type !== "delivery";
+      deliveryAddress.required = type === "delivery";
+      for (const radio of service.querySelectorAll("input[type=radio]")) radio.checked = radio.value === type;
+    }
+    for (const [value, ar, en] of [
+      ["dine_in", "سآتي لتناول الطعام في المطعم", "I'll eat at the restaurant"],
+      ["delivery", "أريد توصيل الطلب", "I want delivery"]
+    ]) {
+      const label = el("label");
+      const radio = el("input");
+      radio.type = "radio"; radio.name = "service_type"; radio.value = value; radio.required = true;
+      radio.checked = draft.service_type === value;
+      radio.onchange = () => updateService(value);
+      label.append(radio, el("span", t(ar,en)));
+      service.append(label);
+    }
+    service.append(addressLabel);
+    f.append(service);
+    updateService(draft.service_type);
     for (const [k, label, type] of [
       ["customer", t("الاسم", "Name"), "text"],
       ["phone", t("رقم الجوال", "Phone"), "tel"],
@@ -492,6 +528,16 @@ export function installCart({ catalog, name, description, closed, page }) {
     f.append(next, button(t("رجوع", "Back"), showCart));
     f.onsubmit = (e) => {
       e.preventDefault();
+      if (!["dine_in","delivery"].includes(draft.service_type)) {
+        service.querySelector("input[type=radio]").focus();
+        error(Error(t("اختر تناول الطعام في المطعم أو التوصيل أولاً", "Choose dine-in or delivery")));
+        return;
+      }
+      if (draft.service_type === "delivery" && draft.delivery_address.trim().length < 8) {
+        deliveryAddress.focus();
+        error(Error(t("اكتب عنوان التوصيل بالتفصيل (8 أحرف على الأقل)", "Enter a full delivery address (at least 8 characters)")));
+        return;
+      }
       task(async () => {
         cfg = await call({ action: "config" });
         if (cfg.methods.length) {
@@ -553,6 +599,9 @@ export function installCart({ catalog, name, description, closed, page }) {
   }
   function payment() {
     const b = layout(t("الدفع", "Payment"));
+    b.append(el("p", draft.service_type === "delivery"
+      ? t("طلب توصيل", "Delivery order") + " · " + draft.delivery_address.trim()
+      : t("تناول الطعام في المطعم", "Dine in at the restaurant")));
     b.append(
       el(
         "h3",
@@ -590,13 +639,21 @@ export function installCart({ catalog, name, description, closed, page }) {
       };
       const option = el("label");
       option.className = "pay-method-choice";
-      const emblem = /^https:\/\//i.test(entry.icon || "") ? el("img") : el("span", entry.icon || "▣");
-      if (emblem.tagName === "IMG") {
+      const validPng = /^https:\/\/\S+\.png(?:\?\S*)?$/i.test(entry.icon || "");
+      const emblem = validPng ? el("img") : el("span");
+      emblem.className = "pay-method-icon";
+      if (validPng) {
         emblem.src = entry.icon;
         emblem.alt = "";
-        emblem.onerror = () => emblem.replaceWith(el("span", "▣"));
+        emblem.onerror = () => {
+          const fallback = el("span");
+          fallback.className = "pay-method-icon pay-method-placeholder";
+          emblem.replaceWith(fallback);
+        };
+      } else {
+        emblem.classList.add("pay-method-placeholder");
+        emblem.setAttribute("aria-hidden", "true");
       }
-      emblem.className = "pay-method-icon";
       option.append(radio, emblem, el("span", entry.name));
       methods.append(option);
     }
@@ -613,7 +670,25 @@ export function installCart({ catalog, name, description, closed, page }) {
       qr.onerror = () => qrBox.remove(); // Never show a broken image or its alt text.
       qrBox.hidden = true;
       qr.src = m.qr_url;
-      qrBox.append(qr, el("figcaption", t("امسح رمز QR للدفع", "Scan QR to pay")));
+      const download = button(t("تنزيل رمز QR", "Download QR"), async () => {
+        try {
+          const response = await fetch(m.qr_url, { mode: "cors", cache: "no-store" });
+          if (!response.ok) throw Error();
+          const blob = await response.blob();
+          if (!blob.type.startsWith("image/")) throw Error();
+          const local = URL.createObjectURL(blob);
+          const anchor = el("a");
+          anchor.href = local;
+          anchor.download = "snounu-payment-qr." +
+            (blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg");
+          document.body.append(anchor); anchor.click(); anchor.remove();
+          setTimeout(() => URL.revokeObjectURL(local), 30000);
+        } catch {
+          error(Error(t("تعذّر تنزيل صورة QR، حاول مجدداً", "QR download failed. Try again.")));
+        }
+      });
+      download.className = "pay-download-qr";
+      qrBox.append(qr, el("figcaption", t("امسح رمز QR للدفع", "Scan QR to pay")), download);
       b.append(qrBox);
     }
     b.append(
@@ -672,7 +747,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       cart = [];
       save();
       proof = null;
-      draft = { customer: "", phone: "", notes: "" };
+      draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "" };
       announce(saved, o);
       await status(saved, o);
     }, submit);
@@ -707,6 +782,8 @@ export function installCart({ catalog, name, description, closed, page }) {
           el("strong", "#" + o.number + " · " + amount(o.total)),
           el("p", o.method + " · " + when(o.created_at)),
         );
+        if (o.service_type === "delivery") b.append(el("p", t("توصيل إلى: ", "Delivery to: ") + (o.delivery_address || "—")));
+        else if (o.service_type === "dine_in") b.append(el("p", t("تناول الطعام في المطعم", "Dine in at the restaurant")));
         if (o.status === "pending") {
           b.append(
             el(
