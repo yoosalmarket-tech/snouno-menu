@@ -279,6 +279,7 @@ async function collectContext(auth){
    [key,settled[i].status==='fulfilled'?settled[i].value:null]));
  const available=[...keys,'ga4'].filter((_,i)=>settled[i].status==='fulfilled');
  const unavailable=[...keys,'ga4'].filter((_,i)=>settled[i].status!=='fulfilled');
+ if(unavailable.length)console.warn('Snounu assistant sources unavailable:',unavailable.join(','));
  if(!available.length)throw Error('All analytics sources unavailable');
  const sale=source.sales&&typeof source.sales==='object'?source.sales:null;
  const orders=Array.isArray(source.orders)?source.orders:null;
@@ -419,7 +420,10 @@ async function groqReply(question,history,context,key){
      ]
    })
  });
- if(!response.ok){const e=new Error('Groq failed');e.status=response.status;throw e}
+ if(!response.ok){
+  console.warn('Snounu Groq request failed (status only):',response.status);
+  const e=new Error('Groq failed');e.status=response.status;throw e
+ }
  const payload=await response.json();
  const answer=String(payload.choices?.[0]?.message?.content||'').trim();
  if(!answer)throw Error('Empty model answer');

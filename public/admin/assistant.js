@@ -17,7 +17,7 @@ export function renderAssistant({root,getToken}){
   hero.append(heroCopy,create('span','snounu-ai-glyph','✦'));
   const badges=create('div','snounu-ai-meta');
   badges.append(create('span','','قراءة فقط · بدون تعديل البيانات'),
-    create('span','','حتى 20 تحليلاً ذكياً يومياً · الإحصاءات المباشرة متاحة دائماً'));
+    create('span','','حتى 100 إجابة ذكية ناجحة يومياً · الإحصاءات المباشرة متاحة دائماً'));
   const briefPanel=create('details','snounu-ai-brief');
   const briefTitle=create('summary','','معلومات ثابتة للمساعد · يحررها مالك المطعم');
   const briefIntro=create('p','','أضف أهداف المطعم، الجمهور المستهدف، هوامش الربح التقريبية، حدود ميزانية التسويق أو قيود التصوير. هذه المعلومات تُرسل إلى Groq ضمن سياق الأسئلة، فلا تكتب بيانات عملاء أو كلمات مرور.');
