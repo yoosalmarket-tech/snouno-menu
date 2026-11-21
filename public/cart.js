@@ -67,7 +67,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     cleanup = () => {},
     generation = 0,
     locked = false;
-  let draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "" },
+  let draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "", delivery_landmark: "", backup_phone: "" },
     cfg,
     method = "",
     proof = null,
@@ -472,10 +472,49 @@ export function installCart({ catalog, name, description, closed, page }) {
     addressLabel.append(el("strong", t("عنوان التوصيل *", "Delivery address *")), deliveryAddress,
       el("small", t("رسوم التوصيل الإضافية غير مشمولة، وسيؤكد المطعم توفر الخدمة والرسوم.",
         "Delivery fees are not included. The restaurant confirms availability and fees.")));
+    const landmarkInput = el("input");
+    landmarkInput.type = "text";
+    landmarkInput.name = "delivery_landmark";
+    landmarkInput.maxLength = 160;
+    landmarkInput.minLength = 3;
+    landmarkInput.placeholder = t("مثلاً: بجانب المدرسة أو المستشفى المعروف في المنطقة",
+      "For example: beside a well-known school or hospital");
+    landmarkInput.value = draft.delivery_landmark || "";
+    landmarkInput.oninput = () => { draft.delivery_landmark = landmarkInput.value; };
+    const landmarkLabel = el("label");
+    landmarkLabel.className = "pay-delivery-address";
+    landmarkLabel.append(
+      el("strong", t("أقرب مبنى معروف أو معلم واضح *", "Nearby well-known building or landmark *")),
+      landmarkInput,
+      el("small", t("اذكر مكاناً يستطيع عامل التوصيل التعرف عليه بسهولة بالقرب من عنوانك.",
+        "Name a recognizable building or landmark close to your address."))
+    );
+    const backupPhoneInput = el("input");
+    backupPhoneInput.type = "tel";
+    backupPhoneInput.name = "backup_phone";
+    backupPhoneInput.autocomplete = "tel";
+    backupPhoneInput.inputMode = "tel";
+    backupPhoneInput.maxLength = 25;
+    backupPhoneInput.pattern = "[+0-9 \\\\(\\\\)\\\\-]{7,25}";
+    backupPhoneInput.placeholder = t("رقم بديل يمكن الاتصال به عند تعذر الوصول إليك",
+      "Another number to call if we can't reach you");
+    backupPhoneInput.value = draft.backup_phone || "";
+    backupPhoneInput.oninput = () => { draft.backup_phone = backupPhoneInput.value; };
+    const backupLabel = el("label");
+    backupLabel.className = "pay-delivery-address";
+    backupLabel.append(
+      el("strong", t("رقم جوال احتياطي *", "Backup phone number *")),
+      backupPhoneInput,
+      el("small", t("أدخل رقماً مختلفاً عن رقم الجوال الأساسي.", "Must be different from the primary phone number."))
+    );
     function updateService(type) {
       draft.service_type = type;
       addressLabel.hidden = type !== "delivery";
       deliveryAddress.required = type === "delivery";
+      landmarkLabel.hidden = type !== "delivery";
+      landmarkInput.required = type === "delivery";
+      backupLabel.hidden = type !== "delivery";
+      backupPhoneInput.required = type === "delivery";
       for (const radio of service.querySelectorAll("input[type=radio]")) radio.checked = radio.value === type;
     }
     for (const [value, ar, en] of [
@@ -490,7 +529,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       label.append(radio, el("span", t(ar,en)));
       service.append(label);
     }
-    service.append(addressLabel);
+    service.append(addressLabel, landmarkLabel, backupLabel);
     f.append(service);
     updateService(draft.service_type);
     for (const [k, label, type] of [
@@ -533,10 +572,28 @@ export function installCart({ catalog, name, description, closed, page }) {
         error(Error(t("اختر تناول الطعام في المطعم أو التوصيل أولاً", "Choose dine-in or delivery")));
         return;
       }
-      if (draft.service_type === "delivery" && draft.delivery_address.trim().length < 8) {
-        deliveryAddress.focus();
-        error(Error(t("اكتب عنوان التوصيل بالتفصيل (8 أحرف على الأقل)", "Enter a full delivery address (at least 8 characters)")));
-        return;
+      if (draft.service_type === "delivery") {
+        if (draft.delivery_address.trim().length < 8) {
+          deliveryAddress.focus();
+          error(Error(t("اكتب عنوان التوصيل بالتفصيل (8 أحرف على الأقل)", "Enter a full delivery address (at least 8 characters)")));
+          return;
+        }
+        if (draft.delivery_landmark.trim().length < 3) {
+          landmarkInput.focus();
+          error(Error(t("اكتب اسم مبنى معروف أو معلم قريب من العنوان", "Enter a nearby recognizable building or landmark")));
+          return;
+        }
+        const secondaryDigits = draft.backup_phone.replace(/\D/g, "");
+        if (!/^\+?[\d ()-]{7,25}$/.test(draft.backup_phone.trim()) || secondaryDigits.length < 7 || secondaryDigits.length > 15) {
+          backupPhoneInput.focus();
+          error(Error(t("أدخل رقم جوال احتياطي صحيحاً", "Enter a valid backup phone number")));
+          return;
+        }
+        if (secondaryDigits === draft.phone.replace(/\D/g, "")) {
+          backupPhoneInput.focus();
+          error(Error(t("يجب أن يختلف رقم الجوال الاحتياطي عن الرقم الأساسي", "Backup phone must differ from the primary phone")));
+          return;
+        }
       }
       task(async () => {
         cfg = await call({ action: "config" });
@@ -602,6 +659,10 @@ export function installCart({ catalog, name, description, closed, page }) {
     b.append(el("p", draft.service_type === "delivery"
       ? t("طلب توصيل", "Delivery order") + " · " + draft.delivery_address.trim()
       : t("تناول الطعام في المطعم", "Dine in at the restaurant")));
+    if (draft.service_type === "delivery") {
+      b.append(el("p", t("أقرب معلم: ", "Nearby landmark: ") + draft.delivery_landmark.trim()));
+      b.append(el("p", t("رقم احتياطي: ", "Backup phone: ") + draft.backup_phone.trim()));
+    }
     b.append(
       el(
         "h3",
@@ -747,7 +808,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       cart = [];
       save();
       proof = null;
-      draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "" };
+      draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "", delivery_landmark: "", backup_phone: "" };
       announce(saved, o);
       await status(saved, o);
     }, submit);
@@ -782,7 +843,11 @@ export function installCart({ catalog, name, description, closed, page }) {
           el("strong", "#" + o.number + " · " + amount(o.total)),
           el("p", o.method + " · " + when(o.created_at)),
         );
-        if (o.service_type === "delivery") b.append(el("p", t("توصيل إلى: ", "Delivery to: ") + (o.delivery_address || "—")));
+        if (o.service_type === "delivery") {
+          b.append(el("p", t("توصيل إلى: ", "Delivery to: ") + (o.delivery_address || "—")));
+          if (o.delivery_landmark) b.append(el("p", t("أقرب معلم: ", "Nearby landmark: ") + o.delivery_landmark));
+          if (o.backup_phone) b.append(el("p", t("رقم احتياطي: ", "Backup phone: ") + o.backup_phone));
+        }
         else if (o.service_type === "dine_in") b.append(el("p", t("تناول الطعام في المطعم", "Dine in at the restaurant")));
         if (o.status === "pending") {
           b.append(
