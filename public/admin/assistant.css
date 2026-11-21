@@ -101,3 +101,11 @@
 .snounu-ai-history-list{display:grid;gap:.4rem;max-height:16rem;overflow:auto}
 .snounu-ai-history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.4rem}
 .snounu-ai-history-row button:first-child{text-align:start;white-space:normal;overflow-wrap:anywhere}
+
+.snounu-ai-assistant .snounu-ai-text{white-space:normal;text-align:start;line-height:1.7}
+.snounu-ai-assistant .snounu-ai-text :is(p,ul,ol){margin:0}
+.snounu-ai-assistant .snounu-ai-text > :is(p,ul,ol) + :is(p,ul,ol){margin-block-start:.65em}
+.snounu-ai-assistant .snounu-ai-text :is(ul,ol){padding-inline-start:1.65em;list-style-position:outside}
+.snounu-ai-assistant .snounu-ai-text ol{list-style-type:decimal}
+.snounu-ai-assistant .snounu-ai-text ul{list-style-type:disc}
+.snounu-ai-assistant .snounu-ai-text li + li{margin-block-start:.4em}
