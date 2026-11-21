@@ -249,7 +249,7 @@ export async function orders({ root, api, notice, endpoint }) {
   root.prepend(button("تحديث الطلبات", load));
   await load();
 }
-export async function settings({ root, api, notice }) {
+export async function settings({ root, api, notice, endpoint }) {
   const [methods, [cfg]] = await Promise.all([
     api(rootPath + "pay_methods?order=position,id"),
     api(rootPath + "pay_settings?id=eq.1"),
@@ -283,7 +283,7 @@ export async function settings({ root, api, notice }) {
             ]),
           ),
         );
-        await settings({ root, api, notice });
+        await settings({ root, api, notice, endpoint });
         notice("تم الحفظ");
       } catch (e) {
         notice(e.message);
@@ -483,59 +483,6 @@ export async function sales(host, api) {
       table(["الوجبة", "الكمية", "المبيعات المعتمدة"],
         (s.meals || []).map(r => [r.name, r.quantity, amount(r.value)])));
     host.append(details);
-  } catch (e) {
-    host.append(el("p", e.message));
-  }
-}
-
-  host.className = "analytics-report";
-  host.append(
-    el("h2", "المدفوعات المعتمدة إدارياً"),
-    el(
-      "p",
-      "منذ تفعيل الطلب المباشر · المبالغ بالشيكل بحسب قرارات إدارة المطعم.",
-    ),
-  );
-  try {
-    const s = await api(rootPath + "rpc/pay_sales", {
-      method: "POST",
-      body: {},
-    });
-    host.append(
-      table(
-        ["المؤشر", "القيمة"],
-        [
-          ["إجمالي الطلبات", s.total],
-          ...Object.entries(labels).map(([k, v]) => [v, s[k]]),
-          ["قيمة المدفوعات المعتمدة", amount(s.value)],
-          ["متوسط الطلب المعتمد", amount(s.average)],
-        ],
-      ),
-    );
-    const period = el("select"),
-      trend = el("div");
-    period.append(...list({ day: "يومي", week: "أسبوعي", month: "شهري" }));
-    const draw = () =>
-      trend.replaceChildren(
-        table(
-          ["بداية الفترة", "المبيعات المعتمدة"],
-          s.trends
-            .filter((r) => r.period === period.value)
-            .map((r) => [r.day, amount(r.value)]),
-        ),
-      );
-    period.onchange = draw;
-    draw();
-    host.append(
-      el("h3", "اتجاه المبيعات"),
-      period,
-      trend,
-      el("h3", "الوجبات الأكثر طلباً"),
-      table(
-        ["الوجبة", "الكمية", "المبيعات المعتمدة"],
-        s.meals.map((r) => [r.name, r.quantity, amount(r.value)]),
-      ),
-    );
   } catch (e) {
     host.append(el("p", e.message));
   }
