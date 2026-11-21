@@ -1169,7 +1169,10 @@ function detail(d){
   const unavailable=make('button',isEnglish()?'Currently unavailable':'غير متوفر حالياً');
   unavailable.type='button';unavailable.disabled=true;
   unavailable.className='meal-order-unavailable';buttons.append(unavailable);
- }else {if(cartUi)buttons.append(cartUi.button(d));contactLinks(buttons,ordering,d);}
+ }else {
+  contactLinks(buttons,ordering,d);
+  if(cartUi)buttons.prepend(cartUi.button(d));
+ }
  content.append(buttons);
  if(d.id&&!isPreview){
   const share=make('button');
