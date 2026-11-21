@@ -134,7 +134,16 @@ export function installCart({ catalog, name, description, closed, page }) {
       else badge.hidden = true;
     }
     history.hidden = !tracking.length || page() === "welcome";
-    history.textContent = t("طلباتي", "My orders");
+    const pendingOrders = tracking.filter((r) => r.status === "pending").length;
+    history.dataset.pending = String(pendingOrders > 0);
+    history.replaceChildren(
+      el("span", "▤"),
+      el("strong", t("طلباتي", "My orders")),
+      el("small", pendingOrders
+        ? t("قيد المراجعة", "Pending") + " · " + pendingOrders
+        : t("متابعة الطلبات", "Track orders"))
+    );
+    history.setAttribute("aria-label", t("عرض حالة طلباتي", "View my order status"));
   }
   function save() {
     localStorage.setItem(key, JSON.stringify(cart));
@@ -298,7 +307,7 @@ export function installCart({ catalog, name, description, closed, page }) {
   function showHistory() {
     const b = layout(t("طلباتي", "My orders"));
     for (const ref of tracking)
-      b.append(button("#" + ref.number, () => status(ref)));
+      b.append(button("#" + (ref.number || "…") + " — " + t(...(statuses[ref.status] || statuses.pending)), () => status(ref)));
   }
   function layout(title) {
     cleanup();
@@ -579,16 +588,33 @@ export function installCart({ catalog, name, description, closed, page }) {
         proof = null;
         payment();
       };
-      field(methods, entry.icon + " " + entry.name, radio);
+      const option = el("label");
+      option.className = "pay-method-choice";
+      const emblem = /^https:\/\//i.test(entry.icon || "") ? el("img") : el("span", entry.icon || "▣");
+      if (emblem.tagName === "IMG") {
+        emblem.src = entry.icon;
+        emblem.alt = "";
+        emblem.onerror = () => emblem.replaceWith(el("span", "▣"));
+      }
+      emblem.className = "pay-method-icon";
+      option.append(radio, emblem, el("span", entry.name));
+      methods.append(option);
     }
     b.append(methods);
     const m = cfg.methods.find((m) => m.id === method);
-    if (m.qr_url) {
+    if (/^https:\/\//i.test(m.qr_url || "")) {
+      const qrBox = el("figure");
+      qrBox.className = "pay-qr-box";
       const qr = el("img");
-      qr.src = m.qr_url;
-      qr.alt = t("رمز الدفع", "Payment QR code");
+      qr.alt = "";
+      qr.loading = "lazy";
       qr.className = "pay-qr";
-      b.append(qr);
+      qr.onload = () => { qrBox.hidden = false; };
+      qr.onerror = () => qrBox.remove(); // Never show a broken image or its alt text.
+      qrBox.hidden = true;
+      qr.src = m.qr_url;
+      qrBox.append(qr, el("figcaption", t("امسح رمز QR للدفع", "Scan QR to pay")));
+      b.append(qrBox);
     }
     b.append(
       el("strong", m.holder),
@@ -647,6 +673,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       save();
       proof = null;
       draft = { customer: "", phone: "", notes: "" };
+      announce(saved, o);
       await status(saved, o);
     }, submit);
     b.append(submit, button(t("رجوع", "Back"), checkout));
@@ -667,7 +694,9 @@ export function installCart({ catalog, name, description, closed, page }) {
         const o = order || (await call({ ...ref, action: "status" }));
         if (ticket !== generation) return;
         if (current === o.status) return;
+        const previousStatus = current;
         current = o.status;
+        if (previousStatus && previousStatus !== o.status) announce(ref, o);
         ref.status = o.status;
         localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
         b.replaceChildren();
@@ -817,33 +846,37 @@ export function installCart({ catalog, name, description, closed, page }) {
     };
     await update(initial);
   }
+  function announce(ref, order) {
+    const note = button(t(...(statuses[order.status] || statuses.pending)) + " · #" + order.number, () => {
+      note.remove();
+      if (!dialog.open) dialog.showModal();
+      void status(ref, order);
+    });
+    note.className = "pay-notification";
+    note.setAttribute("aria-label", t("تحديث حالة طلبك", "Order status update"));
+    note.title = t("اضغط لعرض تفاصيل الطلب", "View order details");
+    document.body.append(note);
+    setTimeout(() => note.remove(), 14000);
+    refresh();
+  }
   let checking = false;
   async function notifications() {
     if (checking || document.hidden || dialog.open) return;
     checking = true;
     try {
-      for (const ref of tracking
-        .filter((r) => r.status === "pending")
-        .slice(0, 4)) {
+      for (const ref of tracking.filter(r => r.status === "pending").slice(0, 5)) {
         const o = await call({ ...ref, action: "status" });
         if (o.status === ref.status) continue;
         ref.status = o.status;
         localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
-        const note = button(t(...statuses[o.status]) + " #" + o.number, () => {
-          note.remove();
-          if (!dialog.open) dialog.showModal();
-          void status(ref, o);
-        });
-        note.className = "pay-notification";
-        note.setAttribute("role", "status");
-        document.body.append(note);
+        announce(ref, o);
       }
     } catch {
     } finally {
       checking = false;
     }
   }
-  setInterval(notifications, 45000);
+  setInterval(notifications, 15000);
   document.addEventListener("visibilitychange", notifications);
   window.addEventListener("pagechange", refresh);
   window.addEventListener("storage", () => {

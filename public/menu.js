@@ -1,4 +1,4 @@
-import {installCart} from './cart.js?v=02';
+import {installCart} from './cart.js?v=03';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
@@ -170,7 +170,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=edit-all-payment-02')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=edit-all-payment-03')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -226,7 +226,7 @@ async function syncRichMode(){
   const module=await richAssets();
   if(version!==richRevision||!richDesired||currentPage()!=='menu')return;
   richController=module.createRichMenu({
-   configureMeal:cartUi?.add,host:target,getData:richData,onOpen:detail,
+   configureMeal:cartUi?.add,host:target,getData:richData,onOpen:detail,onRestaurantInfo:openRestaurantInfo,
    onMealView:meal=>trackMealEvent('view_item',meal),
    onSelection:selection=>{
     if(selection?.mealId)noteSelection('meal',selection.mealId);
@@ -796,6 +796,43 @@ function cancelWelcomeReveal(){
  loader.style.display='none';
  loader.style.visibility='hidden';
  loader.style.pointerEvents='none';
+}
+function openRestaurantInfo() {
+ const previous=document.getElementById('snounu-restaurant-info-dialog');
+ if(previous?.open)return;
+ const d=document.createElement('dialog');
+ d.id='snounu-restaurant-info-dialog';
+ d.className='pay-dialog pay-restaurant-info';
+ d.dir=isEnglish()?'ltr':'rtl';
+ const header=document.createElement('div');header.className='pay-top';
+ const title=document.createElement('h2');title.textContent=isEnglish()?'Restaurant information':'معلومات ومواعيد المطعم';
+ const close=document.createElement('button');close.type='button';close.textContent='×';
+ close.setAttribute('aria-label',isEnglish()?'Close':'إغلاق');
+ close.onclick=()=>d.close();header.append(title,close);d.append(header);
+ const body=document.createElement('div');body.className='pay-restaurant-content';
+ for(const [heading,value] of [
+   [isEnglish()?'Opening hours':'مواعيد العمل',tr(settings.hours)||'—'],
+   [isEnglish()?'Location':'الموقع',tr(settings.address)||'—'],
+   [isEnglish()?'Phone':'رقم الهاتف',settings.hotline||'—']
+ ]) {
+   const row=document.createElement('section');row.className='pay-restaurant-row';
+   const label=document.createElement('span');label.textContent=heading;
+   const content=document.createElement('strong');content.textContent=value;
+   row.append(label,content);body.append(row);
+ }
+ const visit=document.createElement('button');visit.type='button';visit.className='pay-primary';
+ visit.textContent=isEnglish()?'Open contact page':'فتح صفحة التواصل';
+ visit.onclick=()=>{
+  d.close();
+  history.pushState(null,'',pageUrl('contact'));
+  route();
+ };
+ body.append(visit);d.append(body);
+ d.addEventListener('close',()=>d.remove(),{once:true});
+ d.addEventListener('click',event=>{
+  if(event.target===d)d.close();
+ });
+ document.body.append(d);d.showModal();
 }
 let cartUi;
 const pages=['welcome','menu','contact'];

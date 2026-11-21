@@ -294,26 +294,99 @@ export async function settings({ root, api, notice }) {
     return f;
   }
   root.replaceChildren();
+  // Payment QR codes and logos are public-facing assets; payment proofs remain private.
+  async function uploadPaymentImage(file, kind) {
+    const ext = {"image/png":"png","image/jpeg":"jpg","image/webp":"webp"}[file.type];
+    if (!ext) throw Error("اختر صورة PNG أو JPEG أو WebP");
+    if (file.size > 5 * 1024 * 1024) throw Error("يجب أن تكون الصورة أقل من 5 MB");
+    if (!file.size) throw Error("الصورة فارغة");
+    const path = "/menu-images/payment-" + kind + "/" + crypto.randomUUID() + "." + ext;
+    await api("/storage/v1/object" + path, {method:"POST", body:file});
+    return endpoint + "/storage/v1/object/public" + path;
+  }
+  function imagePreview(root, url, description) {
+    const preview = el("div");
+    preview.className = "pay-upload-preview";
+    if (/^https:\/\//i.test(url || "")) {
+      const img = el("img");
+      img.alt = description;
+      img.loading = "lazy";
+      img.src = url;
+      img.onerror = () => {
+        preview.replaceChildren(el("small", "تعذر تحميل الصورة الحالية — ارفع صورة صحيحة."));
+      };
+      preview.append(img);
+    } else {
+      preview.append(el("small", "لم يتم رفع صورة بعد"));
+    }
+    root.append(preview);
+    return preview;
+  }
   function method(m = {}) {
-    return form(
+    const iconFile = input("", "file");
+    iconFile.accept = "image/jpeg,image/png,image/webp";
+    const qrFile = input("", "file");
+    qrFile.accept = iconFile.accept;
+    const clearQr = input(false, "checkbox");
+    const f = form(
       m.name || "طريقة دفع جديدة",
       [
         ["name", "اسم الطريقة", m.name],
-        ["icon", "رمز الطريقة", m.icon || "▣"],
+        ["icon", "أيقونة الطريقة (رمز مثل 🏦، أو رابط شعار مرفوع)", m.icon || "▣"],
         ["account", "رقم الحساب أو المحفظة", m.account],
         ["holder", "صاحب الحساب", m.holder],
         ["instructions", "تعليمات التحويل", m.instructions],
-        ["qr_url","رابط صورة رمز QR الخاص بالمطعم",m.qr_url,"url"],
+        ["qr_url", "رابط صورة QR (يُملأ تلقائياً بعد الرفع)", m.qr_url, "url"],
         ["url", "رابط الدفع الرسمي (اختياري)", m.url, "url"],
         ["position", "الترتيب", m.position ?? methods.length + 1, "number"],
         ["enabled", "مفعّلة", m.enabled, "checkbox"],
       ],
-      (body) =>
-        api(rootPath + "pay_methods" + (m.id ? "?id=eq." + m.id : ""), {
+      async (body) => {
+        if (iconFile.files[0]) body.icon = await uploadPaymentImage(iconFile.files[0], "logo");
+        if (clearQr.checked) body.qr_url = "";
+        if (qrFile.files[0]) body.qr_url = await uploadPaymentImage(qrFile.files[0], "qr");
+        // A payment can only be enabled once Snounu's real receiving account is entered.
+        await api(rootPath + "pay_methods" + (m.id ? "?id=eq." + m.id : ""), {
           method: m.id ? "PATCH" : "POST",
           body,
-        }),
+        });
+      },
     );
+    const iconRow = el("label");
+    iconRow.append(el("strong", "رفع شعار طريقة الدفع (اختياري)"), iconFile);
+    iconRow.append(el("small", "الأيقونة هي الرمز الصغير بجانب اسم طريقة الدفع. يمكنك إبقاء الرمز أو رفع شعار البنك أو المحفظة."));
+    f.insertBefore(iconRow, f.lastElementChild);
+    const iconPreview = imagePreview(f, m.icon, "شعار طريقة الدفع");
+    const qrRow = el("label");
+    qrRow.append(el("strong", "رفع صورة QR ليقوم العميل بمسحها"), qrFile);
+    qrRow.append(el("small", "صورة خاصة بحساب سنونو فقط. PNG أو JPG أو WebP، حتى 5 MB. الصورة اختيارية ويمكن للعميل نسخ الرقم بدلاً منها."));
+    f.insertBefore(qrRow, f.lastElementChild);
+    const qrPreview = imagePreview(f, m.qr_url, "رمز QR الخاص بسنونو");
+    f.insertBefore(qrPreview, f.lastElementChild);
+    f.insertBefore(iconPreview, iconRow);
+    if (m.qr_url) {
+      const clearRow = el("label");
+      clearRow.append(clearQr, el("span", "إزالة صورة QR الحالية عند الحفظ"));
+      f.insertBefore(clearRow, f.lastElementChild);
+    }
+    function watch(fileInput, preview, fallback, alt) {
+      let objectURL = "";
+      fileInput.addEventListener("change", () => {
+        if (objectURL) URL.revokeObjectURL(objectURL);
+        preview.replaceChildren();
+        objectURL = fileInput.files[0] ? URL.createObjectURL(fileInput.files[0]) : "";
+        if (objectURL) {
+          const img = el("img");
+          img.alt = alt;
+          img.src = objectURL;
+          preview.append(img);
+        } else if (fallback) imagePreview(preview, fallback, alt);
+        else preview.append(el("small", "لم يتم اختيار صورة"));
+      });
+    }
+    watch(iconFile, iconPreview, m.icon, "معاينة شعار طريقة الدفع");
+    watch(qrFile, qrPreview, m.qr_url, "معاينة QR");
+    return f;
   }
   methods.forEach(method);
   root.append(
@@ -361,6 +434,60 @@ export async function settings({ root, api, notice }) {
   );
 }
 export async function sales(host, api) {
+  host.className = "analytics-report pay-sales-dashboard";
+  host.replaceChildren(el("h2", "المبيعات من الطلبات المباشرة"));
+  try {
+    const s = await api(rootPath + "rpc/pay_sales", { method: "POST", body: {} });
+    const hero = el("section");
+    hero.className = "pay-sales-hero";
+    hero.append(el("span", "إجمالي المبيعات المعتمدة"), el("strong", amount(s.value || 0)));
+    hero.append(el("small", "المبلغ يشمل فقط المدفوعات التي اعتمدتها إدارة المطعم."));
+    host.append(hero);
+
+    const metrics = el("div");
+    metrics.className = "pay-sales-metrics";
+    for (const [label, value] of [
+      ["الطلبات المعتمدة", s.approved || 0],
+      ["قيد المراجعة", s.pending || 0],
+      ["متوسط الطلب", amount(s.average || 0)],
+      ["إجمالي الطلبات", s.total || 0],
+    ]) {
+      const tile = el("div");
+      tile.className = "pay-sales-metric";
+      tile.append(el("small", label), el("strong", String(value)));
+      metrics.append(tile);
+    }
+    host.append(metrics);
+
+    const details = el("section");
+    details.className = "pay-sales-details";
+    details.append(el("h3", "تفاصيل المبيعات"));
+    details.append(table(["المؤشر", "القيمة"], [
+      ["تم اعتماد الدفع", s.approved || 0],
+      ["مرفوض", s.rejected || 0],
+      ["ملغي", s.cancelled || 0],
+      ["قيمة المدفوعات المعتمدة", amount(s.value || 0)],
+    ]));
+    const period = el("select"), trend = el("div");
+    period.setAttribute("aria-label", "الفترة الزمنية للمبيعات");
+    period.append(...list({ day: "يومي", week: "أسبوعي", month: "شهري" }));
+    const draw = () => trend.replaceChildren(
+      table(["بداية الفترة", "المبيعات المعتمدة"], (s.trends || [])
+        .filter(r => r.period === period.value)
+        .map(r => [r.day, amount(r.value)]))
+    );
+    period.onchange = draw;
+    draw();
+    details.append(el("h3", "اتجاه المبيعات"), period, trend,
+      el("h3", "الوجبات الأكثر طلباً"),
+      table(["الوجبة", "الكمية", "المبيعات المعتمدة"],
+        (s.meals || []).map(r => [r.name, r.quantity, amount(r.value)])));
+    host.append(details);
+  } catch (e) {
+    host.append(el("p", e.message));
+  }
+}
+
   host.className = "analytics-report";
   host.append(
     el("h2", "المدفوعات المعتمدة إدارياً"),
