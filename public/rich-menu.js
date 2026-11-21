@@ -5,7 +5,7 @@ const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 const validImage=value=>{if(!value)return '';try{const u=new URL(value,location.origin);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
 const categoryWords=name=>{const a=String(name||'SNOUNU').trim().split(/\s+/);return [a.slice(0,Math.ceil(a.length/2)).join(' '),a.slice(Math.ceil(a.length/2)).join(' ')]};
-export function createRichMenu({configureMeal,host,getData,onOpen,onFavorite,onExit,onSelection,onShare,onMealView}){
+export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantInfo,onFavorite,onExit,onSelection,onShare,onMealView}){
  const root=mk('div','rm-app');root.dir='ltr';root.id='rich-interactive-stage';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
@@ -33,7 +33,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onFavorite,onE
  // Center meal copy as a group between the rating and the bottom action.
  '<div class="rm-meal-copy"><h2 class="rm-info-name"></h2><span class="rm-availability" hidden></span><p class="rm-info-desc"></p><span class="rm-info-price" dir="ltr"></span></div>',
  '<div class="rm-info-actions">',
- '<button type="button" class="rm-info-details">＋ عرض تفاصيل الوجبة</button>',
+ '<button type="button" class="rm-info-details">◷ مواعيد ومعلومات المطعم</button>',
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
  '<p class="rm-closure-note" role="status"><span class="rm-closure-mark" aria-hidden="true">◷</span><span class="rm-closure-note-copy"></span></p>',
  '<small class="rm-instruction" dir="rtl">اسحب يمين ويسار للتنقل بين الوجبات، وفوق وتحت لتغيير التصنيفات</small></section>',
@@ -310,9 +310,8 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onFavorite,onE
     u.price.append(old);
    }
   }
-  u.details.textContent=unavailable?(isEnglish()?'CURRENTLY UNAVAILABLE':'غير متوفر حالياً')
-   :(isEnglish()?'＋ MEAL DETAILS':'＋ عرض تفاصيل الوجبة');
-  u.details.disabled=unavailable;
+  u.details.textContent=isEnglish()?'◷ OPENING HOURS & CONTACT':'◷ مواعيد ومعلومات المطعم';
+  u.details.disabled=false;
   at(u.customize,'.rm-order-en').textContent=unavailable?'UNAVAILABLE':'ORDER NOW';
   at(u.customize,'.rm-order-ar').textContent=unavailable?'غير متوفر':'اطلب الآن';
   u.customize.disabled=unavailable;
@@ -640,8 +639,8 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onFavorite,onE
  u.railUp.onclick=()=>step(-1);u.railDown.onclick=()=>step(1);
  u.mealPrev.id='rich-desktop-meal-previous';u.mealNext.id='rich-desktop-meal-next';
  u.mealPrev.onclick=()=>step(-1);u.mealNext.onclick=()=>step(1);
- u.details.id='rich-meal-details';u.details.dataset.trackAction='order_now_click';
- u.details.onclick=()=>{if(dish()&&dish().available!==false)configureMeal?.(dish());};
+ u.details.id='rich-restaurant-details';u.details.dataset.trackAction='restaurant_info_click';
+ u.details.onclick=()=>onRestaurantInfo?.();
  u.customize.onclick=()=>{if(dish()&&dish().available!==false)configureMeal?.(dish());};
  u.share.onclick=()=>{
   const current=dish();

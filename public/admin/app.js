@@ -999,7 +999,7 @@ async function renderGaOverview(days=28){
  const status=node('p','جارٍ تحميل الإحصائيات من GA4…');status.id='ga-loading';
  const salesPanel=node('section');
  area.replaceChildren(top,status);
- if(investment){area.prepend(salesPanel);void import('./payments.js?v=02').then(m=>m.sales(salesPanel,api));}
+ if(investment){area.prepend(salesPanel);void import('./payments.js?v=03').then(m=>m.sales(salesPanel,api));}
  try{
   // Use the same authenticated session as the menu admin; no GA credentials in the browser.
   if(session?.expires_at*1000<Date.now()+60000)await api('/auth/v1/user');
@@ -1264,7 +1264,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='orders'||key==='payment_settings'){
-  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=02');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint});return;
+  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=03');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint});return;
  }
  if(key==='seo'||key==='seo_queries'){
    $('body').replaceChildren();

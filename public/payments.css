@@ -185,13 +185,18 @@
 .pay-orders-link[hidden] {
   display: none !important;
 }
-.has-cart-footer #dock,
 .has-cart-footer #credit,
 .has-cart-footer #rich-menu .rm-interactive-credit {
   display: none !important;
 }
+/* Keep Contact and Menu accessible while the cart occupies the bottom rail. */
+body.has-cart-footer:not(.rich-menu-active) #dock {
+  display: flex !important;
+  bottom: calc(65px + env(safe-area-inset-bottom));
+  z-index: 651;
+}
 .has-cart-footer:not(.rich-menu-active) #shell {
-  padding-bottom: calc(68px + env(safe-area-inset-bottom));
+  padding-bottom: calc(133px + env(safe-area-inset-bottom));
 }
 html
   body.has-cart-footer.rich-menu-active:not([data-preview])
@@ -365,3 +370,44 @@ html
     transition: none;
   }
 }
+
+
+/* EDIT ALL PAYMENT 03: prominent sales summary and secondary detailed report. */
+.pay-sales-dashboard {display:grid;gap:16px;direction:rtl;}
+.pay-sales-dashboard > h2 {margin:0;}
+.pay-sales-hero {display:grid;gap:7px;padding:clamp(18px,3vw,30px);border:1px solid #e4bb53;border-radius:22px;background:linear-gradient(125deg,#fff4d6,#fdbe2d38);color:#211d17;}
+.pay-sales-hero > span {font-weight:800;}
+.pay-sales-hero > strong {font:900 clamp(32px,6vw,52px)/1.15 "Qatar2022 Arabic",Tahoma,sans-serif;direction:ltr;text-align:right;font-variant-numeric:tabular-nums;}
+.pay-sales-hero > small {color:#585046;}
+.pay-sales-metrics {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.pay-sales-metric {display:grid;gap:7px;border:1px solid var(--line,#dedede);border-radius:16px;padding:16px;background:var(--paper,#f5f5f5);}
+.pay-sales-metric small {opacity:.8;}
+.pay-sales-metric strong {font-size:clamp(21px,3vw,28px);font-variant-numeric:tabular-nums;}
+.pay-sales-details {min-width:0;display:grid;gap:12px;margin-top:12px;}
+.pay-sales-details table {max-width:100%;width:100%;text-align:right;}
+.pay-sales-details select {width:100%;}
+@media(min-width:700px){.pay-sales-metrics{grid-template-columns:repeat(4,minmax(0,1fr));}}
+.pay-config input[type=file] {display:block;width:100%;min-width:0;max-width:100%;padding:9px;border:1px dashed #b3a57e;border-radius:12px;}
+.pay-upload-preview {margin:5px 0 10px;min-height:44px;}
+.pay-upload-preview img {display:block;max-width:220px;max-height:150px;object-fit:contain;border-radius:10px;background:white;padding:7px;border:1px solid #ddd;}
+.pay-upload-preview small {font-size:12px;opacity:.8;}
+.pay-method-choice {gap:9px !important;justify-content:flex-start !important;}
+.pay-method-choice input {flex:none;}
+.pay-method-icon {width:26px;height:26px;object-fit:contain;display:grid;place-items:center;font-size:19px;}
+.pay-qr-box {margin:4px auto;text-align:center;display:grid;justify-items:center;gap:6px;}
+.pay-qr-box figcaption {font-size:13px;font-weight:700;}
+.pay-orders-link {z-index:654;display:flex;align-items:center;gap:8px;min-height:46px;padding:7px 13px;border:1px solid #ba8c23;border-radius:999px;background:#242126;color:#fff3cf;box-shadow:0 6px 22px #0005;font-size:13px;transition:transform .2s ease,box-shadow .2s ease;}
+.pay-orders-link:hover {transform:translateY(-2px);box-shadow:0 9px 28px #0005;}
+.pay-orders-link > span {display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#fdbe2d;color:#29221a;font-size:19px;}
+.pay-orders-link > strong {white-space:nowrap;}
+.pay-orders-link > small {padding:3px 7px;border-radius:999px;background:#ffffff1c;color:#fce2a0;white-space:nowrap;}
+.pay-orders-link[data-pending="true"] {border-color:#fdbe2d;}
+body.has-cart-footer:not(.rich-menu-active) .pay-orders-link {bottom:calc(139px + env(safe-area-inset-bottom));}
+.pay-notification {bottom:calc(150px + env(safe-area-inset-bottom));inset-inline-end:14px;max-width:min(90vw,340px);font-weight:800;box-shadow:0 9px 30px #0004;animation:pay-spring .25s ease-out;}
+.pay-restaurant-info {box-shadow:0 20px 80px #0008;}
+.pay-restaurant-content {display:grid;gap:13px;}
+.pay-restaurant-row {display:grid;gap:4px;border:1px solid var(--line,#555);border-radius:14px;background:var(--paper,#fff);padding:13px;}
+.pay-restaurant-row span {opacity:.78;font-size:13px;}
+.pay-restaurant-row strong {font-size:16px;overflow-wrap:anywhere;}
+.pay-restaurant-content > .pay-primary {margin-top:4px;min-height:46px;}
+@media(prefers-reduced-motion:reduce){.pay-orders-link,.pay-notification{transition:none;animation:none;}}
