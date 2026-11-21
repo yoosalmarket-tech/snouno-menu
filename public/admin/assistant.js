@@ -13,7 +13,7 @@ export function renderAssistant({root,getToken}){
   const heroCopy=create('div');
   heroCopy.append(create('small','','SNOUNU  ✦  AI'),
     create('h2','','اسأل عن مطعمك'),
-    create('p','','تابع أخبار غزة وتطورات مطاعمها أولاً، واكتشف أفكار المطاعم حول العالم، مع الطقس وبيانات سنونو والأسئلة العامة.'));
+    create('p','','مساعد Gemini لمتابعة سنونو، طقس غزة والمعرفة العامة، مع أخبار موثّقة عندما يدعم مفتاحك البحث الحي.'));
   hero.append(heroCopy,create('span','snounu-ai-glyph','✦'));
   const badges=create('div','snounu-ai-meta');
   badges.append(create('span','','قراءة فقط · بدون تعديل البيانات'),
@@ -90,8 +90,10 @@ export function renderAssistant({root,getToken}){
         const hint=create('small','snounu-ai-mode',
           'تقارير سنونو المباشرة · لا يستخدم نموذج الذكاء الاصطناعي الآن');
         bubble.append(hint);
-      } else if(result.mode==='ai' && result.provider==='groq'){
-        bubble.append(create('small','snounu-ai-mode','إجابة ذكية عبر Groq'));
+      } else if(result.mode==='unverified_news'){
+        bubble.append(create('small','snounu-ai-mode','لا توجد أخبار حديثة متحقق منها · لا تخمين'));
+      } else if(result.mode==='ai' && result.provider==='gemini'){
+        bubble.append(create('small','snounu-ai-mode','إجابة ذكية عبر Gemini'));
       }
       if(Array.isArray(result.sources)&&result.sources.length){
         const linked=create('div','snounu-ai-sources');
