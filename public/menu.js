@@ -848,7 +848,7 @@ function ensureMainStyles(){
  return mainStylesPromise;
 }
 function initialiseCart(){
- if(!isPreview&&!cartUi&&cartModule&&settings?.name)
+ if(!isPreview&&!cartUi&&cartModule&&settings?.name&&dishes.length)
   cartUi=cartModule.installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});
 }
 function ensureMenuAssets(){
