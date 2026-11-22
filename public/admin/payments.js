@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=receipt80-20261122";
+} from "../payment-ui.js?v=receipt-slogan-20261122";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",

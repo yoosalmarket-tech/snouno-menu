@@ -61,7 +61,6 @@ export function invoice(o) {
     ".brand h1{margin:0;font-size:19px;line-height:1.3}.brand p{color:#666;font-size:10px;margin:6px 0 0;overflow-wrap:anywhere}",
     ".heading{text-align:center;padding:10px 0}.heading h2{font-size:16px;margin:0}",
     ".heading small{font-size:10px;direction:ltr;display:block;color:#666}",
-    ".paid{display:inline-block;background:#fff5d8;border:1px solid #d7bc67;border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;margin-top:7px}",
     ".info{border-top:1px dashed #aaa;border-bottom:1px dashed #aaa;padding:8px 0}",
     ".pair{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:4px 0;font-size:11px}",
     ".pair .key{color:#666;flex:0 0 33%}.pair .value{flex:1;text-align:left;overflow-wrap:anywhere;white-space:pre-wrap}.pair .value.ltr{direction:ltr;unicode-bidi:isolate}",
@@ -81,7 +80,7 @@ export function invoice(o) {
     "@page{size:auto;margin:0}",
     "@media print{html,body{width:80mm!important;max-width:80mm!important;margin:0!important;background:#fff!important}",
     ".tools{display:none!important}.receipt{width:80mm!important;max-width:80mm!important;margin:0!important;padding:4mm 4mm 5mm!important;box-shadow:none!important;border-top:2px solid #222!important}",
-    ".paid{background:#fff!important;border-color:#777!important}.items tr,.pair,.total,.brand,.footer{break-inside:avoid;page-break-inside:avoid}}",
+    ".items tr,.pair,.total,.brand,.footer{break-inside:avoid;page-break-inside:avoid}}",
     "@media(max-width:370px){.tools{flex-direction:column}.receipt{margin:12px auto}}"
   ].join("");
   doc.head.append(viewport,css);
@@ -104,7 +103,7 @@ export function invoice(o) {
   brand.append(make("h1",snap.restaurant||"مطعم سنونو"),make("p",[snap.address,snap.phone].filter(Boolean).join(" · ")));
   receipt.append(brand);
   const heading=make("section",null,"heading");
-  heading.append(make("h2","إيصال دفع"),make("small",snap.number||"SN-"+o.number),make("span","✓ تم اعتماد الدفع","paid"));
+  heading.append(make("h2","إيصال دفع"),make("small",snap.number||"SN-"+o.number));
   receipt.append(heading);
   const info=make("section",null,"info");
   const pair=(key,value,ltr=false)=>{
@@ -149,7 +148,7 @@ export function invoice(o) {
     "تم اعتماد الدفع · تم تسليم الطلب":"تم اعتماد الدفع · الطلب غير مسلّم بعد","status"));
   if(o.notes)receipt.append(make("p","ملاحظات الطلب: "+o.notes,"note"));
   const footer=make("footer",null,"footer");
-  footer.append(make("strong","شكراً لطلبكم من سنونو!"),make("small","سنونو… في أكل وفي سنونو!"),
+  footer.append(make("strong","شكراً لطلبكم من سنونو!"),make("small","سنونو قلب زبونو"),
     make("div","Snounu Restaurant · "+(snap.number||o.number),"stamp"));
   receipt.append(footer);
   doc.body.replaceChildren(toolbar,receipt);
