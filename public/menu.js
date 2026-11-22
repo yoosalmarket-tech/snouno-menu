@@ -166,13 +166,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=stamp-contrast-20261122';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=user-stamp-20261122';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=bilingual-categories-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=user-stamp-20261122')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -1196,7 +1196,10 @@ function mealCard(d,context='regular'){
    const nameRow=make('div');nameRow.className='meal-name-row';
    nameRow.append(make('strong',displayName(d)));
    if(d.available===false){
-    // Regular cards use a struck-through gray price, not the interactive stamp.
+    const unavailable=make('span','غير متوفر');
+    unavailable.className='meal-unavailable-label';
+    nameRow.append(unavailable);
+    // Regular cards use a gray name label and struck-through price; no stamp.
     open.setAttribute('aria-label',displayName(d)+' — غير متوفر');
    }
    open.append(nameRow,make('p',displayDescription(d)),price(d));
@@ -1252,8 +1255,15 @@ function detail(d){
    box.append(frame);
  }
  const content=make('div');content.className='content';
- const lead=make('div');lead.className='dish-lead';lead.append(make('h2',displayName(d)));
- // Regular details use a gray struck-through price to signal unavailability.
+ const lead=make('div');lead.className='dish-lead';
+ const heading=make('h2',displayName(d));
+ if(d.available===false){
+  const unavailable=make('span','غير متوفر');
+  unavailable.className='meal-unavailable-label';
+  heading.append(' ',unavailable);
+ }
+ lead.append(heading);
+ // Regular details use a gray name label and struck-through price.
  if(d.rating!=null)lead.append(startingScore(d.rating));
  content.append(lead);if(d.price!=null)content.append(price(d));
  if(d.description)content.append(make('p',displayDescription(d)));

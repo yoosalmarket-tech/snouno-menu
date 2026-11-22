@@ -1458,3 +1458,25 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 @media(prefers-reduced-motion:reduce){
  .welcome-mode-chooser button{transition:none}
 }
+
+/* Unavailable status beside the name in regular cards and regular details.
+   No badge, stamp or red overlay appears in the standard menu. */
+#menu .card.meal-unavailable .meal-name-row .meal-unavailable-label,
+#details .dish-lead .meal-unavailable-label{
+  display:inline;
+  flex:0 0 auto;
+  align-self:baseline;
+  color:#92969D!important;
+  background:transparent!important;
+  border:0!important;
+  padding:0!important;
+  margin:0;
+  font:600 11px/1.4 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
+  white-space:nowrap;
+  text-decoration:none!important;
+}
+#details .dish-lead h2 .meal-unavailable-label{
+  font-size:12px!important;
+  vertical-align:middle;
+  margin-inline-start:6px;
+}

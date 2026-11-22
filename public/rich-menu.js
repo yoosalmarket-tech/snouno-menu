@@ -215,7 +215,11 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
     frame.append(empty);
    }
    if(meal.available===false){
-    const stamp=mk('span','rm-unavailable-stamp','غير متوفر');
+    const stamp=mk('img','rm-unavailable-stamp');
+    stamp.src='/assets/unavailable-stamp-user.webp';
+    stamp.alt='';
+    stamp.decoding='async';
+    stamp.draggable=false;
     stamp.setAttribute('aria-hidden','true');
     frame.append(stamp);
    }
