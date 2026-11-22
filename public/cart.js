@@ -1351,7 +1351,6 @@ export function installCart({ catalog, name, description, closed, page }) {
         localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
         refresh();
         b.replaceChildren();
-        pulse(b);
         const stageTitle=o.fulfillment_status==="completed"
           ? t("تم تسليم طلبك","Order marked delivered")
           : o.payment_mode==="at_restaurant"&&o.status==="pending"
