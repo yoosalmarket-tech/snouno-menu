@@ -157,7 +157,13 @@ export function installCart({ catalog, name, description, closed, page }) {
   const dialog = el("dialog");
   dialog.className = "pay-dialog";
   dialog.setAttribute("aria-label", t("السلة والطلبات", "Cart and orders"));
-  const badge = button("", open);
+  const badge = button("", () => {
+    if (count() === 0) {
+      if (dialog.inert) return;
+      modal();
+      showHistory();
+    } else open();
+  });
   badge.className = "pay-footer";
   const history = button("", () => {
     openPayDialog(dialog, document.body.classList.contains("rich-menu-active"));
@@ -306,12 +312,10 @@ export function installCart({ catalog, name, description, closed, page }) {
  }
 }
   function refresh() {
-    const rich = document.body.classList.contains("rich-menu-active");
-    const show = page() === "menu" && (count() > 0 || tracking.length > 0);
-    badge.replaceChildren(
-      el("strong", count() > 0 ? t("عرض السلة", "View cart") + " · " + count() : t("السلة وطلباتي", "Cart and orders")),
-      el("span", amount(total())),
-    );
+    const empty = count() === 0;
+    const show = page() === "menu";
+    badge.classList.toggle("pay-footer--orders-only", empty);
+    badge.setAttribute("aria-label", empty ? t("طلباتي", "My orders") : t("عرض السلة", "View cart"));
     const cartIcon=el("span");
     cartIcon.className="pay-cart-icon";
     cartIcon.setAttribute("aria-hidden","true");
@@ -322,10 +326,19 @@ export function installCart({ catalog, name, description, closed, page }) {
     iconSvg.setAttribute("stroke-width","1.85");
     iconSvg.setAttribute("stroke-linecap","round");
     iconSvg.setAttribute("stroke-linejoin","round");
-    iconSvg.innerHTML='<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.72a2 2 0 0 0 2-1.58L22 7H5"/>';
+    iconSvg.innerHTML=empty
+      ? '<path d="M8 3h9a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V7a4 4 0 0 1 4-4h1"/><path d="M9 9h7M9 13h5"/>'
+      : '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.72a2 2 0 0 0 2-1.58L22 7H5"/>';
     cartIcon.append(iconSvg);
-    badge.firstChild.prepend(cartIcon);
-    document.body.classList.toggle("has-cart-footer", show);
+    if (empty) {
+      badge.replaceChildren(cartIcon, el("strong", t("طلباتي", "My orders")));
+    } else {
+      const title=el("strong", t("عرض السلة", "View cart") + " · " + count());
+      title.prepend(cartIcon);
+      badge.replaceChildren(title, el("span", amount(total())));
+    }
+    // The full-width rail only reserves page space when there are meals.
+    document.body.classList.toggle("has-cart-footer", show && !empty);
     if (show) {
       badge.hidden = false;
       badge.classList.add("visible");
@@ -338,7 +351,7 @@ export function installCart({ catalog, name, description, closed, page }) {
         }, 220);
       else badge.hidden = true;
     }
-    history.hidden = true; // Orders are now accessible inside both carts.
+    history.hidden = true; // My Orders uses the empty-state button and the full cart dialog.
     const pendingOrders = tracking.filter((r) => r.status === "pending").length;
     history.dataset.pending = String(pendingOrders > 0);
     history.replaceChildren(
