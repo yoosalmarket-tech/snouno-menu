@@ -73,16 +73,88 @@ const table = (headers, rows) => {
   }
   return t;
 };
-export async function orders({ root, api, notice, endpoint, canManage = false }) {
-  const search = input("", "search");
-  search.placeholder = "رقم الطلب، الاسم أو الجوال";
-  const filter = el("select");
-  filter.append(...list({ "": "كل الحالات", ...labels }));
-  const results = el("div");
-  results.className = "pay-results";
-  root.replaceChildren(search, filter, results);
-  let page = 0,
-    revision = 0;
+export async function orders({root,api,notice,endpoint,canManage=false}){
+  root.classList.add("pay-orders-v2");
+  const search=input("","search");
+  search.placeholder="رقم الطلب، العميل أو الجوال";
+  search.setAttribute("aria-label","ابحث في الطلبات");
+  const filter=el("select");
+  filter.setAttribute("aria-label","حالة الدفع");
+  filter.append(...list({"":"جميع حالات الدفع",pending:"قيد المراجعة",approved:"تم اعتماد الدفع",rejected:"رفض الدفع",cancelled:"ملغي"}));
+  const stageFilter=el("select");
+  stageFilter.setAttribute("aria-label","مرحلة الطلب");
+  stageFilter.append(...list({"":"كل مراحل الطلب",awaiting_visit:"بانتظار الحضور",awaiting_payment:"بانتظار الدفع",awaiting_approval:"مراجعة الدفع",preparing:"قيد التحضير",completed:"تم التسليم",stopped:"متوقف"}));
+  const title=el("div");title.className="orders-v2-title";
+  const titleText=el("div");
+  titleText.append(el("h2","إدارة الطلبات"),el("p","متابعة المدفوعات والطلبات والتسليم بسهولة."));
+  const refresh=button("تحديث الطلبات",()=>load());refresh.className="orders-v2-refresh";
+  title.append(titleText,refresh);
+  const labeled=(label,control)=>{
+    const holder=el("label");holder.className="orders-v2-field";
+    holder.append(el("span",label),control);return holder;
+  };
+  const filters=el("div");filters.className="orders-v2-filters";
+  filters.append(labeled("البحث",search),labeled("حالة الدفع",filter),labeled("مرحلة الطلب",stageFilter));
+  const stats=el("div");stats.className="orders-v2-stats";
+  const hint=el("p");hint.className="orders-v2-hint";hint.setAttribute("role","status");
+  const results=el("div");results.className="pay-results orders-v2-results";
+  const pager=el("nav");pager.className="orders-v2-pager";pager.setAttribute("aria-label","صفحات الطلبات");
+  root.replaceChildren(title,filters,stats,hint,results,pager);
+  let page=0,revision=0;
+  const stages={awaiting_visit:"بانتظار الحضور",awaiting_payment:"بانتظار الدفع",awaiting_approval:"مراجعة الدفع",preparing:"قيد التحضير",completed:"تم التسليم",stopped:"متوقف"};
+  const date=s=>s?new Date(s).toLocaleString("ar-PS",{timeZone:"Asia/Gaza",year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"—";
+  const pill=(name,tone,secondary=false)=>{
+    const tag=el("span",name);
+    tag.className="orders-v2-pill orders-v2-pill--"+tone+(secondary?" is-stage":"");
+    return tag;
+  };
+  const info=(label,value)=>{
+    const field=el("div");field.className="orders-v2-info";
+    field.append(el("small",label),el("strong",value||"—"));return field;
+  };
+  function orderCard(o){
+    const card=el("article");card.className="orders-v2-card";
+    card.setAttribute("aria-label","طلب رقم "+o.number);
+    if(o.status==="pending")card.classList.add("needs-review");
+    const head=el("header");head.className="orders-v2-card-head";
+    const id=el("div");id.className="orders-v2-id";
+    id.append(el("strong","طلب #"+o.number),el("small",date(o.created_at)));
+    const badges=el("div");badges.className="orders-v2-badges";
+    badges.append(pill(labels[o.status]||o.status,o.status));
+    if(o.fulfillment_status)badges.append(pill(stages[o.fulfillment_status]||o.fulfillment_status,o.fulfillment_status,true));
+    head.append(id,badges);
+    const main=el("div");main.className="orders-v2-main";
+    const customer=el("div");customer.className="orders-v2-customer";
+    customer.append(el("small","العميل"),el("h3",o.customer||"عميل"));
+    if(o.phone){
+      const phone=el("a",o.phone);phone.className="orders-v2-phone";phone.dir="ltr";
+      phone.href="tel:"+String(o.phone).replace(/[^\d+]/g,"");customer.append(phone);
+    }
+    const price=el("div");price.className="orders-v2-price";
+    price.append(el("small","قيمة الطلب"));
+    const value=el("strong",amount(o.total));value.dir="ltr";price.append(value);
+    main.append(customer,price);
+    const meals=el("div");meals.className="orders-v2-meals";
+    meals.append(el("small","محتوى الطلب"));
+    const summary=(o.pay_items||[]).map(i=>(i.name||"وجبة")+" × "+i.qty).join(" · ");
+    const text=el("p",summary||"لا توجد وجبات");text.title=summary;meals.append(text);
+    const meta=el("div");meta.className="orders-v2-meta";
+    meta.append(
+      info("نوع الطلب",o.service_type==="delivery"?"توصيل":o.service_type==="dine_in"?"تناول بالمطعم":"غير محدد"),
+      info("طريقة الدفع",o.method||"غير محددة")
+    );
+    if(o.expected_arrival_at)meta.append(info("موعد الوصول",date(o.expected_arrival_at)));
+    const foot=el("footer");foot.className="orders-v2-foot";
+    const note=el("div");note.className="orders-v2-note";
+    const reports=(o.pay_order_reports||[]).filter(r=>!r.resolved_at).length;
+    if(reports)note.append(pill("بلاغ مفتوح · "+reports,"report"));
+    else note.append(el("span",o.status==="pending"?"بانتظار المراجعة":o.fulfillment_status==="completed"?"تم تسليم الطلب":"عرض السجل من التفاصيل"));
+    const action=button("عرض تفاصيل الطلب",()=>details(o));action.className="orders-v2-action";
+    action.setAttribute("aria-label","عرض تفاصيل الطلب رقم "+o.number);
+    foot.append(note,action);
+    card.append(head,main,meals,meta,foot);
+    return card;
+  }
   async function details(o) {
     const dialog = el("dialog");
     dialog.className = "pay-admin-dialog";
@@ -249,97 +321,72 @@ export async function orders({ root, api, notice, endpoint, canManage = false })
       );
     dialog.showModal();
   }
-  async function load() {
-    const ticket = ++revision;
-    const q = new URLSearchParams({
-      select:
-        "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
-      order: "created_at.desc",
-      limit: "26",
-      offset: String(page * 25),
+  async function load(){
+    const ticket=++revision;
+    refresh.disabled=true;hint.textContent="جارٍ تحميل الطلبات...";
+    results.setAttribute("aria-busy","true");
+    const q=new URLSearchParams({
+      select:"id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
+      order:"created_at.desc",limit:"26",offset:String(page*25)
     });
-    if (filter.value) q.set("status", "eq." + filter.value);
-    const term = search.value.replace(/[^\p{L}\p{N} +\-]/gu, "").trim();
-    if (term) {
-      const clauses = [
-        "customer.ilike.*" + term + "*",
-        "phone.ilike.*" + term + "*",
-        "backup_phone.ilike.*" + term + "*",
-      ];
-      if (/^\d{1,16}$/.test(term)) clauses.push("number.eq." + term);
-      q.set("or", "(" + clauses.join(",") + ")");
+    if(filter.value)q.set("status","eq."+filter.value);
+    if(stageFilter.value)q.set("fulfillment_status","eq."+stageFilter.value);
+    const term=search.value.replace(/[^\p{L}\p{N} +\-]/gu,"").trim();
+    if(term){
+      const clauses=["customer.ilike.*"+term+"*","phone.ilike.*"+term+"*","backup_phone.ilike.*"+term+"*"];
+      if(/^\d{1,16}$/.test(term))clauses.push("number.eq."+term);
+      q.set("or","("+clauses.join(",")+")");
     }
-    try {
-      const rows = await api(rootPath + "pay_orders?" + q);
-      if (ticket !== revision) return;
-      results.replaceChildren(
-        table(
-          [
-            "رقم",
-            "العميل",
-            "الجوال",
-            "الطلب",
-            "المبلغ",
-            "الدفع",
-            "نوع الطلب",
-            "وقت الوصول المتوقع",
-            "الوقت",
-            "حالة الدفع",
-            "مرحلة الطلب",
-            "بلاغ",
-            "التفاصيل",
-          ],
-          rows
-            .slice(0, 25)
-            .map((o) => [
-              o.number,
-              o.customer,
-              o.phone,
-              o.pay_items.map((i) => i.name + " × " + i.qty).join("، "),
-              amount(o.total),
-              o.method,
-              o.service_type === "delivery" ? "توصيل" : o.service_type === "dine_in" ? "تناول بالمطعم" : "غير محدد",
-              o.expected_arrival_at ? when(o.expected_arrival_at) : "—",
-              when(o.created_at),
-              labels[o.status],
-              ({awaiting_visit:"بانتظار الحضور",awaiting_payment:"بانتظار الدفع",awaiting_approval:"مراجعة الدفع",preparing:"قيد التحضير",completed:"تم التسليم",stopped:"متوقف"}[o.fulfillment_status]||"—"),
-              (o.pay_order_reports||[]).filter(x=>!x.resolved_at).length?"بلاغ مفتوح":"—",
-              button("عرض", () => details(o)),
-            ]),
-        ),
+    try{
+      const rows=await api(rootPath+"pay_orders?"+q);
+      if(ticket!==revision)return;
+      const visible=rows.slice(0,25);
+      const stat=(name,value,kind)=>{
+        const item=el("div");item.className="orders-v2-stat "+kind;
+        item.append(el("small",name),el("strong",String(value)));return item;
+      };
+      stats.replaceChildren(
+        stat("طلبات هذه الصفحة",visible.length,""),
+        stat("قيد المراجعة",visible.filter(o=>o.status==="pending").length,"pending"),
+        stat("مدفوعات معتمدة",visible.filter(o=>o.status==="approved").length,"approved"),
+        stat("تم تسليمها",visible.filter(o=>o.fulfillment_status==="completed").length,"complete")
       );
-      if (!rows.length) results.append(el("p", "لا توجد طلبات مطابقة"));
-      if (page)
-        results.append(
-          button("السابق", () => {
-            page--;
-            load();
-          }),
-        );
-      if (rows.length > 25)
-        results.append(
-          button("التالي", () => {
-            page++;
-            load();
-          }),
-        );
-    } catch (e) {
-      notice(e.message);
+      const grid=el("div");grid.className="orders-v2-grid";
+      visible.forEach(o=>grid.append(orderCard(o)));
+      if(!visible.length){
+        const empty=el("section");empty.className="orders-v2-empty";
+        empty.append(el("strong","لا توجد طلبات مطابقة"),el("p","جرّب تغيير البحث أو الفلاتر."));
+        results.replaceChildren(empty);
+      }else results.replaceChildren(grid);
+      pager.replaceChildren();
+      if(page){
+        const previous=button("السابق",()=>{page--;void load();});
+        pager.append(previous);
+      }
+      pager.append(el("span","الصفحة "+(page+1)));
+      if(rows.length>25){
+        const next=button("التالي",()=>{page++;void load();});
+        pager.append(next);
+      }
+      hint.textContent="يتم عرض "+visible.length+" طلب في الصفحة الحالية";
+    }catch(error){
+      if(ticket!==revision)return;
+      notice(error.message);
+      hint.textContent="تعذّر تحميل الطلبات";
+      const retry=button("إعادة المحاولة",()=>load());
+      const empty=el("section");empty.className="orders-v2-empty";empty.append(el("strong","تعذّر تحميل البيانات"),retry);
+      results.replaceChildren(empty);pager.replaceChildren();
+    }finally{
+      if(ticket===revision){refresh.disabled=false;results.setAttribute("aria-busy","false");}
     }
   }
   let timer;
-  search.oninput = () => {
+  search.oninput=()=>{
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      page = 0;
-      load();
-    }, 250);
+    timer=setTimeout(()=>{page=0;void load();},280);
   };
-  filter.onchange = () => {
-    page = 0;
-    load();
-  };
-  root.prepend(button("تحديث الطلبات", load));
+  filter.onchange=()=>{page=0;void load();};
+  stageFilter.onchange=()=>{page=0;void load();};
   await load();
 }
 export async function settings({ root, api, notice, endpoint }) {
