@@ -1,4 +1,4 @@
-import {installCart, closePayDialog, openPayDialog} from './cart.js?v=interactive-animations-02';
+import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=meal-flight-drag-20261122';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
@@ -831,6 +831,7 @@ function openRestaurantInfo() {
   dismissInfo();
  });
  document.body.append(d);
+ installPayDialogDrag(d);
  openPayDialog(d,document.body.classList.contains('rich-menu-active'));
 }
 let cartUi;

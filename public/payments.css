@@ -700,3 +700,16 @@ body.rich-menu-active .pay-footer .pay-cart-icon::before{
   animation:none!important;
  }
 }
+
+/* The small top grip and title row are draggable, while form content scrolls. */
+body.rich-menu-active .pay-dialog .pay-top{
+ touch-action:none!important;
+ cursor:grab;
+ user-select:none;
+ -webkit-user-select:none;
+}
+body.rich-menu-active .pay-dialog .pay-top button{cursor:pointer}
+body.rich-menu-active .pay-dialog.pay-dragging .pay-top{cursor:grabbing}
+body.rich-menu-active .pay-dialog.pay-dragging{will-change:transform}
+body.rich-menu-active .pay-dialog{touch-action:pan-y}
+body.rich-menu-active .pay-dialog .pay-body{touch-action:pan-y}

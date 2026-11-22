@@ -43,6 +43,7 @@ async function call(data, proof) {
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 export function openPayDialog(dialog, animate = true) {
   if (dialog.open || dialog.classList.contains("closing")) return;
+  dialog.style.removeProperty("transform");
   dialog.showModal();
   if (!animate || reducedMotion()) return;
   const bounds = dialog.getBoundingClientRect();
@@ -76,10 +77,78 @@ export async function closePayDialog(dialog, animate = true) {
     }
   } finally {
     dialog.close();
+    dialog.style.removeProperty("transform");
     exit?.cancel();
     dialog.inert = false;
     dialog.classList.remove("closing");
   }
+}
+// Header-only pointer dragging; form scroll and button presses are unaffected.
+export function installPayDialogDrag(dialog){
+ let gesture=null,settling=null,activePointer=null;
+ const prefersReduce=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+ const deltaY=()=>{try{const m=getComputedStyle(dialog).transform;return m&&m!=="none"?new DOMMatrixReadOnly(m).m42:0;}catch{return 0;}};
+ function reset(){gesture=null;activePointer=null;settling?.cancel();settling=null;dialog.classList.remove("pay-dragging");dialog.style.removeProperty("transform");}
+ function down(event){
+  if(event.button!==0||!dialog.open||dialog.inert||dialog.classList.contains("closing")||
+    !document.body.classList.contains("rich-menu-active")||gesture)return;
+  const target=event.target;
+  if(target?.closest?.("button,a,input,textarea,select,label"))return;
+  const top=target?.closest?.(".pay-top");
+  const rect=dialog.getBoundingClientRect();
+  const onHandle=event.clientY>=rect.top && event.clientY<=rect.top+33;
+  if(!top&&!onHandle)return;
+  const startOffset=deltaY();
+  dialog.getAnimations().forEach(a=>a.cancel());
+  gesture={id:event.pointerId,start:event.clientY,y:event.clientY,offset:startOffset,time:performance.now(),velocity:0};
+  activePointer=event.pointerId;
+  dialog.classList.add("pay-dragging");
+  dialog.style.transform=`translateY(${startOffset}px)`;
+  try{dialog.setPointerCapture(event.pointerId)}catch{}
+ }
+ function move(event){
+  if(!gesture||event.pointerId!==gesture.id||!dialog.open)return;
+  if(event.cancelable)event.preventDefault();
+  const bounds=dialog.getBoundingClientRect();
+  const maxUp=Math.min(145,Math.max(0,bounds.top-gesture.offset-12));
+  const displacement=event.clientY-gesture.start;
+  const next=Math.max(-maxUp,Math.min(window.innerHeight,gesture.offset+displacement));
+  const elapsed=Math.max(1,performance.now()-gesture.time);
+  gesture.velocity=(event.clientY-gesture.y)/elapsed;
+  gesture.y=event.clientY;gesture.time=performance.now();
+  dialog.style.transform=`translateY(${next}px)`;
+ }
+ async function finish(event,cancelled=false){
+  if(!gesture||event.pointerId!==gesture.id)return;
+  const y=deltaY(),velocity=gesture.velocity;
+  gesture=null;
+  try{if(dialog.hasPointerCapture(event.pointerId))dialog.releasePointerCapture(event.pointerId)}catch{}
+  activePointer=null;
+  dialog.classList.remove("pay-dragging");
+  if(!dialog.open||dialog.classList.contains("closing")){dialog.style.removeProperty("transform");return;}
+  if(!cancelled&&(y>Math.min(138,dialog.clientHeight*.23)||y>55&&velocity>.85)){
+   await closePayDialog(dialog,true);
+   return;
+  }
+  if(prefersReduce()){dialog.style.removeProperty("transform");return;}
+  settling?.cancel();
+  settling=dialog.animate(
+   [{transform:`translateY(${y}px)`},{transform:"translateY(0px)"}],
+   {duration:300,easing:"cubic-bezier(.22,1,.36,1)",fill:"forwards"}
+  );
+  try{await settling.finished;}catch{}
+  if(dialog.open&&!dialog.classList.contains("closing"))dialog.style.removeProperty("transform");
+  settling?.cancel();settling=null;
+ }
+ dialog.addEventListener("pointerdown",down);
+ dialog.addEventListener("pointermove",move);
+ dialog.addEventListener("pointerup",event=>void finish(event));
+ dialog.addEventListener("pointercancel",event=>void finish(event,true));
+ dialog.addEventListener("lostpointercapture",event=>{
+  if(gesture?.id===event.pointerId)void finish(event,true);
+ });
+ dialog.addEventListener("close",reset);
+ return reset;
 }
 export function installCart({ catalog, name, description, closed, page }) {
   const dialog = el("dialog");
@@ -93,6 +162,7 @@ export function installCart({ catalog, name, description, closed, page }) {
   });
   history.className = "pay-orders-link";
   document.body.append(dialog, badge, history);
+  installPayDialogDrag(dialog);
   const key = "snounu-cart-v2";
   function restore() {
     const saved = read(key, null);
