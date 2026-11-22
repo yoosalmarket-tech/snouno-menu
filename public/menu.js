@@ -818,14 +818,31 @@ function openRestaurantInfo() {
    const content=document.createElement('strong');content.textContent=value;
    row.append(label,content);body.append(row);
  }
- const visit=document.createElement('button');visit.type='button';visit.className='pay-primary';
- visit.textContent=isEnglish()?'Open contact page':'فتح صفحة التواصل';
- visit.onclick=async()=>{
-  await dismissInfo();
-  history.pushState(null,'',pageUrl('contact'));
-  route();
- };
- body.append(visit);d.append(body);
+ // Direct social links use the existing restaurant dashboard settings.
+ const socials=document.createElement('nav');
+ socials.className='pay-restaurant-socials';
+ socials.setAttribute('aria-label','حسابات المطعم');
+ const names={instagram:'إنستغرام',facebook:'فيسبوك',whatsapp:'واتساب'};
+ for(const channel of ['instagram','facebook','whatsapp']){
+  const url=links.find(row=>row.channel===channel)?.url;
+  if(!url)continue;
+  let safe=false;
+  try{safe=['http:','https:'].includes(new URL(url).protocol);}catch{}
+  if(!safe)continue;
+  const a=document.createElement('a');
+  a.href=url;a.target='_blank';a.rel='noopener noreferrer';
+  a.dataset.trackAction='contact_open';a.dataset.channel=channel;
+  a.className='pay-social-link pay-social-'+channel;
+  a.setAttribute('aria-label',names[channel]);a.title=names[channel];
+  const icon=document.createElement('img');
+  icon.src='/assets/'+channel+'.svg';icon.alt='';icon.setAttribute('aria-hidden','true');
+  a.append(icon);socials.append(a);
+ }
+ if(!socials.children.length){
+  const missing=document.createElement('p');missing.className='pay-social-empty';
+  missing.textContent='روابط التواصل غير متاحة حالياً';socials.append(missing);
+ }
+ body.append(socials);d.append(body);
  d.addEventListener('close',()=>d.remove(),{once:true});
  d.addEventListener('click',event=>{
   if(event.target===d)dismissInfo();

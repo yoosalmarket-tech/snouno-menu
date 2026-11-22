@@ -730,3 +730,17 @@ body.rich-menu-active .pay-dialog.pay-dragging>.pay-drag-strip{cursor:grabbing}
 body.rich-menu-active .pay-footer .pay-cart-icon svg{
  display:block;width:25px;height:25px;overflow:visible;
 }
+
+/* Direct social channels in restaurant information, using live saved links. */
+.pay-restaurant-socials{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;margin:18px auto 4px;padding:6px 0 3px}
+.pay-restaurant-socials .pay-social-link{
+ width:56px;height:56px;display:grid;place-items:center;
+ border:1.5px solid #FDBE2D;border-radius:16px;
+ background:#242329;box-shadow:0 5px 16px #0002;
+ transition:transform .18s ease,background-color .18s ease,box-shadow .18s ease;
+}
+.pay-restaurant-socials .pay-social-link img{width:28px;height:28px;object-fit:contain}
+.pay-restaurant-socials .pay-social-link:hover{transform:translateY(-3px);background:#35302a;box-shadow:0 8px 18px #0003}
+.pay-restaurant-socials .pay-social-link:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px}
+.pay-social-empty{text-align:center;font-size:12px;opacity:.7}
+@media(prefers-reduced-motion:reduce){.pay-restaurant-socials .pay-social-link{transition:none}}
