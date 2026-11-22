@@ -164,13 +164,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=refinement02-20261122';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=stamp-and-order-en-20261122';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=refinement02-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=stamp-and-order-en-20261122')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -1057,7 +1057,7 @@ function mealCard(d,context='regular'){
    const nameRow=make('div');nameRow.className='meal-name-row';
    nameRow.append(make('strong',displayName(d)));
    if(d.available===false){
-    const stamp=make('span');stamp.className='meal-unavailable-stamp';
+    const stamp=make('span','غير متوفر');stamp.className='meal-unavailable-stamp';
     stamp.setAttribute('aria-hidden','true');article.append(stamp);
     open.setAttribute('aria-label',displayName(d)+' — غير متوفر');
    }
@@ -1111,7 +1111,7 @@ function detail(d){
    frame.append(image(d.image==='/assets/knockout.webp'?'/assets/knockout-detail.webp':d.image,displayName(d)));
    if(categoryLabel){const tag=make('span',categoryLabel);tag.className='photo-tag';frame.append(tag);}
    if(d.available===false){
-    const stamp=make('span');stamp.className='meal-unavailable-stamp';
+    const stamp=make('span','غير متوفر');stamp.className='meal-unavailable-stamp';
     stamp.setAttribute('aria-hidden','true');frame.append(stamp);
    }
    box.append(frame);

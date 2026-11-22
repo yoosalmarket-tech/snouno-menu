@@ -1956,15 +1956,52 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 #rich-menu .rm-cat{justify-content:center!important}
 #rich-menu .rm-cat span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important;font-weight:700!important}
 #rich-menu .rm-categories-label span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
-#rich-menu .rm-order-en{display:none!important}
-
-/* The supplied red stamp, centered just above unavailable meal photography. */
-#rich-menu .rm-dish .rm-unavailable-stamp{
- position:absolute;z-index:15;pointer-events:none;
- left:50%;top:-6%;width:84%;aspect-ratio:400/267;
- transform:translateX(-50%);
- background:url('/assets/unavailable-stamp.png') center/contain no-repeat;
- filter:drop-shadow(0 3px 3px #0003);
+/* Restore the bilingual order-button label only; the rest of the menu stays Arabic. */
+#rich-menu .rm-info .rm-order-wrap .rm-customize .rm-order-en{
+ display:block!important;
+ grid-column:3;
+ direction:ltr!important;
+ color:#FDBE2D!important;
+ font:900 8.5px/1.2 system-ui,Arial,sans-serif!important;
+ letter-spacing:0!important;
+ text-align:center!important;
+ white-space:nowrap!important;
 }
+#rich-menu .rm-info .rm-order-wrap .rm-customize .rm-order-ar{grid-column:1}
+#rich-menu .rm-info .rm-order-wrap .rm-customize .rm-order-icon{grid-column:2}
+
+/* Unavailable: accessible DOM text styled as a red stamp (no image-loading dependency).
+   Keep it INSIDE the 3D meal bounds so rm-stage overflow cannot clip it. */
+#rich-menu .rm-dish[data-unavailable="true"] .rm-unavailable-stamp{
+ position:absolute!important;
+ display:grid!important;place-items:center;
+ left:50%!important;top:4%!important;right:auto!important;
+ width:max-content!important;max-width:90%!important;
+ height:auto!important;aspect-ratio:auto!important;
+ z-index:30!important;
+ margin:0!important;padding:12px 9px!important;
+ transform:translateX(-50%) rotate(-17deg)!important;
+ background:none!important;
+ pointer-events:none!important;
+ white-space:nowrap!important;
+ color:#E60014!important;
+ font:900 clamp(28px,3.5vw,51px)/1.3 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important;
+ text-shadow:0 1px 0 #a1000b;
+ filter:drop-shadow(0 1px 1px #0006);
+ isolation:isolate;
+}
+#rich-menu .rm-dish .rm-unavailable-stamp::before,
+#rich-menu .rm-dish .rm-unavailable-stamp::after{
+ content:"";position:absolute;left:0;right:0;height:7px;
+ background:#E60014;
+ pointer-events:none;
+}
+#rich-menu .rm-dish .rm-unavailable-stamp::before{top:0}
+#rich-menu .rm-dish .rm-unavailable-stamp::after{bottom:0}
 #rich-menu .rm-dish[data-unavailable="true"] .rm-dish-badge{display:none!important}
-@media(max-width:980px){#rich-menu .rm-dish .rm-unavailable-stamp{width:88%;top:-4%}}
+@media(max-width:980px){
+ #rich-menu .rm-dish[data-unavailable="true"] .rm-unavailable-stamp{
+  top:5%!important;
+  font-size:clamp(27px,6vw,41px)!important;
+ }
+}

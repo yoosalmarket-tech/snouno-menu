@@ -1376,14 +1376,30 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 .category-nav-title span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
 .chip .chip-ar{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
 
-/* The same provided transparent unavailable stamp overlays regular meal art. */
+/* Red unavailable stamp rendered as real text: no external PNG required. */
 #menu .meal-unavailable-stamp,
 #details .meal-unavailable-stamp{
- position:absolute;display:block;z-index:5;pointer-events:none;
- left:50%;top:4px;width:83%;aspect-ratio:400/267;
- transform:translateX(-50%);
- background:url('/assets/unavailable-stamp.png') center/contain no-repeat;
- filter:drop-shadow(0 3px 3px #0003);
+ position:absolute;z-index:6;display:grid;place-items:center;
+ left:50%;top:13px;width:max-content;max-width:87%;height:auto;
+ padding:7px 6px;
+ transform:translateX(-50%) rotate(-17deg);
+ background:transparent;
+ color:#E60014;
+ font:900 clamp(15px,3.5vw,27px)/1.25 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
+ white-space:nowrap;
+ text-shadow:0 1px 0 #a1000b;
+ pointer-events:none;
+ filter:drop-shadow(0 1px 1px #0004);
 }
+#menu .meal-unavailable-stamp::before,#menu .meal-unavailable-stamp::after,
+#details .meal-unavailable-stamp::before,#details .meal-unavailable-stamp::after{
+ content:"";position:absolute;left:0;right:0;height:4px;background:#E60014;
+}
+#menu .meal-unavailable-stamp::before,#details .meal-unavailable-stamp::before{top:0}
+#menu .meal-unavailable-stamp::after,#details .meal-unavailable-stamp::after{bottom:0}
 #menu .card.meal-unavailable,#details .dish-photo.meal-unavailable{position:relative}
-#details .dish-photo.meal-unavailable .meal-unavailable-stamp{width:min(72%,370px);top:2px}
+#details .dish-photo.meal-unavailable .meal-unavailable-stamp{
+ top:9px;font-size:clamp(25px,6vw,48px);padding:12px 9px;
+}
+#details .dish-photo.meal-unavailable .meal-unavailable-stamp::before,
+#details .dish-photo.meal-unavailable .meal-unavailable-stamp::after{height:7px}
