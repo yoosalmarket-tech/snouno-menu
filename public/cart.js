@@ -516,6 +516,95 @@ export function installCart({ catalog, name, description, closed, page }) {
     };
     draw();
   }
+  // Native ordering controls for the regular menu's existing meal sheet.
+  function inlineAdd(d) {
+    const form=el("form");
+    form.className="pay-inline-add";
+    const chosen=new Set();
+    let qty=1;
+    for(const group of d.order_options||[]){
+      const section=el("fieldset");
+      section.append(el("legend",localized(group)+(group.required?" *":"")));
+      for(const opt of group.choices||[]){
+        const label=el("label");
+        const input=el("input");
+        input.type=group.multiple?"checkbox":"radio";
+        input.name="inline-option-"+(d.order_options||[]).indexOf(group);
+        input.value=opt.id;
+        input.disabled=opt.available===false;
+        input.onchange=()=>{
+          if(!group.multiple)group.choices.forEach(o=>chosen.delete(o.id));
+          if(input.checked)chosen.add(opt.id);else chosen.delete(opt.id);
+          draw();
+        };
+        label.append(input,el("span",localized(opt)+(opt.price?" +"+amount(opt.price):"")));
+        section.append(label);
+      }
+      if(!group.multiple&&!group.required){
+        section.append(button(t("بدون","None"),()=>{
+          section.querySelectorAll("input").forEach(i=>i.checked=false);
+          group.choices.forEach(o=>chosen.delete(o.id));
+          draw();
+        }));
+      }
+      form.append(section);
+    }
+    const note=el("textarea");
+    note.maxLength=300;
+    note.placeholder=t("تعليمات خاصة (اختياري)","Special instructions (optional)");
+    const noteLabel=el("label");
+    noteLabel.append(el("span",t("تعليمات خاصة (اختياري)","Special instructions (optional)")),note);
+    form.append(noteLabel);
+    const controls=el("div");
+    controls.className="pay-inline-controls";
+    const minus=button("−",()=>{qty=Math.max(1,qty-1);draw();});
+    const n=el("output",qty);
+    n.className="pay-inline-qty";
+    const plus=button("+",()=>{qty=Math.min(maxQty,qty+1);draw();});
+    minus.setAttribute("aria-label",t("تقليل الكمية","Decrease quantity"));
+    plus.setAttribute("aria-label",t("زيادة الكمية","Increase quantity"));
+    controls.append(minus,n,plus);
+    const confirm=el("button");
+    confirm.type="submit";
+    confirm.className="pay-primary";
+    const feedback=el("output");
+    feedback.className="pay-inline-feedback";
+    feedback.setAttribute("role","status");
+    form.append(controls,confirm,feedback);
+    function draw(){
+      n.textContent=qty;
+      minus.disabled=qty<=1;
+      plus.disabled=qty>=maxQty;
+      confirm.textContent=t("أضف إلى السلة","Add to cart")+" · "+amount(qty*unit(d,[...chosen]).price);
+    }
+    form.onsubmit=e=>{
+      e.preventDefault();
+      feedback.textContent="";
+      try{
+        addDirect(d,qty,[...chosen],note.value.trim());
+        feedback.textContent=t("أُضيفت إلى السلة ✓","Added to cart ✓");
+      }catch(err){feedback.textContent=err.message;}
+    };
+    draw();
+    return form;
+  }
+  function addDirect(d,qty=1,options=[],note=""){
+    if(!d||d.available===false||closed())throw Error(t("الطلب غير متاح حالياً","Ordering is currently unavailable"));
+    const quantity=Number(qty);
+    if(!Number.isInteger(quantity)||quantity<1||quantity>maxQty)
+      throw Error(t("كمية غير صالحة","Invalid quantity"));
+    const selected=[...options].sort();
+    for(const group of d.order_options||[]){
+      if(group.required&&!group.choices.some(o=>o.available!==false&&selected.includes(o.id)))
+        throw Error(t("اختر من ","Choose from ")+localized(group));
+    }
+    const same=cart.find(l=>l.id===d.id&&JSON.stringify(l.options)===JSON.stringify(selected)&&l.note===note);
+    if(same&&same.qty+quantity>maxQty)throw Error(t("تجاوزت حد الكمية","Quantity limit exceeded"));
+    if(same)same.qty+=quantity;
+    else cart.push({line:crypto.randomUUID(),id:d.id,qty:quantity,options:selected,note});
+    save();
+    return true;
+  }
   function open() {
     if (dialog.inert) return;
     modal();
@@ -1562,6 +1651,7 @@ export function installCart({ catalog, name, description, closed, page }) {
   refresh();
   return {
     add,
+    inlineAdd,
     button(d) {
       const b = button(t("أضف إلى السلة", "Add to cart"), () => add(d));
       b.disabled = d.available === false || closed();
