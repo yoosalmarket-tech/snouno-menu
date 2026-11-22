@@ -583,7 +583,51 @@ export async function settings({ root, api, notice, endpoint }) {
     api(rootPath + "pay_methods?order=position,id"),
     api(rootPath + "pay_settings?id=eq.1"),
   ]);
+  root.classList.add("pay-settings-v3");
   root.replaceChildren();
+  const pageIntro=el("section");
+  pageIntro.className="ps3-intro";
+  const introText=el("div");
+  introText.className="ps3-intro-copy";
+  introText.append(el("span","إدارة وسائل الدفع"),el("h2","طرق الدفع والتحويل"),
+    el("p","أضف المحافظ الإلكترونية، عدّل بيانات التحويل، وتحكّم بما يظهر للزبائن عند إتمام الطلب."));
+  const metrics=el("div");
+  metrics.className="ps3-summary";
+  const smallStat=(n,label)=>{const tile=el("div");tile.className="ps3-stat";tile.append(el("strong",n),el("span",label));return tile;};
+  metrics.append(
+    smallStat(methods.length,"طريقة دفع"),
+    smallStat(methods.filter(m=>m.enabled).length,"مفعّلة"),
+    smallStat(methods.filter(m=>m.qr_url).length,"رمز QR")
+  );
+  pageIntro.append(introText,metrics);
+  const methodsSection=el("section");methodsSection.className="ps3-methods";
+  const methodsHeading=el("div");methodsHeading.className="ps3-section-header";
+  const methodsHeadingText=el("div");
+  methodsHeadingText.append(el("h2","وسائل الدفع"),el("p","اختر طريقة الدفع لتعديل حسابها، شعارها، ورمز التحويل الخاص بها."));
+  methodsHeading.append(methodsHeadingText);
+  const methodGrid=el("div");methodGrid.className="ps3-method-grid";
+  methodsSection.append(methodsHeading,methodGrid);
+  root.append(pageIntro,methodsSection);
+  const block=(title,description,nodes,cls="")=>{
+    const section=el("section");section.className="ps3-block "+cls;
+    const header=el("div");header.className="ps3-block-header";
+    header.append(el("h4",title));
+    if(description)header.append(el("p",description));
+    const content=el("div");content.className="ps3-block-fields";
+    for(const node of nodes){if(node)content.append(node);}
+    section.append(header,content);
+    return section;
+  };
+  const ownLabel=control=>control?.closest("label")||null;
+  const switchify=control=>{
+    const label=ownLabel(control);
+    if(!label)return null;
+    label.classList.add("ps3-switch");
+    const text=label.firstChild?.textContent||"";
+    const span=el("span",text.trim());
+    label.replaceChildren(span,control);
+    return label;
+  };
   function flash(message, good) {
     const banner = el("p", message);
     banner.className = "pay-save-feedback " + (good ? "is-saved" : "is-error");
@@ -596,6 +640,7 @@ export async function settings({ root, api, notice, endpoint }) {
     form.className = "pay-config";
     form.noValidate = true; // Show explicit Arabic errors, not a generic browser-only tooltip.
     form.append(el("h3", title));
+    form.dataset.title=title;
     const fields = {};
     for (const [key, label, value, type = "text"] of items) {
       const control = input(value, type);
@@ -780,6 +825,8 @@ export async function settings({ root, api, notice, endpoint }) {
       download.className = "pay-download-qr";
       form.insertBefore(download, form.querySelector(".pay-save-feedback"));
     }
+    iconLabel.classList.add("ps3-upload-field","ps3-upload-icon");
+    qrLabel.classList.add("ps3-upload-field","ps3-upload-qr");
     for (const [pick, setPreview] of [[iconFile,setIconPreview],[qrFile,setQrPreview]]) {
       let temporary = "";
       pick.addEventListener("change", () => {
@@ -789,17 +836,69 @@ export async function settings({ root, api, notice, endpoint }) {
         pick.removeAttribute("aria-invalid");
       });
     }
+    // Organize existing controls without replacing their values or save handlers.
+    form.classList.add("ps3-method-card");
+    const title=form.querySelector("h3");
+    const status=form.querySelector(".pay-save-feedback");
+    const save=form.querySelector(".pay-save-button");
+    const cardHead=el("div");cardHead.className="ps3-card-head";
+    const logo=el("div");logo.className="ps3-method-logo";
+    if(/^https:\/\//i.test(m.icon||"")){
+      const img=el("img");img.src=m.icon;img.alt="شعار "+(m.name||"طريقة الدفع");
+      img.onerror=()=>logo.replaceChildren(el("span","₪"));
+      logo.append(img);
+    }else logo.append(el("span","₪"));
+    const titleText=el("div");titleText.className="ps3-method-title";
+    title.textContent=m.name||"طريقة دفع جديدة";
+    titleText.append(title);
+    titleText.append(el("small",m.enabled?"هذه الطريقة ظاهرة للزبائن":"هذه الطريقة غير مفعّلة حالياً"));
+    const indicator=el("span",m.enabled?"مفعّلة":"غير مفعّلة");
+    indicator.className="ps3-method-state "+(m.enabled?"is-on":"is-off");
+    cardHead.append(logo,titleText,indicator);
+
+    const account=block("معلومات الحساب","البيانات التي يستخدمها الزبون لإرسال المبلغ.",
+      ["name","account","holder"].map(k=>ownLabel(fields[k])),"ps3-account");
+    const options=block("العرض والتعليمات","تحكّم في الظهور، ترتيب الطريقة، وكيفية إتمام التحويل.",
+      ["instructions","url","position"].map(k=>ownLabel(fields[k]))
+        .concat(switchify(fields.enabled)),"ps3-options");
+    const media=block("الصور المرتبطة بالدفع","شعار المحفظة يظهر بجانب اسمها، ورمز QR يساعد الزبون في التحويل.",
+      [iconLabel,qrLabel],"ps3-media");
+    const qrActions=el("div");qrActions.className="ps3-qr-actions";
+    const clearLabel=ownLabel(clearQr);
+    if(clearLabel){clearLabel.classList.add("ps3-remove-qr");qrActions.append(clearLabel);}
+    const qrDownload=form.querySelector(".pay-download-qr");
+    if(qrDownload)qrActions.append(qrDownload);
+    if(qrActions.childElementCount)media.append(qrActions);
+    const footer=el("footer");footer.className="ps3-card-footer";
+    footer.append(status,save);
+    form.replaceChildren(cardHead,account,options,media,footer);
+    methodGrid.append(form);
     return form;
   }
   for (const m of methods) method(m);
-  const add = button("إضافة طريقة دفع", () => {
-    const newly = method();
-    newly.scrollIntoView({ behavior: "smooth", block: "center" });
-    add.disabled = true;
+  if(!methods.length){
+    const empty=el("div");empty.className="ps3-empty";
+    empty.append(el("strong","لم تُضف أي وسائل دفع بعد"),
+      el("p","ابدأ بإضافة محفظة أو حساب بنكي ليتمكن العملاء من اختيار طريقة الدفع."));
+    methodGrid.append(empty);
+  }
+  const add=button("+ إضافة طريقة دفع جديدة",()=>{
+    const newly=method();
+    newly.scrollIntoView({behavior:"smooth",block:"start"});
+    add.disabled=true;
   });
-  root.append(add);
+  add.className="ps3-add-method";
+  methodsHeading.append(add);
+  const settingsSection=el("section");settingsSection.className="ps3-general";
+  const settingsHead=el("div");settingsHead.className="ps3-section-header";
+  const settingsText=el("div");
+  settingsText.append(el("h2","إعدادات الطلب والإيصال"),
+    el("p","بيانات المطعم، الحد الأقصى للكمية، والإشعارات وصيغ إثبات الدفع."));
+  settingsHead.append(settingsText);
+  settingsSection.append(settingsHead);
+  root.append(settingsSection);
   const formats = ["image/jpeg","image/png","image/webp","application/pdf"];
-  createForm("إعدادات الفاتورة والطلبات", [
+  const {form: configForm,fields: configFields}=createForm("إعدادات الطلب والإيصال", [
     ["max_quantity","الحد الأقصى للكمية لكل بند (1–99)",cfg.max_quantity || 99,"number"],
     ["restaurant","اسم المطعم *",cfg.restaurant],
     ["address","عنوان المطعم *",cfg.address],
@@ -826,6 +925,23 @@ export async function settings({ root, api, notice, endpoint }) {
     values.paper = "80mm";
     await api(rootPath + "pay_settings?id=eq.1", { method: "PATCH", body: values });
   });
+  configForm.classList.add("ps3-general-form");
+  const configStatus=configForm.querySelector(".pay-save-feedback");
+  const configSave=configForm.querySelector(".pay-save-button");
+  const configSections=el("div");configSections.className="ps3-general-grid";
+  configSections.append(
+    block("بيانات المطعم","تظهر بيانات المطعم في إيصالات الدفع.",
+      ["restaurant","address","phone","logo"].map(k=>ownLabel(configFields[k])),"ps3-restaurant-settings"),
+    block("إعدادات الطلبات","اضبط حد الكمية وأدوات التواصل الفوري.",
+      ["max_quantity"].map(k=>ownLabel(configFields[k]))
+        .concat(["cancellation","live_updates"].map(k=>switchify(configFields[k]))),"ps3-order-settings"),
+    block("صيغ إثبات الدفع","اختر أنواع الملفات المسموح للزبائن برفعها عند التحويل.",
+      formats.map(k=>switchify(configFields[k])),"ps3-format-settings")
+  );
+  const configFooter=el("footer");configFooter.className="ps3-card-footer";
+  configFooter.append(configStatus,configSave);
+  configForm.replaceChildren(configSections,configFooter);
+  settingsSection.append(configForm);
 }
 export async function sales(host, api) {
   host.className = "analytics-report pay-sales-dashboard";
