@@ -30,9 +30,6 @@
 .pay-admin-dialog::backdrop {
   background: #000a;
 }
-.pay-dialog[open] {
-  animation: pay-in 0.18s ease-out;
-}
 .pay-top,
 .pay-controls,
 .pay-row {
@@ -220,7 +217,7 @@ html
   overscroll-behavior: contain;
   box-shadow: 0 -12px 46px #0006;
 }
-.pay-dialog[open] {
+.pay-dialog[open]:not(.closing) {
   animation: pay-spring 0.32s cubic-bezier(0.2, 0.85, 0.28, 1.08);
 }
 .pay-dialog::backdrop {
@@ -359,7 +356,7 @@ html
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pay-dialog[open],
+  .pay-dialog[open]:not(.closing),
   .pay-dialog::backdrop,
   .pay-body,
   .pay-footer.visible {
@@ -649,21 +646,15 @@ body.rich-menu-active .pay-orders-link{display:none!important}
   48%{transform:scale(1.125)}
   100%{transform:scale(1.08)}
 }
-@keyframes pay-rich-cart-bounce{
-  0%{transform:translateY(0) scale(1)}
-  33%{transform:translateY(-7px) scale(1.015)}
-  64%{transform:translateY(2px) scale(.996)}
-  100%{transform:translateY(0) scale(1)}
-}
 @media(prefers-reduced-motion:no-preference){
   body.rich-menu-active .pay-dialog[open]:not(.closing){
-    animation:pay-rich-popup-in .48s cubic-bezier(.17,.9,.24,1) both!important;
+    animation:pay-rich-popup-in .38s cubic-bezier(.17,.9,.24,1);
   }
   body.rich-menu-active .pay-dialog::backdrop{
     animation:pay-rich-backdrop-in .3s ease-out both;
   }
   body.rich-menu-active .pay-dialog.closing::backdrop{
-    animation:pay-rich-backdrop-out .235s ease-in both;
+    animation:pay-rich-backdrop-out .22s ease-in both;
   }
   body.rich-menu-active .pay-dialog[open] .pay-top{
     animation:pay-rich-content-in .29s .04s both;
@@ -671,17 +662,6 @@ body.rich-menu-active .pay-orders-link{display:none!important}
   body.rich-menu-active .pay-dialog[open] .pay-body,
   body.rich-menu-active .pay-dialog[open] .pay-restaurant-content{
     animation:pay-rich-content-in .38s .08s cubic-bezier(.2,.8,.2,1) both;
-  }
-  body.rich-menu-active .pay-dialog[open] .pay-body>form,
-  body.rich-menu-active .pay-dialog[open] .pay-body>.pay-row,
-  body.rich-menu-active .pay-dialog[open] .pay-restaurant-row{
-    animation:pay-rich-content-in .35s .13s both;
-  }
-  body.rich-menu-active .pay-dialog[open] .pay-body>.pay-row:nth-child(2){
-    animation-delay:.18s;
-  }
-  body.rich-menu-active .pay-dialog[open] .pay-body>.pay-row:nth-child(3){
-    animation-delay:.22s;
   }
   body.rich-menu-active .pay-dialog .pay-add-confirmed{
     background-image:linear-gradient(105deg,#FDBE2D 22%,#ffdf7a 48%,#FDBE2D 74%)!important;
@@ -693,9 +673,7 @@ body.rich-menu-active .pay-orders-link{display:none!important}
   body.rich-menu-active .pay-dialog .pay-photo-added .pay-meal-photo{
     animation:pay-rich-photo-settle .4s cubic-bezier(.19,.88,.3,1) both;
   }
-  body.rich-menu-active .pay-footer.visible.pay-cart-added{
-    animation:pay-rich-cart-bounce .58s cubic-bezier(.16,.8,.18,1) both!important;
-  }
+
 }
 body.rich-menu-active .pay-dialog .pay-primary:not(:disabled){
   transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
@@ -716,7 +694,6 @@ body.rich-menu-active .pay-dialog .pay-primary:not(:disabled):active{transform:s
   body.rich-menu-active .pay-dialog .pay-body>form,
   body.rich-menu-active .pay-dialog .pay-restaurant-row,
   body.rich-menu-active .pay-dialog .pay-add-confirmed,
-  body.rich-menu-active .pay-dialog .pay-photo-added .pay-meal-photo,
-  body.rich-menu-active .pay-footer.pay-cart-added{animation:none!important}
+  body.rich-menu-active .pay-dialog .pay-photo-added .pay-meal-photo{animation:none!important}
   .pay-dialog .pay-body .pay-cart-orders{transition:none!important}
 }

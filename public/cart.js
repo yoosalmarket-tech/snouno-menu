@@ -39,6 +39,30 @@ async function call(data, proof) {
   if (!r.ok) throw Error(value.error || t("تعذر الاتصال", "Connection failed"));
   return value;
 }
+// Capture an interrupted entrance before changing the CSS state.
+export async function closePayDialog(dialog, animate = true) {
+  if (!dialog.open || dialog.classList.contains("closing")) return;
+  const useMotion = animate && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const style = getComputedStyle(dialog);
+  const from = useMotion && { opacity: style.opacity, transform: style.transform };
+  dialog.classList.add("closing");
+  dialog.inert = true;
+  let exit;
+  try {
+    if (useMotion) {
+      exit = dialog.animate([
+        from,
+        { opacity: 0, transform: "translateY(36px) scale(.985)" },
+      ], { duration: 220, easing: "ease-in", fill: "forwards" });
+      await exit.finished.catch(() => {});
+    }
+  } finally {
+    dialog.close();
+    exit?.cancel();
+    dialog.inert = false;
+    dialog.classList.remove("closing");
+  }
+}
 export function installCart({ catalog, name, description, closed, page }) {
   const dialog = el("dialog");
   dialog.className = "pay-dialog";
@@ -128,12 +152,17 @@ export function installCart({ catalog, name, description, closed, page }) {
       ],{duration:380,easing:"cubic-bezier(.2,.8,.25,1)"}).finished;
     } catch { /* A closed popup or reduced browser support must not block checkout. */ }
   }
+  let footerBounce;
   function celebrateFooter() {
     if (!motion() || !badge.classList.contains("visible")) return;
-    badge.classList.remove("pay-cart-added");
-    void badge.offsetWidth;
-    badge.classList.add("pay-cart-added");
-    setTimeout(()=>badge.classList.remove("pay-cart-added"),650);
+    if (!document.body.classList.contains("rich-menu-active")) return;
+    footerBounce?.cancel();
+    footerBounce = badge.animate([
+      { transform: "translateY(0)" },
+      { transform: "translateY(-5px)", offset: .35 },
+      { transform: "translateY(1px)", offset: .72 },
+      { transform: "translateY(0)" },
+    ], { duration: 360, easing: "ease-out" });
   }
   function refresh() {
     const rich = document.body.classList.contains("rich-menu-active");
@@ -172,29 +201,16 @@ export function installCart({ catalog, name, description, closed, page }) {
     localStorage.setItem(key, JSON.stringify(cart));
     localStorage.removeItem("snounu-cart-v1");
     refresh();
-    pulse(badge);
+    if (!document.body.classList.contains("rich-menu-active")) pulse(badge);
   }
   function modal() {
     if (!dialog.open) dialog.showModal();
   }
   async function dismiss() {
-    if (locked || dialog.classList.contains("closing")) return;
-    dialog.classList.add("closing");
-    if (motion())
-      await dialog
-        .animate(
-          [
-            { opacity: 1, transform: "translateY(0) scale(1)" },
-            { opacity: 0, transform: "translateY(48px) scale(.965)" },
-          ],
-          { duration: 235, easing: "cubic-bezier(.5,0,1,.5)" },
-        )
-        .finished.catch(() => {});
-    dialog.close();
-    dialog.classList.remove("closing");
+    if (!locked) await closePayDialog(dialog);
   }
   function add(d, existing) {
-    if (!d || d.available === false || closed()) return;
+    if (dialog.inert || !d || d.available === false || closed()) return;
     const previous = document.getElementById("dish");
     if (previous?.open) previous.close();
     modal();
@@ -315,12 +331,15 @@ export function installCart({ catalog, name, description, closed, page }) {
           options,
           note: instruction,
         });
-      save();
       confirm.disabled = true;
+      form.inert = true;
+      const ticket = generation;
+      save();
       confirm.textContent = existing
         ? t("تم حفظ التعديل ✓", "Changes saved ✓")
         : t("أُضيفت إلى السلة ✓", "Added to cart ✓");
       await showAddedFeedback(confirm, photoStage);
+      if (ticket !== generation || !dialog.open || dialog.inert) return;
       if (existing) {
         showCart();
         celebrateFooter();
@@ -332,6 +351,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     draw();
   }
   function open() {
+    if (dialog.inert) return;
     modal();
     showCart();
   }
@@ -420,6 +440,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     { passive: true },
   );
   dialog.onclose = () => {
+    if (dialog.open) return;
     cleanup();
     generation++;
   };
