@@ -126,6 +126,57 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
   root.replaceChildren(header,filterRow,metrics,state,results,pagination);
   let page=0,revision=0;
 
+  // Refresh in place every minute while this tab is visible, even with no mouse/keyboard activity.
+  // Refresh immediately on return to a previously hidden tab or focused browser window.
+  // The timer and listeners are removed when the Orders section is unmounted.
+  const AUTO_REFRESH_MS=60_000;
+  const RETURN_DEBOUNCE_MS=1_500;
+  let autoRefreshTimer=null;
+  let lastRefreshStartedAt=0;
+  let disposed=false;
+  let detachObserver=null;
+
+  function stopAutoRefresh(){
+    if(disposed)return;
+    disposed=true;
+    clearTimeout(autoRefreshTimer);
+    document.removeEventListener("visibilitychange",onVisibilityChange);
+    window.removeEventListener("focus",onWindowFocus);
+    window.removeEventListener("pageshow",onWindowFocus);
+    detachObserver?.disconnect();
+  }
+
+  function scheduleAutoRefresh(){
+    clearTimeout(autoRefreshTimer);
+    if(disposed)return;
+    autoRefreshTimer=setTimeout(()=>{
+      if(!root.isConnected){stopAutoRefresh();return;}
+      if(document.visibilityState!=="visible")return; // Refresh on returning to tab instead.
+      if(results.getAttribute("aria-busy")==="true"){
+        scheduleAutoRefresh();
+        return;
+      }
+      void load();
+    },AUTO_REFRESH_MS);
+  }
+
+  function refreshWhenReturning(){
+    if(disposed)return;
+    if(!root.isConnected){stopAutoRefresh();return;}
+    if(document.visibilityState!=="visible")return;
+    if(results.getAttribute("aria-busy")==="true")return;
+    if(Date.now()-lastRefreshStartedAt<RETURN_DEBOUNCE_MS)return;
+    void load();
+  }
+
+  function onVisibilityChange(){
+    if(document.visibilityState==="visible")refreshWhenReturning();
+  }
+
+  function onWindowFocus(){
+    refreshWhenReturning();
+  }
+
   function metric(title,num,kind){
     const box=named("div",null,"ord-metric "+(kind||""));
     box.append(named("span",title),named("strong",String(num)));
@@ -401,7 +452,10 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
   }
 
   async function load(){
+    if(disposed||!root.isConnected)return;
     const ticket=++revision;
+    lastRefreshStartedAt=Date.now();
+    scheduleAutoRefresh();
     reload.disabled=true;state.textContent="جارٍ تحميل الطلبات...";
     results.setAttribute("aria-busy","true");
     const q=new URLSearchParams({
@@ -420,7 +474,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     }
     try{
       const rows=await api(rootPath+"pay_orders?"+q);
-      if(ticket!==revision)return;
+      if(ticket!==revision||disposed||!root.isConnected)return;
       const visible=rows.slice(0,25);
       metrics.replaceChildren(
         metric("طلبات الصفحة",visible.length),
@@ -438,15 +492,21 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       if(page>0)pagination.append(button("السابق",()=>{page--;void load();}));
       pagination.append(named("span","الصفحة "+(page+1)));
       if(rows.length>25)pagination.append(button("التالي",()=>{page++;void load();}));
-      state.textContent="عرض "+visible.length+" طلب · الإحصائيات تخص الصفحة الحالية";
+      const refreshedAt=new Date().toLocaleTimeString("ar-PS",{
+        timeZone:"Asia/Gaza",hour:"2-digit",minute:"2-digit"
+      });
+      state.textContent="عرض "+visible.length+" طلب · الإحصائيات تخص الصفحة الحالية · آخر تحديث: "+refreshedAt;
     }catch(error){
-      if(ticket!==revision)return;
+      if(ticket!==revision||disposed||!root.isConnected)return;
       state.textContent="تعذّر تحميل الطلبات.";
       notice(error.message);
       results.replaceChildren(button("إعادة المحاولة",()=>load()));
       pagination.replaceChildren();
     }finally{
-      if(ticket===revision){reload.disabled=false;results.setAttribute("aria-busy","false");}
+      if(ticket===revision&&!disposed&&root.isConnected){
+        reload.disabled=false;
+        results.setAttribute("aria-busy","false");
+      }
     }
   }
   let timer;
@@ -456,6 +516,17 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
   };
   statusFilter.onchange=()=>{page=0;void load();};
   stageFilter.onchange=()=>{page=0;void load();};
+
+  // The admin router removes this panel when navigating away; clean up immediately.
+  if(root.parentNode){
+    detachObserver=new MutationObserver(()=>{
+      if(!root.isConnected)stopAutoRefresh();
+    });
+    detachObserver.observe(root.parentNode,{childList:true});
+  }
+  document.addEventListener("visibilitychange",onVisibilityChange);
+  window.addEventListener("focus",onWindowFocus);
+  window.addEventListener("pageshow",onWindowFocus);
   await load();
 }
 export async function settings({ root, api, notice, endpoint }) {
