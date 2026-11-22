@@ -13,7 +13,7 @@ const channels={instagram:"إنستغرام",facebook:"فيسبوك",whatsapp:"�
 const money=value=>(Number(value)||0).toLocaleString("en-US",{maximumFractionDigits:2})+" ₪";
 const integer=value=>(Number(value)||0).toLocaleString("en-US",{maximumFractionDigits:0});
 function makeLink(row){
-  const url=new URL("/menu",HOST);
+  const url=new URL(row.target_kind==="dish"&&row.dish_id?"/menu":"/welcome",HOST);
   url.searchParams.set("source",row.code);
   url.searchParams.set("utm_source",row.channel==="qr"?"offline":row.channel==="other"?"other":row.channel);
   url.searchParams.set("utm_medium",row.channel==="qr"?"qr":row.channel==="whatsapp"?"share":"organic");
@@ -32,6 +32,30 @@ function metric(label,value,description){
   if(description)el.append($el("span",description,"rf-metric-description"));
   return el;
 }
+// Reliable copy affordance in the success box, selected report, and saved links.
+async function copyReferral(url,button,input){
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard unavailable");
+  await navigator.clipboard.writeText(url);
+  button.textContent="تم النسخ ✓";
+ }catch{
+  input.focus();input.select();
+  let ok=false;
+  try{ok=typeof document.execCommand==="function"&&document.execCommand("copy");}catch{}
+  button.textContent=ok?"تم النسخ ✓":"انسخ الرابط المحدد";
+ }
+}
+function referralUrlRow(url,label,extraClass=""){
+ const row=$el("div",undefined,"rf-quick-link "+extraClass);
+ const input=$el("input");input.readOnly=true;input.type="text";input.dir="ltr";input.value=url;
+ input.setAttribute("aria-label",label);input.addEventListener("focus",()=>input.select());
+ const copy=$el("button","نسخ الرابط");copy.className="rf-copy-button";copy.type="button";
+ copy.onclick=()=>copyReferral(url,copy,input);
+ const open=$el("a","فتح");open.href=url;open.target="_blank";open.rel="noopener noreferrer";
+ row.append(input,copy,open);
+ return row;
+}
+
 const sourceKey="snounu-referral-selected-report-v1";
 function savedSource(){
   try{return sessionStorage.getItem(sourceKey)||"";}catch{return "";}
@@ -71,22 +95,36 @@ export async function renderReferralLinks({root,api,notice,getToken}){
     const option=$el("option",label);option.value=value;channel.append(option);
   }
   const target=$el("select");target.name="target";
-  for(const [value,label] of [["menu","المنيو"],["dish","وجبة محددة"]]){
+  for(const [value,label] of [["menu","المنيو — صفحة الترحيب"],["dish","وجبة محددة"]]){
     const option=$el("option",label);option.value=value;target.append(option);
   }
   const dish=$el("select");dish.name="dish";dish.disabled=true;
+  const dishPlaceholder=$el("option","اختر الوجبة");dishPlaceholder.value="";dish.append(dishPlaceholder);
   let codeEdited=false;
   name.addEventListener("input",()=>{if(!codeEdited)code.value=slug(name.value);});
   code.addEventListener("input",()=>{codeEdited=true;code.value=slug(code.value);});
-  target.addEventListener("change",()=>{dish.disabled=target.value!=="dish";});
+  target.addEventListener("change",()=>{
+    const choosing=target.value==="dish";
+    dish.disabled=!choosing;dish.required=choosing;
+    if(!choosing)dish.value="";
+  });
   const create=$el("button","إنشاء الرابط","rf-primary");create.type="submit";
   form.append(field("اسم الفيديو أو الرابط",name),field("كود المصدر",code),
-    field("مكان النشر",channel),field("يفتح الرابط",target),field("اختر الوجبة",dish),create);
+    field("يفتح الرابط",target),field("اختر الوجبة",dish),field("مكان النشر",channel),create);
   creator.append(form);
+  const createdPanel=$el("section",undefined,"rf-created-link");
+  createdPanel.hidden=true;
+  createdPanel.setAttribute("aria-label","رابط الإحالة الجديد");
   const library=$el("section",undefined,"rf-library");
   library.append($el("h2","الروابط المحفوظة"),$el("p","انسخ رابط أي حملة أو افتح تقريره من هنا.","rf-note"));
   const linkList=$el("div",undefined,"rf-list");library.append(linkList);
-  root.append(intro,report,creator,library);
+  root.append(intro,creator,createdPanel,report,library);
+  function showCreatedLink(link){
+    createdPanel.hidden=false;
+    const heading=$el("div",undefined,"rf-created-heading");
+    heading.append($el("strong","تم إنشاء الرابط ✓"),$el("span",link.label));
+    createdPanel.replaceChildren(heading,referralUrlRow(makeLink(link),"الرابط الجديد","rf-created-url"));
+  }
   const catalog=await api("/rest/v1/dishes?select=id,name&order=name.asc");
   if(!root.isConnected)return;
   const mealMap=new Map(catalog.map(meal=>[meal.id,meal.name]));
@@ -102,41 +140,64 @@ export async function renderReferralLinks({root,api,notice,getToken}){
   let reportVersion=0;
   function renderLibrary(){
     linkList.replaceChildren();
-    if(!links.length){linkList.append($el("p","لا توجد روابط محفوظة بعد. أنشئ أول رابط وسيظهر هنا وفي قائمة التقرير."));return;}
+    if(!links.length){
+      linkList.append($el("div","لا توجد روابط محفوظة بعد. أنشئ أول رابط وسيظهر هنا وفي قائمة التقرير.","rf-empty"));
+      return;
+    }
+    const wrap=$el("div",undefined,"rf-library-table-wrap");
+    const table=$el("table",undefined,"rf-library-table");
+    const thead=$el("thead"),headRow=$el("tr");
+    for(const title of ["الرابط والمصدر","مكان النشر","الوجهة","المدفوعات المعتمدة","الإيرادات","إجراءات"]){
+      headRow.append($el("th",title));
+    }
+    thead.append(headRow);
+    const tbody=$el("tbody");
     for(const link of links){
-      const card=$el("article",undefined,"rf-card rf-saved-card");
-      const head=$el("div",undefined,"rf-card-head");
-      const nameBlock=$el("div");
-      nameBlock.append($el("h3",link.label),$el("small",link.code+" · "+(channels[link.channel]||"أخرى")));
-      const destination=link.target_kind==="dish"?(mealMap.get(link.dish_id)||"وجبة محذوفة — المنيو"):"المنيو";
-      head.append(nameBlock,$el("span",destination,"rf-tag"));
-      const linkUrl=makeLink(link);
-      const row=$el("div",undefined,"rf-url-row");
-      const input=$el("input");input.readOnly=true;input.dir="ltr";input.value=linkUrl;
-      input.setAttribute("aria-label","رابط "+link.label);
-      input.addEventListener("focus",()=>input.select());
-      const copy=$el("button","نسخ الرابط");copy.type="button";
-      copy.onclick=async()=>{
-        try{await navigator.clipboard.writeText(linkUrl);copy.textContent="تم النسخ ✓";}
-        catch{input.select();copy.textContent="انسخ الرابط المحدد";}
+      const url=makeLink(link);
+      const totals=stats.get(link.code)||{submitted:0,approved:0,revenue_ils:0};
+      const tr=$el("tr");
+      const campaign=$el("td",undefined,"rf-campaign-cell");campaign.dataset.label="الرابط والمصدر";
+      campaign.append($el("strong",link.label),$el("span",link.code,"rf-library-code"));
+      const path=$el("small",url,"rf-library-path");path.dir="ltr";path.title=url;campaign.append(path);
+      const channelCell=$el("td");channelCell.dataset.label="مكان النشر";
+      channelCell.append($el("span",channels[link.channel]||"أخرى","rf-library-channel"));
+      const destination=$el("td");destination.dataset.label="الوجهة";
+      destination.textContent=link.target_kind==="dish"?(mealMap.get(link.dish_id)||"المنيو"):"صفحة الترحيب";
+      const approved=$el("td",undefined,"rf-table-number");approved.dataset.label="المدفوعات المعتمدة";
+      approved.append($el("strong",integer(totals.approved)),
+        $el("small","من "+integer(totals.submitted)+" طلب"));
+      const revenue=$el("td",undefined,"rf-table-number");revenue.dataset.label="الإيرادات";
+      revenue.append($el("strong",money(totals.revenue_ils)));
+      const operations=$el("td",undefined,"rf-operations-cell");operations.dataset.label="الإجراءات";
+      const buttons=$el("div",undefined,"rf-library-actions");
+      const show=$el("button","تقرير");show.type="button";show.className="rf-action-main";
+      show.onclick=()=>{
+        sourceSelect.value=link.code;
+        void selectSource().then(()=>report.scrollIntoView({behavior:"smooth",block:"start"}));
       };
-      const open=$el("a","فتح الرابط");open.href=linkUrl;open.target="_blank";open.rel="noopener noreferrer";
-      row.append(input,copy,open);
-      const actions=$el("div",undefined,"rf-card-actions");
-      const show=$el("button","عرض التقرير");show.type="button";
-      show.onclick=()=>{sourceSelect.value=link.code;void selectSource().then(()=>report.scrollIntoView({behavior:"smooth",block:"start"}));};
-      const remove=$el("button","حذف الرابط","rf-delete");remove.type="button";
+      const copy=$el("button","نسخ");copy.type="button";
+      copy.setAttribute("aria-label","نسخ رابط "+link.label);
+      copy.onclick=async()=>{
+        const input=$el("input");input.value=url;input.readOnly=true;
+        input.style.position="fixed";input.style.opacity="0";input.style.pointerEvents="none";
+        document.body.append(input);
+        try{await copyReferral(url,copy,input);}finally{input.remove();}
+      };
+      const open=$el("a","فتح");open.href=url;open.target="_blank";open.rel="noopener noreferrer";
+      const remove=$el("button","حذف");remove.type="button";remove.className="rf-action-danger";
       remove.onclick=async()=>{
-        if(!confirm("حذف الرابط «"+link.label+"»؟ لن تُحذف طلباته وإيراداته التاريخية."))return;
+        if(!confirm("حذف الرابط «"+link.label+"»؟ لن تُحذف طلباته وإيراداته السابقة."))return;
         remove.disabled=true;
         try{
           await api("/rest/v1/menu_referral_links?id=eq."+encodeURIComponent(link.id),{method:"DELETE"});
-          notice("تم حذف الرابط. لم تتغير الطلبات القديمة.");
+          notice("تم حذف الرابط دون تغيير سجل الطلبات.");
           await loadData();
         }catch(e){remove.disabled=false;notice(e.message);}
       };
-      actions.append(show,remove);card.append(head,row,actions);linkList.append(card);
+      buttons.append(show,copy,open,remove);operations.append(buttons);
+      tr.append(campaign,channelCell,destination,approved,revenue,operations);tbody.append(tr);
     }
+    table.append(thead,tbody);wrap.append(table);linkList.append(wrap);
   }
   function renderDropdown(prefer){
     const code=prefer||sourceSelect.value||savedSource();
@@ -179,7 +240,7 @@ export async function renderReferralLinks({root,api,notice,getToken}){
     const approval=metric("نسبة اعتماد الطلبات",submitted?(100*approved/submitted).toFixed(1)+"%":"—");
     const avg=metric("متوسط قيمة الطلب المعتمد",approved?money(revenue/approved):"—");
     metrics.append(visits,visitors,views,ordersCard,approvedCard,revenueCard,conversion,approval,avg);
-    reportContent.append(head,metrics);
+    reportContent.append(head,referralUrlRow(makeLink(chosen),"رابط "+chosen.label,"rf-current-url"),metrics);
     reportStatus.textContent="جارٍ قراءة الزيارات من Google Analytics 4…";
     try{
       const token=await getToken();
@@ -245,11 +306,12 @@ export async function renderReferralLinks({root,api,notice,getToken}){
       target_kind:target.value,dish_id:target.value==="dish"?dish.value:null};
     create.disabled=true;create.textContent="جارٍ إنشاء الرابط...";
     try{
-      await api("/rest/v1/menu_referral_links",{method:"POST",body:payload,headers:{Prefer:"return=representation"}});
-      notice("تم إنشاء الرابط وإضافته إلى قائمة مصادر الزيارة.");
-      form.reset();codeEdited=false;dish.disabled=true;
+      const created=await api("/rest/v1/menu_referral_links",{method:"POST",body:payload,headers:{Prefer:"return=representation"}});
+      showCreatedLink(Array.isArray(created)&&created[0]?created[0]:payload);
+      notice("تم إنشاء رابط الإحالة. انسخه من الصندوق الظاهر تحت النموذج.");
+      form.reset();codeEdited=false;dish.disabled=true;dish.required=false;dish.value="";
       await loadData(source);
-      report.scrollIntoView({behavior:"smooth",block:"start"});
+      createdPanel.scrollIntoView({behavior:"smooth",block:"start"});
     }catch(e){notice(/duplicate|unique|23505/i.test(e.message)
       ?"كود المصدر مستخدم سابقاً. اختر كوداً مختلفاً.":e.message);}
     finally{create.disabled=false;create.textContent="إنشاء الرابط";}

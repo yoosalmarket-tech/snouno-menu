@@ -7,6 +7,7 @@ const sections = {
   orders:['الطلبات والمدفوعات',[]],payment_settings:['إعدادات الدفع',[]],
   overview: ['اللوحة الرئيسية', []],
   investment: ['الاستثمار', []],
+  referrals: ['روابط الإحالة', []],
   assistant: ['مساعد سنونو الذكي', []],
   roles: ['الأدوار والصلاحيات', []],
   dishes: ['الأطباق', [['name','اسم الطبق'],['description','الوصف','textarea'],['ingredients','المكونات'],['badge','شارة الطبق'],['rich_badge_x','موضع الشارة التفاعلية — أفقي','position'],['rich_badge_y','موضع الشارة التفاعلية — عمودي','position'],['rating','التقييم المعروض','optionalRating'],['old_price','السعر السابق','optionalPrice'],['category_id','الصنف','select'],['price','السعر بالشيكل','number'],['image','صورة الطبق — المنيو العادي','image'],['rich_image','صورة الوضع التفاعلي (خلفية شفافة)','image'],['available','متوفر','checkbox']]],
@@ -41,7 +42,6 @@ const sections = {
   menu_ads: ['إدارة الإعلانات', [['name','عنوان الإعلان'],['image','صورة الإعلان','image'],['dish_id','الطبق المرتبط','product']]],
   seo: ['تحسين الظهور SEO', []],
   seo_queries: ['كلمات البحث في Google', []],
-  referrals: ['روابط الإحالة', []],
   rankings: ['تقييمات الأطباق', []],
   events: ['إحصائيات التفاعل', []],
   submissions: ['رسائل التواصل', []],
@@ -220,10 +220,10 @@ function buildAdminSidebar(email){
  const links=node('div');links.className='admin-sidebar-links';links.id='admin-sidebar-links';
  let prevGroup='';
  const groups={
-  orders:'الدفع',payment_settings:'الدفع',overview:'نظرة عامة',investment:'نظرة عامة',assistant:'الذكاء الاصطناعي',dishes:'محتوى المنيو',categories:'محتوى المنيو',
+  orders:'الدفع',payment_settings:'الدفع',overview:'نظرة عامة',investment:'نظرة عامة',referrals:'نظرة عامة',assistant:'الذكاء الاصطناعي',dishes:'محتوى المنيو',categories:'محتوى المنيو',
   menu_settings:'محتوى المنيو',menu_links:'محتوى المنيو',menu_ads:'محتوى المنيو',
   seo:'تحسين الظهور في Google',seo_queries:'تحسين الظهور في Google',
-  referrals:'التقارير والتفاعل',rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
+  rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
   menu_staff:'إدارة الحساب',roles:'إدارة الحساب',account:'إدارة الحساب'
  };
  for(const [key,[label]] of Object.entries(sections)){
@@ -1240,7 +1240,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
    return;
  }
  if(key==='referrals'){
-  const mod=await import('./referrals.js?v=referrals-2');
+  const mod=await import('./referrals.js?v=referrals-3');
   if(ticket!==generation)return;
   await mod.renderReferralLinks({root:$('body'),api,notice,getToken:async()=>{
     await api('/auth/v1/user');
