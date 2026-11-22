@@ -1471,12 +1471,12 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
   border:0!important;
   padding:0!important;
   margin:0;
-  font:600 11px/1.4 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
+  font:600 9px/1.4 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
   white-space:nowrap;
   text-decoration:none!important;
 }
 #details .dish-lead h2 .meal-unavailable-label{
-  font-size:12px!important;
+  font-size:10px!important;
   vertical-align:middle;
   margin-inline-start:6px;
 }
