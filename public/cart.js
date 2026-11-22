@@ -219,16 +219,6 @@ export function installCart({ catalog, name, description, closed, page }) {
     100;
   const count = () => cart.reduce((v, l) => v + l.qty, 0);
   const motion = () => !matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const pulse = (node) => {
-    if (motion())
-      node.animate(
-        [
-          { opacity: 0.65, transform: "translateY(3px)" },
-          { opacity: 1, transform: "none" },
-        ],
-        { duration: 200 },
-      );
-  };
   let glowCleanupTimer=0;
   function celebrateFooter(){
  if(!motion()||!badge.classList.contains("visible")||
@@ -317,7 +307,7 @@ export function installCart({ catalog, name, description, closed, page }) {
 }
   function refresh() {
     const rich = document.body.classList.contains("rich-menu-active");
-    const show = page() === "menu" && (count() > 0 || (rich && tracking.length > 0));
+    const show = page() === "menu" && (count() > 0 || tracking.length > 0);
     badge.replaceChildren(
       el("strong", count() > 0 ? t("عرض السلة", "View cart") + " · " + count() : t("السلة وطلباتي", "Cart and orders")),
       el("span", amount(total())),
@@ -348,7 +338,7 @@ export function installCart({ catalog, name, description, closed, page }) {
         }, 220);
       else badge.hidden = true;
     }
-    history.hidden = !tracking.length || page() === "welcome" || rich;
+    history.hidden = true; // Orders are now accessible inside both carts.
     const pendingOrders = tracking.filter((r) => r.status === "pending").length;
     history.dataset.pending = String(pendingOrders > 0);
     history.replaceChildren(
@@ -364,7 +354,6 @@ export function installCart({ catalog, name, description, closed, page }) {
     localStorage.setItem(key, JSON.stringify(cart));
     localStorage.removeItem("snounu-cart-v1");
     refresh();
-    if (!document.body.classList.contains("rich-menu-active")) pulse(badge);
   }
   function modal() {
     openPayDialog(dialog, document.body.classList.contains("rich-menu-active"));
@@ -465,7 +454,6 @@ export function installCart({ catalog, name, description, closed, page }) {
           : t("أضف للسلة", "Add to cart")) +
         " · " +
         amount(qty * unit(d, [...chosen]).price);
-      pulse(n);
     }
     form.onsubmit = async (e) => {
       e.preventDefault();
@@ -535,15 +523,14 @@ export function installCart({ catalog, name, description, closed, page }) {
   }
   function showHistory() {
     const b = layout(t("طلباتي", "My orders"));
-    if(document.body.classList.contains("rich-menu-active")){
-      const back=button(t("العودة إلى السلة", "Back to cart"),showCart);
-      back.className="pay-cart-back";b.append(back);
-    }
+    const back=button(t("العودة إلى السلة", "Back to cart"),showCart);
+    back.className="pay-cart-back";b.append(back);
     if(!tracking.length)b.append(el("p",t("لا توجد طلبات سابقة","No previous orders")));
     for (const ref of tracking)
       b.append(button("#" + (ref.number || "…") + " — " + t(...(statuses[ref.status] || statuses.pending)), () => status(ref)));
   }
   function layout(title) {
+    dialog.classList.remove("pay-cart-view");
     cleanup();
     cleanup = () => {};
     generation++;
