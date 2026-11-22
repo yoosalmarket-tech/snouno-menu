@@ -958,86 +958,84 @@ body.has-cart-footer:not(.rich-menu-active) #shell {
   .pay-dialog.pay-cart-view .pay-row {transition:none!important}
 }
 
-/* CART UX 02 — compact My Orders shortcut replaces the empty yellow cart rail. */
+/* CART UX 03 — My Orders uses exactly the basket rail's curved footprint.
+   Empty: charcoal with gold outline; populated: original solid yellow basket. */
 .pay-footer.pay-footer--orders-only {
-  inset:auto max(15px,env(safe-area-inset-right)) calc(73px + env(safe-area-inset-bottom)) auto;
-  left:auto;
-  right:max(15px,env(safe-area-inset-right));
-  width:max-content;
-  max-width:calc(100vw - 30px);
+  inset:auto 0 0;
+  left:0;
+  right:0;
+  bottom:0;
+  box-sizing:border-box;
+  width:min(100%,520px);
+  max-width:520px;
   min-width:0;
-  min-height:50px;
+  min-height:calc(64px + env(safe-area-inset-bottom));
   height:auto;
-  margin:0;
-  padding:9px 16px;
+  margin-inline:auto;
+  padding:10px clamp(15px,4.3vw,25px) calc(10px + env(safe-area-inset-bottom));
   border:2px solid #FDBE2D;
-  border-radius:999px;
+  border-radius:18px 18px 0 0;
   background:#303037;
   color:#fff5dc;
-  box-shadow:0 6px 20px #0004;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
+  box-shadow:0 -4px 20px #0003;
   gap:9px;
-  text-align:center;
-  overflow:visible;
-  font:800 14px/1.4 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
+  overflow:hidden;
+  font:800 clamp(13px,3.9vw,17px)/1.3 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
 }
 body:not(.rich-menu-active) .pay-footer.pay-footer--orders-only {
-  inset:auto max(15px,env(safe-area-inset-right)) calc(73px + env(safe-area-inset-bottom)) auto;
-  width:max-content;
-  max-width:calc(100vw - 30px);
-  min-height:50px;
-  padding:9px 16px;
-  border:2px solid #FDBE2D;
-  border-radius:999px;
-  background:#303037;
-  color:#fff5dc;
+  inset:auto 0 calc(65px + env(safe-area-inset-bottom));
+  width:min(100%,520px);
+  max-width:520px;
+  margin-inline:auto;
+  min-height:64px;
+  padding:10px clamp(15px,4.3vw,25px);
+  border-radius:18px 18px 0 0;
 }
 body.rich-menu-active .pay-footer.pay-footer--orders-only {
-  inset:auto max(15px,env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) auto;
-  width:max-content;
-  max-width:calc(100vw - 30px);
-  min-height:50px;
-  padding:9px 16px;
-  border:2px solid #FDBE2D;
-  border-radius:999px;
-  background:#303037;
-  color:#fff5dc;
-  box-shadow:0 6px 20px #0006;
-  overflow:visible;
+  inset:auto 0 0;
+  width:min(100%,520px);
+  max-width:520px;
+  margin-inline:auto;
+  min-height:calc(64px + env(safe-area-inset-bottom));
+  padding:10px clamp(15px,4.3vw,25px) calc(10px + env(safe-area-inset-bottom));
+  border-radius:18px 18px 0 0;
 }
-.pay-footer.pay-footer--orders-only > strong,
+body:not(.rich-menu-active) .pay-footer.pay-footer--orders-only.visible,
+body.rich-menu-active .pay-footer.pay-footer--orders-only.visible {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 body:not(.rich-menu-active) .pay-footer.pay-footer--orders-only > strong,
 body.rich-menu-active .pay-footer.pay-footer--orders-only > strong {
-  display:inline;
+  display:inline-flex;
   flex:0 0 auto;
-  min-width:0;
   white-space:nowrap;
+  min-width:0;
+  align-items:center;
   color:#fff5dc;
-  font:800 14px/1.4 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
+  font:800 clamp(13px,3.9vw,17px)/1.3 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
 }
-.pay-footer.pay-footer--orders-only .pay-cart-icon,
 body:not(.rich-menu-active) .pay-footer.pay-footer--orders-only .pay-cart-icon,
 body.rich-menu-active .pay-footer.pay-footer--orders-only .pay-cart-icon {
   display:inline-grid;
-  flex:0 0 23px;
-  width:23px;
-  height:23px;
-  min-width:23px;
-  min-height:23px;
+  flex:0 0 28px;
+  width:28px;
+  height:28px;
+  min-width:28px;
+  min-height:28px;
   margin:0;
   place-items:center;
   color:#FDBE2D;
 }
 .pay-footer.pay-footer--orders-only .pay-cart-icon svg {
   display:block;
-  width:23px;
-  height:23px;
+  width:24px;
+  height:24px;
 }
 .pay-footer.pay-footer--orders-only:focus-visible {
   outline:3px solid #FDBE2D;
-  outline-offset:3px;
+  outline-offset:-5px;
 }
 @media (hover:hover) {
   .pay-footer.pay-footer--orders-only:hover {
