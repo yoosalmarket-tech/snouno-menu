@@ -1,5 +1,6 @@
 /* Opt-in immersive Snounu menu: spring inertia, horizontal 3D dish feed,
    swipe-driven category transitions, and a perspective thumbnail rail. */
+import {visitYoosalWithBell} from './credit-bell.js?v=1';
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -37,8 +38,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  '<p class="rm-closure-note" role="status"><span class="rm-closure-mark" aria-hidden="true">◷</span><span class="rm-closure-note-copy"></span></p>',
  '</section>',
  '<footer class="rm-interactive-credit" aria-label="حقوق تصميم المنيو">',
- '<button type="button" class="rm-interactive-credit-link" aria-label="انقر مرتين لزيارة موقع وكالة يوصل">تصميم <strong>وكالة يوصل</strong> لتسويق المطاعم</button>',
- '<small class="rm-interactive-credit-hint" role="status" aria-live="polite"></small></footer>'
+ '<button type="button" class="rm-interactive-credit-link" aria-label="زيارة موقع وكالة يوصل">تصميم <strong>وكالة يوصل</strong> لتسويق المطاعم</button></footer>'
  ].join('');
  const share=mk('button','rm-share');
  share.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 13.5 6.6 4M15.3 6.5l-6.6 4"/></svg>';
@@ -75,25 +75,9 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  };
  // Anchor the horizontal selector below categories, outside the animated scene.
  root.insertBefore(at(root,'.rm-thumbs'),u.wrap);
- // Reuse the existing site's two-click agency-credit behavior on the interactive screen.
- // Two taps also work on phones; the first tap never leaves the menu.
+ // A single click plays the soft bell and navigates to Yoosal.
  const creditButton=at(root,'.rm-interactive-credit-link');
- const creditHint=at(root,'.rm-interactive-credit-hint');
- let creditTimer=0;
- const resetInteractiveCredit=()=>{
-  if(creditTimer)clearTimeout(creditTimer);
-  creditTimer=0;
-  creditHint.textContent='';
- };
- creditButton.addEventListener('click',()=>{
-  if(creditTimer){
-   resetInteractiveCredit();
-   window.location.assign('https://www.yoosal.net/');
-   return;
-  }
-  creditHint.textContent='اضغط مرة ثانية لزيارة موقع يوصل';
-  creditTimer=setTimeout(resetInteractiveCredit,5000);
- });
+ creditButton.addEventListener('click',visitYoosalWithBell);
  let groups=[],groupIndex=0,front=0,k=2.2,target=0,velocity=-.02;
  let active=false,frame=0,lastTime=0,pointer=null,lastWheel=-Infinity,wheelAxis=null,wheelHandled=false,wheelDistance=0,swapping=false,swapToken=0;
  let motionDirection=1,visualDirection=1;
@@ -702,7 +686,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   }
  }
  function destroy(){
-  destroyed=true;resetInteractiveCredit();setActive(false);
+  destroyed=true;setActive(false);
   window.removeEventListener('offline',handleNetworkChange);
   connection?.removeEventListener?.('change',handleNetworkChange);
   ++swapToken;root.remove();

@@ -1334,3 +1334,17 @@ body.dark #menu .meal-order-unavailable,body.dark #details .meal-order-unavailab
 .restaurant-closure-content small{color:#ece1ce;font:500 12px/1.7 Snounu,Tahoma,sans-serif}
 body.lang-en .restaurant-closure-banner{direction:ltr}
 
+
+/* Agency credits use the locally hosted Qatar typeface, including regular words. */
+@font-face{
+ font-family:"Snounu Qatar Credit";
+ src:url("/assets/qatar-bold.woff") format("woff");
+ font-weight:700;
+ font-style:normal;
+ font-display:swap;
+}
+#credit-link{
+ font-family:"Snounu Qatar Credit",Snounu,Tahoma,Arial,sans-serif!important;
+ font-weight:700!important;
+}
+#credit-link strong{font-family:inherit!important;font-weight:700!important}

@@ -1911,7 +1911,7 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 #rich-menu .rm-interactive-credit-link{
   min-height:44px!important;background:transparent!important;border:0!important;
   border-radius:0!important;color:#c4bdb2!important;
-  font:400 12px/1.55 "Qatar2022 Arabic",Tahoma,Arial,sans-serif!important;
+  font:700 12px/1.55 "Snounu Qatar Credit",Snounu,Tahoma,Arial,sans-serif!important;
   padding:10px 14px!important;text-shadow:none!important;box-shadow:none!important;
   max-width:min(95vw,480px)!important;
 }
