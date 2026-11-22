@@ -1380,9 +1380,9 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 #menu .meal-unavailable-stamp,
 #details .meal-unavailable-stamp{
  position:absolute;z-index:6;display:grid;place-items:center;
- left:50%;top:26px;width:max-content;max-width:87%;height:auto;
+ left:50%;top:32%;width:max-content;max-width:87%;height:auto;
  padding:7px 6px;
- transform:translateX(-50%) rotate(-17deg);
+ transform:translate(-50%,-50%) rotate(-17deg);
  background:transparent;
  color:#E60014;
  font:900 clamp(15px,3.5vw,27px)/1.25 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
@@ -1400,7 +1400,7 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 #menu .meal-unavailable-stamp::after,#details .meal-unavailable-stamp::after{bottom:0}
 #menu .card.meal-unavailable,#details .dish-photo.meal-unavailable{position:relative}
 #details .dish-photo.meal-unavailable .meal-unavailable-stamp{
- top:22px;font-size:clamp(25px,6vw,48px);padding:12px 9px;
+ top:54%;font-size:clamp(25px,6vw,48px);padding:12px 9px;
 }
 #details .dish-photo.meal-unavailable .meal-unavailable-stamp::before,
 #details .dish-photo.meal-unavailable .meal-unavailable-stamp::after{height:7px}
