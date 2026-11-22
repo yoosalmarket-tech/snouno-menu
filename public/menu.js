@@ -1,3 +1,4 @@
+import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=cart-ux-04-20261122';
 import {englishCategoryName} from './category-labels.js?v=1';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
@@ -185,9 +186,6 @@ function richData(){
   displayName,displayDescription};
 }
 async function syncRichMode(){
- if(currentPage()==='menu'){
-  try{await ensureMenuAssets();}catch(error){console.warn('Snounu menu assets:',error);return;}
- }
  const enabled=richDesired&&!isPreview;
  const target=$('rich-menu');
  if(!target||!richToggle)return;
@@ -821,50 +819,7 @@ function openRestaurantInfo() {
  installPayDialogDrag(d);
  openPayDialog(d,document.body.classList.contains('rich-menu-active'));
 }
-// Menu-only assets are loaded on demand. Welcome never downloads checkout code
-// or the full regular-menu and payment stylesheets.
-let cartUi,cartModule,mainStylesPromise,menuAssetsPromise;
-function injectPageStylesheet(id,url){
- return new Promise((resolve,reject)=>{
-  let link=document.getElementById(id);
-  if(link?.dataset.loaded==='true'){resolve();return;}
-  if(!link){
-   link=document.createElement('link');
-   link.id=id;link.rel='stylesheet';link.href=url;
-   // Match the original cascade: menu.css precedes desktop.css,
-   // while payment styles remain after both.
-   const desktop=id==='snounu-regular-styles'
-    ?document.querySelector('link[href^="/desktop.css"]'):null;
-   if(desktop)desktop.before(link);
-   else document.head.append(link);
-  }
-  link.addEventListener('load',()=>{link.dataset.loaded='true';resolve();},{once:true});
-  link.addEventListener('error',()=>{link.remove();reject(new Error('Stylesheet could not load: '+url));},{once:true});
- });
-}
-function ensureMainStyles(){
- if(!mainStylesPromise)mainStylesPromise=injectPageStylesheet('snounu-regular-styles','/menu.css?v=smaller-label-20261122')
-  .catch(error=>{mainStylesPromise=null;throw error;});
- return mainStylesPromise;
-}
-function initialiseCart(){
- if(!isPreview&&!cartUi&&cartModule&&settings?.name&&dishes.length)
-  cartUi=cartModule.installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});
-}
-function ensureMenuAssets(){
- if(!menuAssetsPromise){
-  menuAssetsPromise=Promise.all([
-   ensureMainStyles(),
-   injectPageStylesheet('snounu-payment-styles','/payments.css?v=cart-ux-04-20261122'),
-   import('./cart.js?v=cart-ux-04-20261122')
-  ]).then(([, ,module])=>{cartModule=module;initialiseCart();return module;})
-   .catch(error=>{menuAssetsPromise=null;throw error;});
- }
- return menuAssetsPromise;
-}
-function closePayDialog(...args){return cartModule?.closePayDialog(...args);}
-function openPayDialog(...args){return cartModule?.openPayDialog(...args);}
-function installPayDialogDrag(...args){return cartModule?.installPayDialogDrag(...args);}
+let cartUi;
 const pages=['welcome','menu','contact'];
 function currentPage(){
  const path=location.pathname.replace(/^\/|\/$/g,'');
@@ -961,14 +916,11 @@ function installWelcomeModeChooser(){
   richDesired=mode==='interactive';
   rememberMode(richDesired);
   updateRichToggle();
-  void ensureMenuAssets().then(()=>{
-   if(currentPage()!=='welcome')return;
-   cancelWelcomeReveal();
-   cancelBrowseFade();
-   const url='/menu?mode='+mode;
-   if(location.pathname+location.search!==url)history.pushState(null,'',url);
-   route();
-  }).catch(error=>console.error('Unable to prepare menu:',error));
+  cancelWelcomeReveal();
+  cancelBrowseFade();
+  const url='/menu?mode='+mode;
+  if(location.pathname+location.search!==url)history.pushState(null,'',url);
+  route();
  }
  options.forEach(option=>option.addEventListener('click',()=>enterMode(option.dataset.mode)));
  for(const button of buttons){
@@ -981,8 +933,6 @@ function installWelcomeModeChooser(){
   button.addEventListener('pointerdown',event=>{
    if(event.button!==0||currentPage()!=='welcome')return;
    swallowClick=false;
-   // A real browse intent can begin loading menu assets before the tap ends.
-   void ensureMenuAssets().catch(error=>console.warn('Menu preload:',error));
    cancelGesture();
    gesture={id:event.pointerId,x:event.clientX,y:event.clientY,opened:false};
    timer=setTimeout(()=>{
@@ -1038,25 +988,14 @@ function installWelcomeModeChooser(){
 }
 installWelcomeModeChooser();
 
-function routeAfterAssets(){
- cancelBrowseFade();
- const next=currentPage();
- if(next==='menu')void ensureMenuAssets().then(route).catch(error=>console.error('Menu resources:',error));
- else if(next==='contact')void ensureMainStyles().then(route).catch(error=>console.error('Contact styles:',error));
- else route();
-}
-window.addEventListener('popstate',routeAfterAssets);
-window.addEventListener('hashchange',routeAfterAssets);
+window.addEventListener('popstate',()=>{cancelBrowseFade();route();});
+window.addEventListener('hashchange',()=>{cancelBrowseFade();route();});
 document.addEventListener('click',event=>{
  const link=event.target.closest('a[data-page]');
  if(!link||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
  event.preventDefault();
  const destination=link.dataset.page;
- const navigate=async()=>{
-  try{
-   if(destination==='menu')await ensureMenuAssets();
-   else if(destination==='contact')await ensureMainStyles();
-  }catch(error){console.error('Unable to prepare destination styles:',error);return;}
+ const navigate=()=>{
   if(destination!=='welcome')cancelWelcomeReveal();
   const url=pageUrl(destination);
   if(location.pathname+location.search!==url)history.pushState(null,'',url);
@@ -1509,23 +1448,10 @@ async function refreshSeoWelcomeAlts(){
 }
 async function load(){
  try{
-  // Dispatch all five requests together, but don't make the LCP food photo
-  // wait for categories, meals, contact links, or advertisements to finish.
-  const paths=['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'];
-  const requests=paths.map(async path=>{
+  const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
-  });
-  [settings]=await requests[0];
-  if(!settings)throw new Error('Missing restaurant settings');
-  if(currentPage()==='welcome'){
-   syncWelcomeSettings();
-   setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
-  }
-  [categories,dishes,links,advertisements]=await Promise.all(requests.slice(1));
-  if(currentPage()==='menu')await ensureMenuAssets();
-  else if(currentPage()==='contact')await ensureMainStyles();
-  initialiseCart();
-  installRestaurantClosureUpdates();renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  }));
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   // The SEO fetch runs after initial menu data, outside the 3-second decision.
   setTimeout(()=>void refreshSeoWelcomeAlts(),3200);
   void syncRichMode();
