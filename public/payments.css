@@ -603,11 +603,20 @@ body.rich-menu-active:not(.has-cart-footer) .pay-notification--latest {
 /* Orders accessible from the basket inside the interactive menu. */
 body.rich-menu-active .pay-orders-link{display:none!important}
 .pay-dialog .pay-body .pay-cart-orders{
- display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;
- padding:10px 16px;margin:13px 0 6px;border-radius:13px;
- color:#1f1c17;background:#FDBE2D;border:1px solid #dfaa26;font-weight:800;cursor:pointer;
+ display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;
+ padding:10px 16px;margin:13px 0 6px;border-radius:14px;
+ color:#fff5d8!important;-webkit-text-fill-color:#fff5d8!important;
+ background:#1d1c21!important;border:2px solid #FDBE2D!important;
+ box-shadow:0 5px 18px #0002,inset 0 0 0 1px #FDBE2D22;
+ font:800 14px/1.5 Snounu,Tahoma,sans-serif;
+ cursor:pointer;transition:background-color .2s,border-color .2s,transform .2s,box-shadow .2s;
 }
-.pay-dialog .pay-body .pay-cart-orders:hover{background:#f1b51c}
+.pay-dialog .pay-body .pay-cart-orders:hover{
+ background:#2a2722!important;border-color:#ffd766!important;
+ box-shadow:0 7px 23px #0003,0 0 0 3px #FDBE2D22;transform:translateY(-2px)
+}
+.pay-dialog .pay-body .pay-cart-orders:active{transform:scale(.985)}
+.pay-dialog .pay-body .pay-cart-orders:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px}
 .pay-dialog .pay-body .pay-cart-back{display:flex;align-items:center;justify-content:center;width:100%;min-height:42px;margin-bottom:12px;padding:8px 13px;border-radius:12px;border:1px solid var(--line);color:var(--ink);background:var(--surface);font-weight:700}
 /* Give the clicked meal a larger, yellow-backed cropped image stage in interactive mode. */
 .rich-menu-active .pay-dialog .pay-meal-photo-stage{width:100%;height:clamp(185px,27dvh,305px);display:block;position:relative;overflow:hidden;border-radius:18px;background:#FDBE2D;isolation:isolate}
@@ -617,3 +626,97 @@ body.rich-menu-active .pay-orders-link{display:none!important}
  transform:scale(1.08);background:#FDBE2D;
 }
 @media(max-width:600px){.rich-menu-active .pay-dialog .pay-meal-photo-stage{height:clamp(165px,24dvh,225px);border-radius:15px}}
+
+/* Interactive checkout polish: a softer, springy modal and staggered content. */
+@keyframes pay-rich-popup-in{
+  0%{opacity:0;transform:translateY(43px) scale(.945)}
+  55%{opacity:1;transform:translateY(-5px) scale(1.008)}
+  76%{transform:translateY(2px) scale(.998)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes pay-rich-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes pay-rich-backdrop-out{from{opacity:1}to{opacity:0}}
+@keyframes pay-rich-content-in{
+  from{opacity:0;transform:translateY(10px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes pay-rich-success-shine{
+  0%{background-position:125% center}
+  100%{background-position:-85% center}
+}
+@keyframes pay-rich-photo-settle{
+  0%{transform:scale(1.08)}
+  48%{transform:scale(1.125)}
+  100%{transform:scale(1.08)}
+}
+@keyframes pay-rich-cart-bounce{
+  0%{transform:translateY(0) scale(1)}
+  33%{transform:translateY(-7px) scale(1.015)}
+  64%{transform:translateY(2px) scale(.996)}
+  100%{transform:translateY(0) scale(1)}
+}
+@media(prefers-reduced-motion:no-preference){
+  body.rich-menu-active .pay-dialog[open]:not(.closing){
+    animation:pay-rich-popup-in .48s cubic-bezier(.17,.9,.24,1) both!important;
+  }
+  body.rich-menu-active .pay-dialog::backdrop{
+    animation:pay-rich-backdrop-in .3s ease-out both;
+  }
+  body.rich-menu-active .pay-dialog.closing::backdrop{
+    animation:pay-rich-backdrop-out .235s ease-in both;
+  }
+  body.rich-menu-active .pay-dialog[open] .pay-top{
+    animation:pay-rich-content-in .29s .04s both;
+  }
+  body.rich-menu-active .pay-dialog[open] .pay-body,
+  body.rich-menu-active .pay-dialog[open] .pay-restaurant-content{
+    animation:pay-rich-content-in .38s .08s cubic-bezier(.2,.8,.2,1) both;
+  }
+  body.rich-menu-active .pay-dialog[open] .pay-body>form,
+  body.rich-menu-active .pay-dialog[open] .pay-body>.pay-row,
+  body.rich-menu-active .pay-dialog[open] .pay-restaurant-row{
+    animation:pay-rich-content-in .35s .13s both;
+  }
+  body.rich-menu-active .pay-dialog[open] .pay-body>.pay-row:nth-child(2){
+    animation-delay:.18s;
+  }
+  body.rich-menu-active .pay-dialog[open] .pay-body>.pay-row:nth-child(3){
+    animation-delay:.22s;
+  }
+  body.rich-menu-active .pay-dialog .pay-add-confirmed{
+    background-image:linear-gradient(105deg,#FDBE2D 22%,#ffdf7a 48%,#FDBE2D 74%)!important;
+    background-size:260% 100%!important;
+    color:#17130a!important;
+    animation:pay-rich-success-shine .52s ease-out 1 both;
+    border-color:#FDBE2D!important;
+  }
+  body.rich-menu-active .pay-dialog .pay-photo-added .pay-meal-photo{
+    animation:pay-rich-photo-settle .4s cubic-bezier(.19,.88,.3,1) both;
+  }
+  body.rich-menu-active .pay-footer.visible.pay-cart-added{
+    animation:pay-rich-cart-bounce .58s cubic-bezier(.16,.8,.18,1) both!important;
+  }
+}
+body.rich-menu-active .pay-dialog .pay-primary:not(:disabled){
+  transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
+}
+@media(hover:hover){
+  body.rich-menu-active .pay-dialog .pay-primary:not(:disabled):hover{
+    filter:brightness(1.045);box-shadow:0 7px 19px #FDBE2D35;
+    transform:translateY(-2px);
+  }
+}
+body.rich-menu-active .pay-dialog .pay-primary:not(:disabled):active{transform:scale(.97)}
+@media(prefers-reduced-motion:reduce){
+  body.rich-menu-active .pay-dialog[open],
+  body.rich-menu-active .pay-dialog::backdrop,
+  body.rich-menu-active .pay-dialog .pay-top,
+  body.rich-menu-active .pay-dialog .pay-body,
+  body.rich-menu-active .pay-dialog .pay-restaurant-content,
+  body.rich-menu-active .pay-dialog .pay-body>form,
+  body.rich-menu-active .pay-dialog .pay-restaurant-row,
+  body.rich-menu-active .pay-dialog .pay-add-confirmed,
+  body.rich-menu-active .pay-dialog .pay-photo-added .pay-meal-photo,
+  body.rich-menu-active .pay-footer.pay-cart-added{animation:none!important}
+  .pay-dialog .pay-body .pay-cart-orders{transition:none!important}
+}

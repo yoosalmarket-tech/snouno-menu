@@ -114,6 +114,27 @@ export function installCart({ catalog, name, description, closed, page }) {
         { duration: 200 },
       );
   };
+  // Make adding a meal feel rewarding without delaying cart persistence.
+  // Animations are decorative: the item is saved before any motion runs.
+  async function showAddedFeedback(confirm, photoStage) {
+    confirm.classList.add("pay-add-confirmed");
+    photoStage?.classList.add("pay-photo-added");
+    if (!motion() || !document.body.classList.contains("rich-menu-active")) return;
+    try {
+      await confirm.animate([
+        {transform:"scale(.97)",filter:"brightness(1.02)"},
+        {transform:"scale(1.045)",filter:"brightness(1.12)",offset:.43},
+        {transform:"scale(1)",filter:"none"}
+      ],{duration:380,easing:"cubic-bezier(.2,.8,.25,1)"}).finished;
+    } catch { /* A closed popup or reduced browser support must not block checkout. */ }
+  }
+  function celebrateFooter() {
+    if (!motion() || !badge.classList.contains("visible")) return;
+    badge.classList.remove("pay-cart-added");
+    void badge.offsetWidth;
+    badge.classList.add("pay-cart-added");
+    setTimeout(()=>badge.classList.remove("pay-cart-added"),650);
+  }
   function refresh() {
     const rich = document.body.classList.contains("rich-menu-active");
     const show = page() === "menu" && (count() > 0 || (rich && tracking.length > 0));
@@ -163,10 +184,10 @@ export function installCart({ catalog, name, description, closed, page }) {
       await dialog
         .animate(
           [
-            { opacity: 1, transform: "none" },
-            { opacity: 0, transform: "translateY(28px) scale(.98)" },
+            { opacity: 1, transform: "translateY(0) scale(1)" },
+            { opacity: 0, transform: "translateY(48px) scale(.965)" },
           ],
-          { duration: 180, easing: "ease-in" },
+          { duration: 235, easing: "cubic-bezier(.5,0,1,.5)" },
         )
         .finished.catch(() => {});
     dialog.close();
@@ -296,12 +317,17 @@ export function installCart({ catalog, name, description, closed, page }) {
         });
       save();
       confirm.disabled = true;
-      confirm.textContent = t("تمت الإضافة ✓", "Added ✓");
+      confirm.textContent = existing
+        ? t("تم حفظ التعديل ✓", "Changes saved ✓")
+        : t("أُضيفت إلى السلة ✓", "Added to cart ✓");
+      await showAddedFeedback(confirm, photoStage);
       if (existing) {
         showCart();
+        celebrateFooter();
         return;
       }
       await dismiss();
+      celebrateFooter();
     };
     draw();
   }

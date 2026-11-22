@@ -1,4 +1,4 @@
-import {installCart} from './cart.js?v=rich-ui-20261122';
+import {installCart} from './cart.js?v=cart-motion-20261122';
 import {visitYoosalWithBell} from './credit-bell.js?v=1';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
@@ -799,8 +799,21 @@ function openRestaurantInfo() {
  const header=document.createElement('div');header.className='pay-top';
  const title=document.createElement('h2');title.textContent=isEnglish()?'Restaurant information':'معلومات ومواعيد المطعم';
  const close=document.createElement('button');close.type='button';close.textContent='×';
+ const dismissInfo=()=>{
+  if(d.classList.contains('closing'))return;
+  if(!document.body.classList.contains('rich-menu-active')||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    d.close();return;
+  }
+  d.classList.add('closing');
+  d.animate([
+   {opacity:1,transform:'translateY(0) scale(1)'},
+   {opacity:0,transform:'translateY(45px) scale(.97)'}
+  ],{duration:235,easing:'cubic-bezier(.5,0,1,.5)'})
+   .finished.catch(()=>{}).finally(()=>d.close());
+ };
  close.setAttribute('aria-label',isEnglish()?'Close':'إغلاق');
- close.onclick=()=>d.close();header.append(title,close);d.append(header);
+ close.onclick=dismissInfo;header.append(title,close);d.append(header);
  const body=document.createElement('div');body.className='pay-restaurant-content';
  for(const [heading,value] of [
    [isEnglish()?'Opening hours':'مواعيد العمل',tr(settings.hours)||'—'],
@@ -815,14 +828,19 @@ function openRestaurantInfo() {
  const visit=document.createElement('button');visit.type='button';visit.className='pay-primary';
  visit.textContent=isEnglish()?'Open contact page':'فتح صفحة التواصل';
  visit.onclick=()=>{
-  d.close();
+  void dismissInfo();
   history.pushState(null,'',pageUrl('contact'));
   route();
  };
  body.append(visit);d.append(body);
  d.addEventListener('close',()=>d.remove(),{once:true});
  d.addEventListener('click',event=>{
-  if(event.target===d)d.close();
+  if(event.target===d)dismissInfo();
+ });
+ d.addEventListener('cancel',event=>{
+  if(!document.body.classList.contains('rich-menu-active'))return;
+  event.preventDefault();
+  dismissInfo();
  });
  document.body.append(d);d.showModal();
 }
