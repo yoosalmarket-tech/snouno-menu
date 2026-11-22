@@ -1,0 +1,128 @@
+/* Snounu payment settings 03 – structured desktop and mobile editor */
+#body .pay-settings-v3{--ps-ink:#24221e;--ps-soft:#766f63;--ps-border:#e8e3d8;--ps-gold:#FDBE2D;--ps-base:#fff;display:grid;gap:27px;min-width:0;color:var(--ps-ink);padding-bottom:35px;direction:rtl}
+#body .pay-settings-v3 *{box-sizing:border-box}
+#body .pay-settings-v3 .ps3-intro{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 26px;background:linear-gradient(112deg,#fffdf7,#fff7e2);border:1px solid #eadfbd;border-radius:19px}
+#body .pay-settings-v3 .ps3-intro-copy{display:grid;gap:5px;min-width:0}
+#body .pay-settings-v3 .ps3-intro-copy>span{color:#80642a;font-size:12px;font-weight:850}
+#body .pay-settings-v3 .ps3-intro-copy h2{font-size:clamp(20px,2.1vw,27px);margin:0;font-weight:850;line-height:1.3}
+#body .pay-settings-v3 .ps3-intro-copy p{margin:3px 0 0;max-width:560px;font-size:13px;color:#726a5c;line-height:1.8}
+#body .pay-settings-v3 .ps3-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;flex:0 1 400px;min-width:255px}
+#body .pay-settings-v3 .ps3-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:80px;padding:12px 10px;background:#ffffffbd;border:1px solid #ecdfbf;border-radius:13px}
+#body .pay-settings-v3 .ps3-stat strong{font:850 25px/1.15 system-ui,Tahoma,sans-serif;color:#2b271f;font-variant-numeric:tabular-nums}
+#body .pay-settings-v3 .ps3-stat span{font-size:11px;color:#736a5c;white-space:nowrap}
+#body .pay-settings-v3 .ps3-methods,#body .pay-settings-v3 .ps3-general{display:grid;gap:14px;min-width:0}
+#body .pay-settings-v3 .ps3-section-header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+#body .pay-settings-v3 .ps3-section-header h2{font-size:21px;font-weight:800;margin:0;color:#24221e}
+#body .pay-settings-v3 .ps3-section-header p{font-size:13px;color:#7b756c;margin:4px 0 0;line-height:1.7}
+#body .pay-settings-v3 .ps3-add-method{display:inline-flex;align-items:center;justify-content:center;min-height:45px;border:1px solid #FDBE2D;background:#FDBE2D;color:#24221e;-webkit-text-fill-color:#24221e;border-radius:12px;padding:10px 17px;font:800 13px system-ui,Tahoma,sans-serif;white-space:nowrap;cursor:pointer}
+#body .pay-settings-v3 .ps3-add-method:hover{background:#f4b725;border-color:#f4b725}
+#body .pay-settings-v3 .ps3-add-method:disabled{opacity:.55}
+#body .pay-settings-v3 .ps3-method-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,515px),1fr));align-items:start;gap:16px;min-width:0}
+#body .pay-settings-v3 .pay-config.ps3-method-card,#body .pay-settings-v3 .pay-config.ps3-general-form{display:flex;flex-direction:column;gap:0;min-width:0;margin:0;border:1px solid var(--ps-border);border-radius:18px;background:#fff;padding:0;box-shadow:0 5px 18px #211b1208;overflow:hidden}
+#body .pay-settings-v3 .ps3-card-head{display:flex;align-items:center;gap:12px;min-height:91px;padding:17px 19px;border-bottom:1px solid #eee9df;background:#fff}
+#body .pay-settings-v3 .ps3-method-logo{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border-radius:13px;border:1px solid #eee6d2;background:#fff8e9;overflow:hidden}
+#body .pay-settings-v3 .ps3-method-logo img{width:41px;height:41px;object-fit:contain}
+#body .pay-settings-v3 .ps3-method-logo span{font-weight:900;font-size:23px;color:#876511}
+#body .pay-settings-v3 .ps3-method-title{flex:1;min-width:0;display:grid;gap:4px}
+#body .pay-settings-v3 .ps3-method-title h3{font-size:17px;font-weight:850;margin:0;line-height:1.35;overflow-wrap:anywhere}
+#body .pay-settings-v3 .ps3-method-title small{font-size:11px;color:#807b72;line-height:1.5}
+#body .pay-settings-v3 .ps3-method-state{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;padding:5px 10px;border:1px solid #dfdcd3;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap;color:#746a5d;background:#f6f5f2}
+#body .pay-settings-v3 .ps3-method-state.is-on{background:#e7f5ec;border-color:#c8e6d2;color:#217647}
+#body .pay-settings-v3 .ps3-method-card .ps3-block{margin:0 18px;border-bottom:1px solid #f0ece4}
+#body .pay-settings-v3 .ps3-method-card .ps3-block:last-of-type{border-bottom:0}
+#body .pay-settings-v3 .ps3-block{display:grid;gap:13px;min-width:0;padding:19px 0 21px;background:transparent;border:0;border-radius:0}
+#body .pay-settings-v3 .ps3-block-header{display:grid;gap:3px}
+#body .pay-settings-v3 .ps3-block-header h4{font-size:13px;font-weight:850;color:#2c2923;margin:0}
+#body .pay-settings-v3 .ps3-block-header p{font-size:11px;line-height:1.7;color:#928a7c;margin:0}
+#body .pay-settings-v3 .ps3-block-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;min-width:0}
+#body .pay-settings-v3 .ps3-block-fields>label{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:12px;font-weight:750;color:#554e44;line-height:1.5}
+#body .pay-settings-v3 .ps3-block-fields input:not([type=checkbox]):not([type=file]){display:block;width:100%;min-width:0;min-height:44px;padding:10px 12px;background:#fbfaf8;border:1px solid #e3ded4;color:#28241d;border-radius:10px;font-size:13px;font-weight:600;line-height:1.4;text-align:right;direction:rtl}
+#body .pay-settings-v3 .ps3-block-fields input:focus{outline:2px solid #FDBE2D;outline-offset:1px;background:#fff}
+#body .pay-settings-v3 .ps3-block-fields input::placeholder{color:#afa79c;font-weight:400}
+#body .pay-settings-v3 .ps3-block-fields label:has(input[name=url]){grid-column:1/-1}
+#body .pay-settings-v3 .ps3-block-fields input[type=url],#body .pay-settings-v3 .ps3-block-fields input[name=account],#body .pay-settings-v3 .ps3-block-fields input[name=phone]{direction:ltr!important;text-align:right!important;unicode-bidi:plaintext}
+#body .pay-settings-v3 .ps3-account .ps3-block-fields>label:first-child{grid-column:1/-1}
+#body .pay-settings-v3 .ps3-options .ps3-block-fields>label:nth-child(1){grid-column:1/-1}
+#body .pay-settings-v3 .ps3-switch{display:flex!important;align-items:center;justify-content:space-between;flex-direction:row;gap:15px;background:#f8f7f4;border:1px solid #eae6df;border-radius:11px;min-height:45px;padding:10px 13px;cursor:pointer}
+#body .pay-settings-v3 .ps3-switch span{font-size:12px;font-weight:750;color:#45413a;line-height:1.5}
+#body .pay-settings-v3 .ps3-switch input[type=checkbox]{width:20px;height:20px;flex:0 0 20px;margin:0;accent-color:#e6ac17;cursor:pointer}
+#body .pay-settings-v3 .ps3-switch:has(input:checked){background:#fff9e9;border-color:#efdfb7}
+#body .pay-settings-v3 .ps3-media .ps3-block-fields{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:11px}
+#body .pay-settings-v3 .ps3-upload-field{display:flex!important;flex-direction:column;gap:8px!important;padding:12px;border:1px dashed #d5cbb8;border-radius:13px;background:#faf9f6;min-width:0;justify-content:flex-start}
+#body .pay-settings-v3 .ps3-upload-field strong{font-size:12px;color:#302b23;line-height:1.5}
+#body .pay-settings-v3 .ps3-upload-field>small{font-size:10px;line-height:1.6;font-weight:400;color:#81796b;order:2}
+#body .pay-settings-v3 .ps3-upload-field input[type=file]{display:block;width:100%;min-width:0;max-width:100%;min-height:41px;font-size:11px;padding:5px;border:1px solid #ded8cd;background:#fff;border-radius:8px;color:#6a6358;cursor:pointer}
+#body .pay-settings-v3 .ps3-upload-field input[type=file]::file-selector-button{font:800 11px system-ui,Tahoma,sans-serif;border-radius:7px;padding:7px 9px;border:0;background:#f2e5bf;color:#342918;cursor:pointer;margin-inline-end:8px}
+#body .pay-settings-v3 .ps3-upload-field .pay-upload-preview{min-height:112px;display:grid;place-items:center;order:1;margin:0;padding:8px;border:1px solid #eae5db;border-radius:9px;background:#fff}
+#body .pay-settings-v3 .ps3-upload-field .pay-upload-preview img{max-width:100%;max-height:96px;object-fit:contain;border:0;box-shadow:none;padding:0;margin:0}
+#body .pay-settings-v3 .ps3-upload-field .pay-upload-preview small{font-size:11px;color:#8c847a}
+#body .pay-settings-v3 .ps3-qr-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding-top:4px}
+#body .pay-settings-v3 .ps3-remove-qr{display:flex;align-items:center;gap:8px;flex-direction:row;font-size:11px;font-weight:700;color:#a5473f}
+#body .pay-settings-v3 .ps3-remove-qr input{width:18px;height:18px;accent-color:#c74c3d;cursor:pointer}
+#body .pay-settings-v3 button.pay-download-qr{min-height:36px!important;background:#fff!important;color:#493c20!important;border:1px solid #dfd0aa!important;border-radius:9px!important;font-size:12px!important;padding:7px 12px!important}
+#body .pay-settings-v3 button.pay-download-qr:hover{background:#fff7e7!important}
+#body .pay-settings-v3 .ps3-card-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0!important;padding:15px 18px;border-top:1px solid #ece8df;background:#fbfaf8}
+#body .pay-settings-v3 .pay-config .pay-save-feedback{display:inline-flex;align-items:center;flex:1 1 160px;min-height:41px;width:auto;margin:0;padding:8px 10px;background:transparent;color:#81796d;border:0;border-radius:0;font-size:11px;font-weight:650}
+#body .pay-settings-v3 .pay-config .pay-save-feedback.is-unsaved{color:#866116}
+#body .pay-settings-v3 .pay-config .pay-save-feedback.is-error{color:#a82d27}
+#body .pay-settings-v3 .pay-config .pay-save-feedback.is-saving{color:#756c5f}
+#body .pay-settings-v3 .pay-config button.pay-save-button{flex:0 0 auto;min-width:148px;width:auto!important;min-height:43px;padding:10px 21px;border-radius:10px;background:#FDBE2D!important;color:#221e17!important;-webkit-text-fill-color:#221e17!important;border:1px solid #FDBE2D!important;font:850 13px system-ui,Tahoma,sans-serif;cursor:pointer}
+#body .pay-settings-v3 .pay-config button.pay-save-button:hover{background:#efb21b!important;border-color:#efb21b!important}
+#body .pay-settings-v3 .pay-config button.pay-save-button:disabled{opacity:.55}
+#body .pay-settings-v3 .ps3-empty{text-align:center;display:grid;justify-items:center;gap:6px;padding:45px 15px;background:#fff;border:1px dashed #dcd1b7;border-radius:16px}
+#body .pay-settings-v3 .ps3-empty strong{font-size:17px}
+#body .pay-settings-v3 .ps3-empty p{font-size:13px;color:#797166;margin:0}
+#body .pay-settings-v3 .pay-config.ps3-general-form{box-shadow:none}
+#body .pay-settings-v3 .ps3-general-form .ps3-general-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:0 22px;padding:0 20px}
+#body .pay-settings-v3 .ps3-general-grid .ps3-block{border-bottom:1px solid #eee9df}
+#body .pay-settings-v3 .ps3-general-grid .ps3-restaurant-settings{grid-column:1}
+#body .pay-settings-v3 .ps3-general-grid .ps3-order-settings{grid-column:2}
+#body .pay-settings-v3 .ps3-general-grid .ps3-format-settings{grid-column:1/-1;border-bottom:0}
+#body .pay-settings-v3 .ps3-format-settings .ps3-block-fields{grid-template-columns:repeat(4,minmax(0,1fr))}
+#body .pay-settings-v3 .ps3-restaurant-settings .ps3-block-fields>label:nth-child(2),#body .pay-settings-v3 .ps3-restaurant-settings .ps3-block-fields>label:nth-child(4){grid-column:1/-1}
+#body .pay-settings-v3 .ps3-order-settings .ps3-block-fields{grid-template-columns:1fr}
+#body .pay-settings-v3 .ps3-order-settings .ps3-block-fields>label:first-child{max-width:250px}
+#body .pay-settings-v3 .ps3-general-form .ps3-card-footer{padding:18px 20px}
+#body .pay-settings-v3 .pay-save-feedback.is-saved{color:#267649!important}
+#body .pay-settings-v3 .ps3-media .ps3-upload-field:focus-within{border-color:#FDBE2D}
+#body .pay-settings-v3 :is(input,button):focus-visible{outline:3px solid #f1c95d;outline-offset:2px}
+@media(max-width:1080px){
+ #body .pay-settings-v3 .ps3-intro{flex-direction:column;align-items:stretch;gap:16px}
+ #body .pay-settings-v3 .ps3-summary{flex:none;min-width:0}
+}
+@media(max-width:800px){
+ #body .pay-settings-v3{gap:22px}
+ #body .pay-settings-v3 .ps3-general-form .ps3-general-grid{grid-template-columns:1fr;gap:0;padding:0 18px}
+ #body .pay-settings-v3 .ps3-general-grid .ps3-restaurant-settings,#body .pay-settings-v3 .ps3-general-grid .ps3-order-settings,#body .pay-settings-v3 .ps3-general-grid .ps3-format-settings{grid-column:1}
+ #body .pay-settings-v3 .ps3-format-settings .ps3-block-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:580px){
+ #body .pay-settings-v3{gap:19px}
+ #body .pay-settings-v3 .ps3-intro{padding:18px;border-radius:15px}
+ #body .pay-settings-v3 .ps3-intro-copy h2{font-size:22px}
+ #body .pay-settings-v3 .ps3-summary{gap:5px}
+ #body .pay-settings-v3 .ps3-stat{min-height:68px;padding:9px 5px}
+ #body .pay-settings-v3 .ps3-stat strong{font-size:21px}
+ #body .pay-settings-v3 .ps3-stat span{font-size:10px}
+ #body .pay-settings-v3 .ps3-section-header h2{font-size:19px}
+ #body .pay-settings-v3 .ps3-section-header p{font-size:12px}
+ #body .pay-settings-v3 .ps3-add-method{width:100%}
+ #body .pay-settings-v3 .ps3-card-head{padding:14px 13px;gap:9px}
+ #body .pay-settings-v3 .ps3-method-logo{width:46px;height:46px;flex-basis:46px}
+ #body .pay-settings-v3 .ps3-method-logo img{max-width:33px;max-height:33px}
+ #body .pay-settings-v3 .ps3-method-title h3{font-size:15px}
+ #body .pay-settings-v3 .ps3-method-state{font-size:10px;padding:5px 7px}
+ #body .pay-settings-v3 .ps3-method-card .ps3-block{margin:0 13px}
+ #body .pay-settings-v3 .ps3-block{padding:17px 0;gap:11px}
+ #body .pay-settings-v3 .ps3-block-fields{grid-template-columns:1fr}
+ #body .pay-settings-v3 .ps3-account .ps3-block-fields>label:first-child,
+ #body .pay-settings-v3 .ps3-options .ps3-block-fields>label:first-child{grid-column:1}
+ #body .pay-settings-v3 .ps3-media .ps3-block-fields{grid-template-columns:1fr}
+ #body .pay-settings-v3 .ps3-card-footer{padding:12px 13px;gap:8px}
+ #body .pay-settings-v3 .pay-config .pay-save-feedback{flex-basis:100%}
+ #body .pay-settings-v3 .pay-config button.pay-save-button{width:100%!important}
+ #body .pay-settings-v3 .ps3-general-form .ps3-general-grid{padding:0 13px}
+ #body .pay-settings-v3 .ps3-restaurant-settings .ps3-block-fields{grid-template-columns:1fr}
+ #body .pay-settings-v3 .ps3-format-settings .ps3-block-fields{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){#body .pay-settings-v3 button,#body .pay-settings-v3 input{transition:none}}
