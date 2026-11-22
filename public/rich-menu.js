@@ -209,6 +209,11 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
     empty.style.cssText='display:grid;place-items:center;font-size:76px;color:#FDBE2D';
     frame.append(empty);
    }
+   if(meal.available===false){
+    const stamp=mk('span','rm-unavailable-stamp');
+    stamp.setAttribute('aria-hidden','true');
+    frame.append(stamp);
+   }
    if(meal.badge){
     const badge=mk('div','rm-dish-badge',meal.badge);
     const px=clamp(Number(meal.rich_badge_x??77),5,95);
@@ -261,8 +266,9 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   const m=dish();if(!m)return;
   u.title.textContent=getName(m);
   const unavailable=m.available===false;
-  u.availability.hidden=!unavailable;
-  u.availability.textContent=unavailable?(isEnglish()?'Sold out':'نفدت الكمية'):'';
+  // The red stamp on the meal image replaces the previous gold pill.
+  u.availability.hidden=true;
+  u.availability.textContent='';
   at(u.closureNote,'.rm-closure-note-copy').textContent=isEnglish()
    ?'Restaurant currently closed. Browse the menu and come back when we reopen!'
    :'المطعم مغلق حالياً · تقدر تتصفح وجباتنا ونستناك وقت الافتتاح!';

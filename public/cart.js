@@ -233,13 +233,13 @@ export function installCart({ catalog, name, description, closed, page }) {
   function celebrateFooter(){
  if(!motion()||!badge.classList.contains("visible")||
  !document.body.classList.contains("rich-menu-active"))return;
- const icon=badge.querySelector(".pay-cart-icon");
- if(!icon)return;
+ if(!badge.querySelector(".pay-cart-icon"))return;
  clearTimeout(glowCleanupTimer);
  badge.classList.remove("pay-arrival-glow");
- void icon.offsetWidth;
+ // Only the yellow box responds to landing. The icon never moves or shines.
+ void badge.offsetWidth;
  badge.classList.add("pay-arrival-glow");
- glowCleanupTimer=setTimeout(()=>badge.classList.remove("pay-arrival-glow"),550);
+ glowCleanupTimer=setTimeout(()=>badge.classList.remove("pay-arrival-glow"),1280);
 }
   async function flyMealToCart(photo,origin,isNewFooter){
  if(!motion()||!document.body.classList.contains("rich-menu-active")||
@@ -295,12 +295,12 @@ export function installCart({ catalog, name, description, closed, page }) {
   }catch{}
   const dy=destination.top+destination.height/2-footerShiftY-(origin.top+origin.height/2);
   const finalScale=Math.min(.30,Math.max(.095,Math.min(destination.width/origin.width,destination.height/origin.height)));
-  const arc=Math.min(110,Math.max(45,Math.abs(dx)*.2));
+  const arc=Math.min(96,Math.max(38,Math.abs(dx)*.17));
   flight=ghost.animate([
    {transform:"translate3d(0px,0px,0px) scale(1)",offset:0},
-   {transform:`translate3d(${dx*.47}px,${dy*.40-arc}px,0px) scale(.62)`,offset:.47},
+   {transform:`translate3d(${dx*.47}px,${dy*.44-arc}px,0px) scale(.7)`,offset:.47},
    {transform:`translate3d(${dx}px,${dy}px,0px) scale(${finalScale})`,offset:1}
-  ],{duration:670,easing:"cubic-bezier(.2,.74,.26,1)",fill:"forwards"});
+  ],{duration:1200,easing:"cubic-bezier(.22,.68,.22,1)",fill:"forwards"});
   await flight.finished;
   if(cancelled)return false;
   celebrateFooter(); // Trigger only on actual arrival.

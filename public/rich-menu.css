@@ -1892,9 +1892,7 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
 }
 
 /* Availability labels replace grayscale. Food images keep their original color and 3D motion. */
-#rich-menu .rm-availability{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:95%;padding:3px 13px;border:1px solid #d0a453;border-radius:999px;background:#6a4b24;color:#ffe3a4;font:800 11px/1.6 Snounu,Tahoma,sans-serif;margin:4px auto 0}
-#rich-menu .rm-availability[hidden]{display:none!important}
-#rich-menu .rm-availability::before{content:"";width:6px;height:6px;flex:none;border-radius:50%;background:#ffd879}
+#rich-menu .rm-availability{display:none!important}
 #rich-menu .rm-customize:disabled{background:#343239!important;border-color:#867352!important;box-shadow:none!important;color:#ebd3a0!important;cursor:not-allowed}
 #rich-menu .rm-customize:disabled .rm-order-icon{background:#ae9666!important;color:#2b251c!important}
 #rich-menu .rm-customize:disabled strong{color:#efd5a3!important}
@@ -1959,3 +1957,14 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 #rich-menu .rm-cat span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important;font-weight:700!important}
 #rich-menu .rm-categories-label span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
 #rich-menu .rm-order-en{display:none!important}
+
+/* The supplied red stamp, centered just above unavailable meal photography. */
+#rich-menu .rm-dish .rm-unavailable-stamp{
+ position:absolute;z-index:15;pointer-events:none;
+ left:50%;top:-6%;width:84%;aspect-ratio:400/267;
+ transform:translateX(-50%);
+ background:url('/assets/unavailable-stamp.png') center/contain no-repeat;
+ filter:drop-shadow(0 3px 3px #0003);
+}
+#rich-menu .rm-dish[data-unavailable="true"] .rm-dish-badge{display:none!important}
+@media(max-width:980px){#rich-menu .rm-dish .rm-unavailable-stamp{width:88%;top:-4%}}

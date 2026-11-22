@@ -667,39 +667,32 @@ body.rich-menu-active .pay-footer .pay-cart-icon{
  min-width:29px;min-height:29px;margin-inline-end:7px;
  isolation:isolate;transform-origin:center center;vertical-align:middle;
 }
-body.rich-menu-active .pay-footer .pay-cart-icon::before{
- content:"";position:absolute;z-index:-1;width:94px;height:63px;
- border-radius:50%;pointer-events:none;
- background:radial-gradient(ellipse,
-  rgba(255,249,209,.94) 0%,rgba(255,231,151,.47) 38%,rgba(253,190,45,0) 77%);
- filter:blur(7px);opacity:0;transform:scale(.48);
+
+/* A slow, contained sheen across the yellow cart box on food arrival. */
+body.rich-menu-active .pay-footer{isolation:isolate;overflow:hidden}
+body.rich-menu-active .pay-footer::before{
+ content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+ opacity:0;
+ background:radial-gradient(ellipse 80% 145% at 50% 45%,rgba(255,255,246,.50) 0%,rgba(255,246,204,.28) 42%,transparent 81%);
+ box-shadow:inset 0 5px 25px rgba(255,255,235,.22);
 }
-@keyframes pay-cart-icon-arrival{
- 0%{transform:translateY(0) scale(1)}
- 36%{transform:translateY(-6px) scale(1.10)}
- 71%{transform:translateY(1px) scale(.985)}
- 100%{transform:translateY(0) scale(1)}
-}
-@keyframes pay-cart-icon-glow{
- 0%{opacity:0;transform:scale(.48)}
- 34%{opacity:.95;transform:scale(1)}
- 66%{opacity:.54;transform:scale(1.13)}
- 100%{opacity:0;transform:scale(1.28)}
+body.rich-menu-active .pay-footer > *{position:relative;z-index:1}
+@keyframes pay-cart-box-glow{
+ 0%{opacity:0}
+ 26%{opacity:.75}
+ 58%{opacity:.52}
+ 100%{opacity:0}
 }
 @media(prefers-reduced-motion:no-preference){
- body.rich-menu-active .pay-footer.pay-arrival-glow .pay-cart-icon{
-  animation:pay-cart-icon-arrival .5s cubic-bezier(.22,.7,.2,1) both;
- }
- body.rich-menu-active .pay-footer.pay-arrival-glow .pay-cart-icon::before{
-  animation:pay-cart-icon-glow .52s ease-out both;
+ body.rich-menu-active .pay-footer.pay-arrival-glow::before{
+  animation:pay-cart-box-glow 1.24s ease-in-out both;
  }
 }
 @media(prefers-reduced-motion:reduce){
- body.rich-menu-active .pay-footer.pay-arrival-glow .pay-cart-icon,
- body.rich-menu-active .pay-footer.pay-arrival-glow .pay-cart-icon::before{
-  animation:none!important;
- }
+ body.rich-menu-active .pay-footer.pay-arrival-glow::before{animation:none!important}
 }
+/* Cart icon and amount remain visually and positionally stable. */
+body.rich-menu-active .pay-footer .pay-cart-icon{animation:none!important}
 
 /* The small top grip and title row are draggable, while form content scrolls. */
 body.rich-menu-active .pay-dialog .pay-top{

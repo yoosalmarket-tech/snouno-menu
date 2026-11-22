@@ -1321,8 +1321,7 @@ body.rich-menu-active:not([data-preview]) #rich-menu{
 /* Availability affects the labels and ordering controls, never the food photography. */
 #menu .meal-name-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;min-width:0}
 #menu .meal-name-row>strong{min-width:0;overflow-wrap:anywhere}
-.meal-availability-pill{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:fit-content;max-width:100%;padding:3px 10px;border:1px solid #cb9b42;border-radius:999px;background:#f5d99b;color:#3a270c;font:800 11px/1.5 Snounu,Tahoma,sans-serif;white-space:nowrap;flex:none}
-.meal-availability-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:#a57616;flex:none}
+.meal-availability-pill{display:none!important}
 #menu .meal-order-unavailable,#details .meal-order-unavailable{width:100%;border:1px solid #9b927d;background:#ddd9ce;color:#554f43;min-height:45px;border-radius:12px;padding:10px 15px;font:800 14px/1.5 Snounu,Tahoma,sans-serif;cursor:not-allowed;opacity:1}
 body.dark #menu .meal-order-unavailable,body.dark #details .meal-order-unavailable{background:#3a3835;border-color:#635c50;color:#cbc2b3}
 #details .dish-lead .meal-availability-pill{margin-inline-start:8px}
@@ -1376,3 +1375,15 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 .category-nav-title{align-items:center!important}
 .category-nav-title span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
 .chip .chip-ar{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
+
+/* The same provided transparent unavailable stamp overlays regular meal art. */
+#menu .meal-unavailable-stamp,
+#details .meal-unavailable-stamp{
+ position:absolute;display:block;z-index:5;pointer-events:none;
+ left:50%;top:4px;width:83%;aspect-ratio:400/267;
+ transform:translateX(-50%);
+ background:url('/assets/unavailable-stamp.png') center/contain no-repeat;
+ filter:drop-shadow(0 3px 3px #0003);
+}
+#menu .card.meal-unavailable,#details .dish-photo.meal-unavailable{position:relative}
+#details .dish-photo.meal-unavailable .meal-unavailable-stamp{width:min(72%,370px);top:2px}
