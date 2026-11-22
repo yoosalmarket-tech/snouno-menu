@@ -1,6 +1,7 @@
 /* Opt-in immersive Snounu menu: spring inertia, horizontal 3D dish feed,
    swipe-driven category transitions, and a perspective thumbnail rail. */
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
+import {englishCategoryName} from './category-labels.js?v=1';
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -12,7 +13,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
  '<span class="rm-top-caption">المنيو التفاعلي</span><a class="rm-top-logo-home" href="/welcome" data-page="welcome" aria-label="العودة إلى شاشة ترحيب سنونو" title="العودة إلى شاشة الترحيب"><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></a></div>',
  '<nav class="rm-categories" aria-label="تصنيفات الأطباق"><div class="rm-categories-header">',
- '<div class="rm-categories-label"><span dir="rtl">التصنيفات</span></div>',
+ '<div class="rm-categories-label"><strong lang="en">CATEGORIES</strong><span dir="rtl">التصنيفات</span></div>',
  '<div class="rm-categories-controls"><button class="rm-category-previous" type="button" aria-label="الصنف السابق">←</button>',
  '<b class="rm-categories-count" dir="ltr">1 / 1</b><button class="rm-category-next" type="button" aria-label="الصنف التالي">→</button></div></div>',
  '<div class="rm-categories-track" role="tablist"></div></nav>',
@@ -169,8 +170,12 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
    button.dataset.trackAction='category_select';
    button.dataset.permalink='/menu?category='+encodeURIComponent(g.id)+'&mode=interactive';
    button.setAttribute('aria-label',g.name);
-   // Restore the original bilingual category buttons in the top navigation.
-   button.append(mk('span',null,g.name));
+   // English on top, Arabic below, as in the original category navigation.
+   const english=mk('strong',null,englishCategoryName(g.name).toLocaleUpperCase('en'));
+   english.lang='en';english.dir='ltr';
+   const arabic=mk('span',null,g.name);
+   arabic.lang='ar';arabic.dir='rtl';
+   button.append(english,arabic);
    button.addEventListener('click',()=>changeGroup(i));
    categoryEls.push(button);u.categories.append(button);
   });selectCategoryTab();

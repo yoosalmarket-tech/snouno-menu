@@ -1,4 +1,5 @@
 import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=transparent-flight-20261122';
+import {englishCategoryName} from './category-labels.js?v=1';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
@@ -170,7 +171,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=stamp-and-order-en-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=bilingual-categories-20261122')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -957,8 +958,9 @@ function renderChips(groups){
  const strip=$('chips');strip.replaceChildren();categoryButtons.clear();activeCategory=null;
  const head=make('div');head.className='category-nav-head';
  const titles=make('span');titles.className='category-nav-title';
+ const english=make('strong','CATEGORIES');english.lang='en';english.dir='ltr';
  const arabic=make('span','التصنيفات');arabic.lang='ar';arabic.dir='rtl';
- titles.append(arabic);
+ titles.append(english,arabic);
  const controls=make('div');controls.className='category-nav-controls';
  const previous=make('button',isEnglish()?'←':'→');previous.type='button';previous.className='category-nav-arrow';previous.id='category-previous';
  previous.setAttribute('aria-label',isEnglish()?'Previous category':'الصنف السابق');
@@ -972,9 +974,11 @@ function renderChips(groups){
  rail.setAttribute('aria-label',isEnglish()?'Meal categories':'أصناف المنيو');
  for(const {category,section} of groups){
    const button=make('button');button.type='button';button.className='chip';
+   const en=make('span',englishCategoryName(category.name).toLocaleUpperCase('en'));
+   en.className='chip-en';en.lang='en';en.dir='ltr';
    const ar=make('span',category.name);
    ar.className='chip-ar';ar.lang='ar';ar.dir='rtl';
-   button.append(ar);
+   button.append(en,ar);
    button.id='category-button-'+category.id;
    button.dataset.categoryId=category.id;
    button.dataset.trackAction='category_select';
