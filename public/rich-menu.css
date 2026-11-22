@@ -1975,7 +1975,7 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 #rich-menu .rm-dish[data-unavailable="true"] .rm-unavailable-stamp{
  position:absolute!important;
  display:grid!important;place-items:center;
- left:50%!important;top:4%!important;right:auto!important;
+ left:50%!important;top:10%!important;right:auto!important;
  width:max-content!important;max-width:90%!important;
  height:auto!important;aspect-ratio:auto!important;
  z-index:30!important;
@@ -1989,6 +1989,7 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
  text-shadow:0 1px 0 #a1000b;
  filter:drop-shadow(0 1px 1px #0006);
  isolation:isolate;
+ opacity:.8!important;
 }
 #rich-menu .rm-dish .rm-unavailable-stamp::before,
 #rich-menu .rm-dish .rm-unavailable-stamp::after{
@@ -2001,7 +2002,7 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 #rich-menu .rm-dish[data-unavailable="true"] .rm-dish-badge{display:none!important}
 @media(max-width:980px){
  #rich-menu .rm-dish[data-unavailable="true"] .rm-unavailable-stamp{
-  top:5%!important;
+  top:11%!important;
   font-size:clamp(27px,6vw,41px)!important;
  }
 }

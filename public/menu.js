@@ -165,7 +165,7 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=stamp-and-order-en-20261122';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=stamp-opacity-position-20261122';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));

@@ -1380,7 +1380,7 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 #menu .meal-unavailable-stamp,
 #details .meal-unavailable-stamp{
  position:absolute;z-index:6;display:grid;place-items:center;
- left:50%;top:13px;width:max-content;max-width:87%;height:auto;
+ left:50%;top:26px;width:max-content;max-width:87%;height:auto;
  padding:7px 6px;
  transform:translateX(-50%) rotate(-17deg);
  background:transparent;
@@ -1390,6 +1390,7 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
  text-shadow:0 1px 0 #a1000b;
  pointer-events:none;
  filter:drop-shadow(0 1px 1px #0004);
+ opacity:.8;
 }
 #menu .meal-unavailable-stamp::before,#menu .meal-unavailable-stamp::after,
 #details .meal-unavailable-stamp::before,#details .meal-unavailable-stamp::after{
@@ -1399,7 +1400,7 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 #menu .meal-unavailable-stamp::after,#details .meal-unavailable-stamp::after{bottom:0}
 #menu .card.meal-unavailable,#details .dish-photo.meal-unavailable{position:relative}
 #details .dish-photo.meal-unavailable .meal-unavailable-stamp{
- top:9px;font-size:clamp(25px,6vw,48px);padding:12px 9px;
+ top:22px;font-size:clamp(25px,6vw,48px);padding:12px 9px;
 }
 #details .dish-photo.meal-unavailable .meal-unavailable-stamp::before,
 #details .dish-photo.meal-unavailable .meal-unavailable-stamp::after{height:7px}
