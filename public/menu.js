@@ -1,4 +1,4 @@
-import {installCart, closePayDialog} from './cart.js?v=interactive-motion-01';
+import {installCart, closePayDialog, openPayDialog} from './cart.js?v=interactive-animations-02';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
@@ -830,7 +830,8 @@ function openRestaurantInfo() {
   event.preventDefault();
   dismissInfo();
  });
- document.body.append(d);d.showModal();
+ document.body.append(d);
+ openPayDialog(d,document.body.classList.contains('rich-menu-active'));
 }
 let cartUi;
 const pages=['welcome','menu','contact'];

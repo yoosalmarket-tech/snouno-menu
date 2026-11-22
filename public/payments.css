@@ -624,76 +624,25 @@ body.rich-menu-active .pay-orders-link{display:none!important}
 }
 @media(max-width:600px){.rich-menu-active .pay-dialog .pay-meal-photo-stage{height:clamp(165px,24dvh,225px);border-radius:15px}}
 
-/* Interactive checkout polish: a softer, springy modal and staggered content. */
-@keyframes pay-rich-popup-in{
-  0%{opacity:0;transform:translateY(43px) scale(.945)}
-  55%{opacity:1;transform:translateY(-5px) scale(1.008)}
-  76%{transform:translateY(2px) scale(.998)}
-  100%{opacity:1;transform:translateY(0) scale(1)}
-}
-@keyframes pay-rich-backdrop-in{from{opacity:0}to{opacity:1}}
-@keyframes pay-rich-backdrop-out{from{opacity:1}to{opacity:0}}
-@keyframes pay-rich-content-in{
-  from{opacity:0;transform:translateY(10px) scale(.985)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-@keyframes pay-rich-success-shine{
-  0%{background-position:125% center}
-  100%{background-position:-85% center}
-}
-@keyframes pay-rich-photo-settle{
-  0%{transform:scale(1.08)}
-  48%{transform:scale(1.125)}
-  100%{transform:scale(1.08)}
-}
-@media(prefers-reduced-motion:no-preference){
-  body.rich-menu-active .pay-dialog[open]:not(.closing){
-    animation:pay-rich-popup-in .38s cubic-bezier(.17,.9,.24,1);
-  }
-  body.rich-menu-active .pay-dialog::backdrop{
-    animation:pay-rich-backdrop-in .3s ease-out both;
-  }
-  body.rich-menu-active .pay-dialog.closing::backdrop{
-    animation:pay-rich-backdrop-out .22s ease-in both;
-  }
-  body.rich-menu-active .pay-dialog[open] .pay-top{
-    animation:pay-rich-content-in .29s .04s both;
-  }
-  body.rich-menu-active .pay-dialog[open] .pay-body,
-  body.rich-menu-active .pay-dialog[open] .pay-restaurant-content{
-    animation:pay-rich-content-in .38s .08s cubic-bezier(.2,.8,.2,1) both;
-  }
-  body.rich-menu-active .pay-dialog .pay-add-confirmed{
-    background-image:linear-gradient(105deg,#FDBE2D 22%,#ffdf7a 48%,#FDBE2D 74%)!important;
-    background-size:260% 100%!important;
-    color:#17130a!important;
-    animation:pay-rich-success-shine .52s ease-out 1 both;
-    border-color:#FDBE2D!important;
-  }
-  body.rich-menu-active .pay-dialog .pay-photo-added .pay-meal-photo{
-    animation:pay-rich-photo-settle .4s cubic-bezier(.19,.88,.3,1) both;
-  }
 
+/* INTERACTIVE ANIMATIONS 02.1 — popup motion is owned exclusively by JS.
+   The entire popup remains opaque; no opacity/scale, delayed inner content,
+   blur changes, or CSS keyframes should compete with the Y-only animation. */
+body.rich-menu-active .pay-dialog[open],
+body.rich-menu-active .pay-dialog[open]:not(.closing),
+body.rich-menu-active .pay-dialog .pay-top,
+body.rich-menu-active .pay-dialog .pay-body,
+body.rich-menu-active .pay-dialog .pay-body form,
+body.rich-menu-active .pay-dialog .pay-restaurant-content,
+body.rich-menu-active .pay-dialog .pay-restaurant-row,
+body.rich-menu-active .pay-dialog .pay-row{
+ animation:none!important;
 }
-body.rich-menu-active .pay-dialog .pay-primary:not(:disabled){
-  transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
+body.rich-menu-active .pay-dialog[open]{opacity:1!important}
+body.rich-menu-active .pay-dialog::backdrop{
+ animation:none!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+ background:rgba(9,8,11,.73);
 }
-@media(hover:hover){
-  body.rich-menu-active .pay-dialog .pay-primary:not(:disabled):hover{
-    filter:brightness(1.045);box-shadow:0 7px 19px #FDBE2D35;
-    transform:translateY(-2px);
-  }
-}
-body.rich-menu-active .pay-dialog .pay-primary:not(:disabled):active{transform:scale(.97)}
-@media(prefers-reduced-motion:reduce){
-  body.rich-menu-active .pay-dialog[open],
-  body.rich-menu-active .pay-dialog::backdrop,
-  body.rich-menu-active .pay-dialog .pay-top,
-  body.rich-menu-active .pay-dialog .pay-body,
-  body.rich-menu-active .pay-dialog .pay-restaurant-content,
-  body.rich-menu-active .pay-dialog .pay-body>form,
-  body.rich-menu-active .pay-dialog .pay-restaurant-row,
-  body.rich-menu-active .pay-dialog .pay-add-confirmed,
-  body.rich-menu-active .pay-dialog .pay-photo-added .pay-meal-photo{animation:none!important}
-  .pay-dialog .pay-body .pay-cart-orders{transition:none!important}
-}
+body.rich-menu-active .pay-footer.visible{animation:none!important}

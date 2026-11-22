@@ -39,21 +39,39 @@ async function call(data, proof) {
   if (!r.ok) throw Error(value.error || t("تعذر الاتصال", "Connection failed"));
   return value;
 }
-// Capture an interrupted entrance before changing the CSS state.
+// One shared vertical-only dialog motion controller.
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+export function openPayDialog(dialog, animate = true) {
+  if (dialog.open || dialog.classList.contains("closing")) return;
+  dialog.showModal();
+  if (!animate || reducedMotion()) return;
+  const bounds = dialog.getBoundingClientRect();
+  const bottomSheet = window.innerWidth <= 980;
+  const startY = bottomSheet ? Math.max(72, window.innerHeight - bounds.top + 12) : 74;
+  dialog.getAnimations().forEach(a => a.cancel());
+  const entrance = dialog.animate(
+    [{transform:`translateY(${startY}px)`},{transform:"translateY(0px)"}],
+    {duration:400,easing:"cubic-bezier(.22,1,.36,1)"}
+  );
+  entrance.finished.catch(() => {});
+}
 export async function closePayDialog(dialog, animate = true) {
   if (!dialog.open || dialog.classList.contains("closing")) return;
-  const useMotion = animate && !matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const style = getComputedStyle(dialog);
-  const from = useMotion && { opacity: style.opacity, transform: style.transform };
+  const useMotion = animate && !reducedMotion();
+  const from = useMotion ? getComputedStyle(dialog).transform : "";
+  dialog.getAnimations().forEach(a => a.cancel());
   dialog.classList.add("closing");
   dialog.inert = true;
   let exit;
   try {
     if (useMotion) {
-      exit = dialog.animate([
-        from,
-        { opacity: 0, transform: "translateY(36px) scale(.985)" },
-      ], { duration: 220, easing: "ease-in", fill: "forwards" });
+      const bounds = dialog.getBoundingClientRect();
+      const distance = Math.max(85,window.innerHeight - bounds.top + 36);
+      exit = dialog.animate(
+        [{transform:from==="none"?"translateY(0px)":from},
+         {transform:`translateY(${distance}px)`}],
+        {duration:305,easing:"cubic-bezier(.4,0,1,1)",fill:"forwards"}
+      );
       await exit.finished.catch(() => {});
     }
   } finally {
@@ -70,7 +88,7 @@ export function installCart({ catalog, name, description, closed, page }) {
   const badge = button("", open);
   badge.className = "pay-footer";
   const history = button("", () => {
-    if (!dialog.open) dialog.showModal();
+    openPayDialog(dialog, document.body.classList.contains("rich-menu-active"));
     showHistory();
   });
   history.className = "pay-orders-link";
@@ -204,10 +222,10 @@ export function installCart({ catalog, name, description, closed, page }) {
     if (!document.body.classList.contains("rich-menu-active")) pulse(badge);
   }
   function modal() {
-    if (!dialog.open) dialog.showModal();
+    openPayDialog(dialog, document.body.classList.contains("rich-menu-active"));
   }
   async function dismiss() {
-    if (!locked) await closePayDialog(dialog);
+    if (!locked) await closePayDialog(dialog, document.body.classList.contains("rich-menu-active"));
   }
   function add(d, existing) {
     if (dialog.inert || !d || d.available === false || closed()) return;
