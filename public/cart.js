@@ -67,7 +67,10 @@ export async function closePayDialog(dialog, animate = true) {
   try {
     if (useMotion) {
       const bounds = dialog.getBoundingClientRect();
-      const distance = Math.max(85,window.innerHeight - bounds.top + 36);
+      // Include an existing finger-drag offset; the entire dialog must
+      // finish below the viewport even if dismissal began mid-gesture.
+      const currentY=(()=>{try{return from&&from!=="none"?new DOMMatrixReadOnly(from).m42:0;}catch{return 0;}})();
+      const distance = Math.max(currentY+85,window.innerHeight - bounds.top + currentY + 36);
       exit = dialog.animate(
         [{transform:from==="none"?"translateY(0px)":from},
          {transform:`translateY(${distance}px)`}],
@@ -511,7 +514,14 @@ export function installCart({ catalog, name, description, closed, page }) {
         const selected=document.querySelector('#rich-menu .rm-dish[aria-selected="true"]');
         const original=selected?.dataset.mealId===String(d.id)
           ?selected.querySelector("img.rm-dish-photo"):null;
-        if(d.rich_image && original?.complete && original.naturalWidth){
+        // Verify that the visible carousel photo is the dedicated rich_image
+        // asset, never the opaque d.image fallback or the popup thumbnail.
+        let transparentSource=false;
+        try{
+          transparentSource=Boolean(d.rich_image&&original?.dataset.src&&
+            new URL(d.rich_image,location.origin).href===original.dataset.src);
+        }catch{}
+        if(transparentSource && original.complete && original.naturalWidth){
           await flyMealToCart(original,original.getBoundingClientRect(),false);
         }
       }
