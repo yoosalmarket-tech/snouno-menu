@@ -1355,3 +1355,12 @@ body.lang-en .restaurant-closure-banner{direction:ltr}
   color:#E56932!important;
 }
 @media(prefers-reduced-motion:reduce){#credit-link strong{transition:none}}
+
+/* Same two-click credit departure on the standard menu. */
+#credit-link{transition:opacity .28s ease,transform .28s cubic-bezier(.2,.7,.25,1)!important}
+#credit-link.is-departing{
+  opacity:0!important;
+  transform:translateY(9px) scale(.97)!important;
+  pointer-events:none!important;
+}
+@media(prefers-reduced-motion:reduce){#credit-link{transition:none!important}}

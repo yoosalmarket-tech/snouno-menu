@@ -5,7 +5,7 @@ const creditSelector='#credit-link, .rm-interactive-credit-link';
 function resetYoosalCreditStates(){
   redirectStarted=false;
   for(const button of document.querySelectorAll(creditSelector)){
-    button.classList.remove('is-armed');
+    button.classList.remove('is-armed','is-departing');
     button.setAttribute('aria-label','زيارة موقع وكالة يوصل');
   }
   // A cached page may return with the interactive credit footer hidden.
@@ -70,8 +70,10 @@ export function handleYoosalCreditClick(event){
     button.setAttribute('aria-label','اضغط مرة ثانية لزيارة موقع وكالة يوصل');
     return;
   }
-  // Restore yellow on the second click before the bell and navigation.
-  button.classList.remove('is-armed');
-  button.setAttribute('aria-label','زيارة موقع وكالة يوصل');
+  // The second click fades the still-orange credit out as the chime plays.
+  // Keep is-armed until navigation so the agency name does not flash yellow.
+  if(button.classList.contains('is-departing'))return;
+  button.classList.add('is-departing');
+  button.setAttribute('aria-label','جارٍ فتح موقع وكالة يوصل');
   visitYoosalWithBell();
 }

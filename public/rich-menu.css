@@ -1940,3 +1940,16 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 @media(prefers-reduced-motion:reduce){
   #rich-menu .rm-interactive-credit-link strong{transition:none}
 }
+
+/* Fade the orange agency credit on the second click before leaving the menu. */
+#rich-menu .rm-interactive-credit-link{
+  transition:opacity .28s ease,transform .28s cubic-bezier(.2,.7,.25,1)!important;
+}
+#rich-menu .rm-interactive-credit-link.is-departing{
+  opacity:0!important;
+  transform:translateY(9px) scale(.97)!important;
+  pointer-events:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+  #rich-menu .rm-interactive-credit-link{transition:none!important}
+}
