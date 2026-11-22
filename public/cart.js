@@ -94,7 +94,7 @@ export function installPayDialogDrag(dialog){
     !document.body.classList.contains("rich-menu-active")||gesture)return;
   const target=event.target;
   if(target?.closest?.("button,a,input,textarea,select,label"))return;
-  const top=target?.closest?.(".pay-top");
+  const top=target?.closest?.(".pay-top, .pay-drag-strip");
   const rect=dialog.getBoundingClientRect();
   const onHandle=event.clientY>=rect.top && event.clientY<=rect.top+33;
   if(!top&&!onHandle)return;
@@ -319,9 +319,18 @@ export function installCart({ catalog, name, description, closed, page }) {
       el("strong", count() > 0 ? t("عرض السلة", "View cart") + " · " + count() : t("السلة وطلباتي", "Cart and orders")),
       el("span", amount(total())),
     );
-    const cartIcon=el("span","🛒");
+    const cartIcon=el("span");
     cartIcon.className="pay-cart-icon";
     cartIcon.setAttribute("aria-hidden","true");
+    const iconSvg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    iconSvg.setAttribute("viewBox","0 0 24 24");
+    iconSvg.setAttribute("fill","none");
+    iconSvg.setAttribute("stroke","currentColor");
+    iconSvg.setAttribute("stroke-width","1.85");
+    iconSvg.setAttribute("stroke-linecap","round");
+    iconSvg.setAttribute("stroke-linejoin","round");
+    iconSvg.innerHTML='<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.72a2 2 0 0 0 2-1.58L22 7H5"/>';
+    cartIcon.append(iconSvg);
     badge.firstChild.prepend(cartIcon);
     document.body.classList.toggle("has-cart-footer", show);
     if (show) {
@@ -482,8 +491,6 @@ export function installCart({ catalog, name, description, closed, page }) {
           options,
           note: instruction,
         });
-      const origin=photo.getBoundingClientRect();
-      const footerWasVisible=badge.classList.contains("visible");
       const rich=document.body.classList.contains("rich-menu-active");
       confirm.disabled=true;
       form.inert=true;
@@ -497,11 +504,17 @@ export function installCart({ catalog, name, description, closed, page }) {
         showCart(); // Preserve the existing edit-and-return flow.
         return;
       }
-      // Launch the image clone before sliding its source dialog down.
-      const flight=rich?flyMealToCart(photo,origin,!footerWasVisible):Promise.resolve(false);
-      const closing=closePayDialog(dialog,rich);
-      await Promise.all([closing,flight]);
-      // The glow must not play if no image arrived (or the flight was cancelled).
+      // Only duplicate the original, transparent interactive-meal image.
+      // The ordering popup and its yellow image background must close first.
+      await closePayDialog(dialog,rich);
+      if(rich){
+        const selected=document.querySelector('#rich-menu .rm-dish[aria-selected="true"]');
+        const original=selected?.dataset.mealId===String(d.id)
+          ?selected.querySelector("img.rm-dish-photo"):null;
+        if(d.rich_image && original?.complete && original.naturalWidth){
+          await flyMealToCart(original,original.getBoundingClientRect(),false);
+        }
+      }
     };
     draw();
   }
@@ -535,7 +548,11 @@ export function installCart({ catalog, name, description, closed, page }) {
         void dismiss();
       }),
     );
-    dialog.append(top);
+    const grab=el("div");
+    grab.className="pay-drag-strip";
+    grab.setAttribute("aria-hidden","true");
+    grab.append(el("span"));
+    dialog.append(grab,top);
     const body = el("div");
     body.className = "pay-body";
     const msg = el("p");

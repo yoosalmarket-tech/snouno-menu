@@ -1,4 +1,4 @@
-import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=meal-flight-drag-20261122';
+import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=transparent-flight-20261122';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
@@ -801,7 +801,12 @@ function openRestaurantInfo() {
  const close=document.createElement('button');close.type='button';close.textContent='×';
  const dismissInfo=()=>closePayDialog(d,document.body.classList.contains('rich-menu-active'));
  close.setAttribute('aria-label',isEnglish()?'Close':'إغلاق');
- close.onclick=dismissInfo;header.append(title,close);d.append(header);
+ close.onclick=dismissInfo;header.append(title,close);
+ const grip=document.createElement('div');
+ grip.className='pay-drag-strip';
+ grip.setAttribute('aria-hidden','true');
+ grip.append(document.createElement('span'));
+ d.append(grip,header);
  const body=document.createElement('div');body.className='pay-restaurant-content';
  for(const [heading,value] of [
    [isEnglish()?'Opening hours':'مواعيد العمل',tr(settings.hours)||'—'],

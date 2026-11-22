@@ -713,3 +713,20 @@ body.rich-menu-active .pay-dialog.pay-dragging .pay-top{cursor:grabbing}
 body.rich-menu-active .pay-dialog.pay-dragging{will-change:transform}
 body.rich-menu-active .pay-dialog{touch-action:pan-y}
 body.rich-menu-active .pay-dialog .pay-body{touch-action:pan-y}
+
+/* INTERACTIVE ANIMATIONS 03: draggable top grip & outlined cart icon. */
+body.rich-menu-active .pay-dialog:has(> .pay-drag-strip)::before{display:none!important}
+body.rich-menu-active .pay-dialog>.pay-drag-strip{
+ display:flex;align-items:center;justify-content:center;
+ margin:-2px -4px 5px;min-height:31px;
+ touch-action:none!important;cursor:grab;
+ user-select:none;-webkit-user-select:none;
+}
+body.rich-menu-active .pay-dialog>.pay-drag-strip span{
+ display:block;width:48px;height:5px;border-radius:999px;
+ background:#a99c80;box-shadow:0 1px 2px #0002;pointer-events:none;
+}
+body.rich-menu-active .pay-dialog.pay-dragging>.pay-drag-strip{cursor:grabbing}
+body.rich-menu-active .pay-footer .pay-cart-icon svg{
+ display:block;width:25px;height:25px;overflow:visible;
+}
