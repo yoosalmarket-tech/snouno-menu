@@ -10,9 +10,9 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  const root=mk('div','rm-app');root.dir='ltr';root.id='rich-interactive-stage';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
- '<span class="rm-top-caption" lang="en">SNOUNU / INTERACTIVE</span><a class="rm-top-logo-home" href="/welcome" data-page="welcome" aria-label="العودة إلى شاشة ترحيب سنونو" title="العودة إلى شاشة الترحيب"><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></a></div>',
+ '<span class="rm-top-caption">المنيو التفاعلي</span><a class="rm-top-logo-home" href="/welcome" data-page="welcome" aria-label="العودة إلى شاشة ترحيب سنونو" title="العودة إلى شاشة الترحيب"><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></a></div>',
  '<nav class="rm-categories" aria-label="تصنيفات الأطباق"><div class="rm-categories-header">',
- '<div class="rm-categories-label"><strong lang="en">CATEGORIES</strong><span dir="rtl">التصنيفات</span></div>',
+ '<div class="rm-categories-label"><span dir="rtl">التصنيفات</span></div>',
  '<div class="rm-categories-controls"><button class="rm-category-previous" type="button" aria-label="الصنف السابق">←</button>',
  '<b class="rm-categories-count" dir="ltr">1 / 1</b><button class="rm-category-next" type="button" aria-label="الصنف التالي">→</button></div></div>',
  '<div class="rm-categories-track" role="tablist"></div></nav>',
@@ -28,7 +28,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  '<span class="rm-rail-count" dir="ltr">1 / 1</span></aside>',
  '<section class="rm-info" aria-live="polite">',
  // ORDER NOW stays above the rating; both continue to track the selected meal.
- '<div class="rm-order-wrap"><button type="button" class="rm-customize" dir="rtl" aria-label="اطلب الآن"><span class="rm-order-ar" dir="rtl">اطلب الآن</span><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg><strong class="rm-order-en" lang="en" dir="ltr">ORDER NOW</strong></button></div>',
+ '<div class="rm-order-wrap"><button type="button" class="rm-customize" dir="rtl" aria-label="اطلب الآن"><span class="rm-order-ar" dir="rtl">اطلب الآن</span><svg class="rm-order-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12H6.1L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 14h6"/></svg></button></div>',
  '<span class="rm-info-rating" dir="ltr" hidden></span>',
  // Center meal copy as a group between the rating and the bottom action.
  '<div class="rm-meal-copy"><h2 class="rm-info-name"></h2><span class="rm-availability" hidden></span><p class="rm-info-desc"></p><span class="rm-info-price" dir="ltr"></span></div>',
@@ -152,7 +152,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  const dish=()=>group()?.items[front];
  const getName=d=>snapshot.displayName?.(d)||d.name;
  const getDescription=d=>snapshot.displayDescription?.(d)||d.description||'';
- const isEnglish=()=>snapshot.lang==='en';
+ const isEnglish=()=>false;
  const focusCategory=()=>{
   const selected=categoryEls[groupIndex];if(!selected)return;
   const r=selected.getBoundingClientRect(),p=u.categories.getBoundingClientRect();
@@ -170,7 +170,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
    button.dataset.permalink='/menu?category='+encodeURIComponent(g.id)+'&mode=interactive';
    button.setAttribute('aria-label',g.name);
    // Restore the original bilingual category buttons in the top navigation.
-   button.append(mk('strong',null,g.english||g.name),mk('span',null,g.name));
+   button.append(mk('span',null,g.name));
    button.addEventListener('click',()=>changeGroup(i));
    categoryEls.push(button);u.categories.append(button);
   });selectCategoryTab();
@@ -187,7 +187,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   dishesEls=[];thumbEls=[];
   u.stage.replaceChildren();u.thumbTrack.replaceChildren();
   if(!g)return;
-  const words=categoryWords(g.english||g.name);
+  const words=categoryWords(g.name);
   u.word.children[0].textContent=words[0];
   u.word.children[1].textContent=words[1];
   u.stage.setAttribute('aria-label',g.name);
@@ -292,8 +292,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   }
   u.details.textContent=isEnglish()?'◷ OPENING HOURS & CONTACT':'◷ مواعيد ومعلومات المطعم';
   u.details.disabled=false;
-  at(u.customize,'.rm-order-en').textContent=unavailable?'UNAVAILABLE':'ORDER NOW';
-  at(u.customize,'.rm-order-ar').textContent=unavailable?'غير متوفر':'اطلب الآن';
+    at(u.customize,'.rm-order-ar').textContent=unavailable?'غير متوفر':'اطلب الآن';
   u.customize.disabled=unavailable;
   u.customize.setAttribute('aria-label',unavailable
    ?(isEnglish()?'Currently unavailable':'غير متوفر حالياً')
@@ -646,11 +645,11 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   const oldGroup=group()?.id,oldDish=dish()?.id;
   const all=snapshot.dishes||[];
   groups=(snapshot.categories||[]).map(cat=>({
-   ...cat,english:snapshot.categoryEnglish?.[cat.name]||cat.name,
+   ...cat,
    items:cat.items||all.filter(d=>String(d.category_id)===String(cat.id))
   })).filter(c=>c.items.length);
   const favorites=snapshot.favoriteMeals;
-  if(favorites.length)groups.unshift({id:'favorites',name:'المفضلة',english:'FAVORITES',items:favorites});
+  if(favorites.length)groups.unshift({id:'favorites',name:'المفضلة',items:favorites});
   const retained=groups.findIndex(c=>String(c.id)===String(oldGroup));
   groupIndex=retained>=0?retained:0;
   const matching=group()?.items.findIndex(d=>d.id===oldDish)??0;

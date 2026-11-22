@@ -1371,3 +1371,8 @@ html.yoosal-credit-visited #credit,
 html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
   display:none!important;
 }
+
+/* Arabic-only standard categories. */
+.category-nav-title{align-items:center!important}
+.category-nav-title span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
+.chip .chip-ar{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}

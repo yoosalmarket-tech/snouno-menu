@@ -1953,3 +1953,9 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 @media(prefers-reduced-motion:reduce){
   #rich-menu .rm-interactive-credit-link{transition:none!important}
 }
+
+/* Arabic-only immersive menu. */
+#rich-menu .rm-cat{justify-content:center!important}
+#rich-menu .rm-cat span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important;font-weight:700!important}
+#rich-menu .rm-categories-label span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
+#rich-menu .rm-order-en{display:none!important}
