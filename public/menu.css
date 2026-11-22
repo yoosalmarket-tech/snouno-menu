@@ -1380,30 +1380,33 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 #menu .meal-unavailable-stamp,
 #details .meal-unavailable-stamp{
  position:absolute;z-index:6;display:grid;place-items:center;
- left:50%;top:32%;width:max-content;max-width:87%;height:auto;
- padding:7px 6px;
+ left:50%;top:42%;width:max-content;max-width:94%;height:auto;
+ padding:9px 8px;
  transform:translate(-50%,-50%) rotate(-17deg);
  background:transparent;
- color:#E60014;
- font:900 clamp(15px,3.5vw,27px)/1.25 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
+ color:#FF304A;
+ font:900 clamp(18px,4.3vw,34px)/1.25 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
  white-space:nowrap;
- text-shadow:0 1px 0 #a1000b;
+ -webkit-text-stroke:.65px #30060B;
+ text-shadow:0 2px 0 #30060B,0 0 3px rgba(0,0,0,.85);
  pointer-events:none;
- filter:drop-shadow(0 1px 1px #0004);
- opacity:.8;
+ filter:drop-shadow(0 2px 3px rgba(0,0,0,.65));
+ mix-blend-mode:normal;
+ opacity:1;
 }
 #menu .meal-unavailable-stamp::before,#menu .meal-unavailable-stamp::after,
 #details .meal-unavailable-stamp::before,#details .meal-unavailable-stamp::after{
- content:"";position:absolute;left:0;right:0;height:4px;background:#E60014;
+ content:"";position:absolute;left:0;right:0;height:5px;background:#FF304A;
+ box-shadow:0 1px 0 #30060B,0 -1px 0 #30060B;
 }
 #menu .meal-unavailable-stamp::before,#details .meal-unavailable-stamp::before{top:0}
 #menu .meal-unavailable-stamp::after,#details .meal-unavailable-stamp::after{bottom:0}
 #menu .card.meal-unavailable,#details .dish-photo.meal-unavailable{position:relative}
 #details .dish-photo.meal-unavailable .meal-unavailable-stamp{
- top:54%;font-size:clamp(25px,6vw,48px);padding:12px 9px;
+ top:64%;font-size:clamp(30px,7.3vw,58px);padding:14px 12px;
 }
 #details .dish-photo.meal-unavailable .meal-unavailable-stamp::before,
-#details .dish-photo.meal-unavailable .meal-unavailable-stamp::after{height:7px}
+#details .dish-photo.meal-unavailable .meal-unavailable-stamp::after{height:8px}
 
 /* Welcome Browse: press-and-hold mode chooser. Rendered in <body> to avoid
    clipping under mobile welcome curves and desktop transformed sections. */
