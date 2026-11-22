@@ -28,3 +28,33 @@
 .rf-card-actions .rf-delete{color:#b42318}
 .rf-old-sources p{font-size:.88rem;overflow-wrap:anywhere}
 @media(max-width:760px){.rf-form{grid-template-columns:1fr;padding:15px}.rf-totals{grid-template-columns:1fr 1fr}.rf-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.rf-url-row{flex-wrap:wrap}.rf-url-row input{flex-basis:100%}.rf-card{padding:14px}.rf-card-head{flex-wrap:wrap}}
+
+/* Referral report selector moved from Investment */
+.rf-report{background:#fff;border:1px solid #e5dfd4;border-radius:19px;padding:23px;margin:20px 0 26px;box-shadow:0 4px 16px #00000008}
+.rf-report-head h2{font-size:1.4rem;margin:0 0 6px}
+.rf-report-head p{color:#666;font-size:.9rem;margin:0}
+.rf-report-controls{display:grid;grid-template-columns:minmax(0,2fr) minmax(150px,1fr) auto;gap:12px;align-items:end;margin-top:19px}
+.rf-report-controls select{width:100%;padding:12px;border-radius:12px;border:1px solid #ddd7cb;background:white;color:#252525;font:inherit}
+.rf-report-controls .rf-refresh{background:#FDBE2D;color:#151515;font:inherit;font-weight:700;padding:12px 18px;border:0;border-radius:12px;cursor:pointer}
+.rf-report-controls .rf-refresh:disabled{opacity:.65;cursor:wait}
+.rf-report-status{color:#655f55;font-size:.9rem;margin:15px 0}
+.rf-selected-source{margin:16px 0 12px}
+.rf-selected-source h3{margin:0;font-size:1.15rem}
+.rf-selected-source p{font-size:.82rem;color:#777;margin:4px 0;direction:rtl;overflow-wrap:anywhere}
+.rf-report-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rf-report-metrics .rf-metric{background:#faf8f3;min-height:95px}
+.rf-metric-description{font-size:.74rem;color:#777}
+.rf-create,.rf-library{margin-top:25px}
+.rf-create h2,.rf-library h2{font-size:1.25rem;margin:0 0 5px}
+.rf-create>.rf-note,.rf-library>.rf-note{margin:0 0 10px}
+.rf-library .rf-list{display:grid;gap:10px}
+.rf-saved-card{margin:0}
+@media(max-width:760px){
+ .rf-report{padding:15px}
+ .rf-report-controls{grid-template-columns:1fr 1fr;gap:10px}
+ .rf-report-controls .rf-field:first-child{grid-column:1/-1}
+ .rf-report-controls .rf-refresh{align-self:end}
+ .rf-report-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .rf-selected-source h3{font-size:1rem}
+}
+@media(max-width:410px){.rf-report-metrics{grid-template-columns:1fr 1fr}.rf-report-controls{grid-template-columns:1fr}.rf-report-controls .rf-field:first-child{grid-column:auto}}

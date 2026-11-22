@@ -139,6 +139,26 @@ async function lookupVisitSource(token,days,searchText){
     asOf:new Date().toISOString()};
 }
 
+// Exact-code lookup for the saved Referral Links dropdown (no fuzzy source matching).
+// Count sessions/users rather than inferring sales from page views.
+async function lookupVisitSourceExact(token,days,code){
+ const source=String(code||"").normalize("NFKC").toLowerCase().trim();
+ if(source.length<2||source.length>80||!/^[\p{L}\p{N}_-]+$/u.test(source))throw new RangeError("source_query_invalid");
+ const encoded=encodeURIComponent(source);
+ const variants=[...new Set([source,encoded])].map(quoteGaRegex);
+ const filter="[?&](?:source|utm_campaign)=(?:"+variants.join("|")+")(?:[&#]|$)";
+ const report=await gaReport(token,{
+  dateRanges:[{startDate:(days-1)+"daysAgo",endDate:"today"}],
+  metrics:[{name:"sessions"},{name:"totalUsers"},{name:"screenPageViews"}],
+  dimensionFilter:{filter:{fieldName:"pageLocation",stringFilter:{
+    matchType:"PARTIAL_REGEXP",value:filter,caseSensitive:false
+  }}}
+ });
+ const values=rows(report)[0]?.metrics||[0,0,0];
+ return {source,days,sessions:values[0],users:values[1],pageViews:values[2],
+  metric:"GA4 sessions, distinct users and tagged page views",asOf:new Date().toISOString()};
+}
+
 export default async function handler(req,res){
   if(req.method!=='GET')return json(res,405,{error:'method_not_allowed'});
   try{
@@ -153,6 +173,13 @@ export default async function handler(req,res){
     const range={startDate:(days-1)+'daysAgo',endDate:'today'};
     const token=await googleToken(account);
     const base={dateRanges:[range]};
+    if(Object.hasOwn(req.query||{},'visitSourceExact')){
+      try{return json(res,200,await lookupVisitSourceExact(token,days,req.query.visitSourceExact));}
+      catch(error){
+        if(error instanceof RangeError)return json(res,400,{error:'invalid_source',message:'Invalid referral code'});
+        throw error;
+      }
+    }
     if(Object.hasOwn(req.query||{},'visitSource')){
       try{return json(res,200,await lookupVisitSource(token,days,req.query.visitSource));}
       catch(error){

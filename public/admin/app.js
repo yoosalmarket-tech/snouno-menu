@@ -947,60 +947,6 @@ function gaBrowserPanel(browsers,available){
 
 
 /* Investment-only lookup of tagged sources via the authenticated GA4 proxy. */
-function gaVisitSourceSearch(days,ticket){
- const panel=node('section');panel.id='ga-visit-source-search';panel.className='analytics-report ga-source-search';
- const heading=node('div');heading.className='ga-chart-heading';
- heading.append(node('h2','البحث عن مصدر زيارة محدد'),
-  node('p','مثال: اكتب sharing box video 1 للبحث عن source=sharingboxvideo1 أو utm_source=sharingboxvideo1.'));
- panel.append(heading);
- const form=node('form');form.className='ga-source-search-form';form.setAttribute('role','search');
- const input=node('input');input.type='search';input.id='ga-source-lookup';
- input.dir='ltr';input.maxLength=120;input.placeholder='sharing box video 1';
- input.setAttribute('aria-label','البحث عن كود مصدر الزيارة');input.autocomplete='off';
- const submit=node('button','بحث');submit.type='submit';submit.id='ga-source-lookup-submit';
- form.append(input,submit);
- const info=node('p','يُظهر عدد المستخدمين المميزين وفق GA4، وليس النقرات أو الطلبات المؤكدة. تُحتسب الروابط التي تحتفظ بوسم source أو utm_source.');
- info.className='ga-source-search-help';
- const state=node('p','');state.id='ga-source-lookup-status';state.setAttribute('role','status');
- const results=node('div');results.className='ga-source-search-results';
- form.addEventListener('submit',async event=>{
-  event.preventDefault();
-  const query=input.value.trim();
-  if(query.replace(/[^\p{L}\p{N}]/gu,'').length<2){
-   state.textContent='اكتب حرفين على الأقل من كود المصدر.';return;
-  }
-  submit.disabled=true;state.textContent='جارٍ البحث في GA4…';results.replaceChildren();
-  try{
-   if(session?.expires_at*1000<Date.now()+60000)await api('/auth/v1/user');
-   const response=await fetch('/api/ga4?days='+encodeURIComponent(days)+'&visitSource='+encodeURIComponent(query),{
-    headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'
-   });
-   const data=await response.json();
-   if(ticket!==generation||!panel.isConnected)return;
-   if(!response.ok)throw new Error(data?.error==='invalid_source'?'أدخل كود مصدر صالحاً.':'تعذر قراءة مصادر الزيارة من GA4.');
-   if(!Array.isArray(data.matches)||!data.matches.length){
-    state.textContent='لم يتم العثور على زيارات مسجلة بهذا المصدر خلال الفترة المحددة. تأكد من الوسم وفترة التقرير.';
-    return;
-   }
-   state.textContent='المصادر المطابقة: '+data.matches.length+(data.truncated?' · قد توجد نتائج إضافية خارج حد التقرير.':'');
-   for(const source of data.matches){
-    const card=node('article');card.className='ga-source-result';
-    const code=node('strong',source.source);code.dir='ltr';code.title=source.source;
-    const counts=node('div');counts.className='ga-source-result-counts';
-    const users=node('div');users.append(node('strong',gaNumber(source.users)),node('span','زائر مميز'));
-    const views=node('div');views.append(node('strong',gaNumber(source.pageViews)),node('span','مشاهدة صفحة'));
-    counts.append(users,views);card.append(code,counts);results.append(card);
-   }
-  }catch(error){
-   if(ticket===generation&&panel.isConnected)state.textContent=error.message||'تعذر البحث حالياً.';
-  }finally{
-   if(ticket===generation&&panel.isConnected)submit.disabled=false;
-  }
- });
- panel.append(form,info,state,results);
- return panel;
-}
-
 async function renderGaOverview(days=28){
  const area=$('body'),ticket=generation,investment=section==='investment';
  const top=node('div');top.className='ga-heading';
@@ -1207,9 +1153,8 @@ async function renderGaOverview(days=28){
   if(notes)notes.className='ga-notice';
   area.classList.add('ga-overview');
   if(investment){
-   const search=gaVisitSourceSearch(days,ticket);
    area.replaceChildren(salesPanel,hero,primaryMetrics,...(pendingNote?[pendingNote]:[]),
-    search,topSources,sources,estimate,ranks,live,historyTitle,metrics,refTable,eventsTable,foot,...(notes?[notes]:[]));
+    topSources,sources,estimate,ranks,live,historyTitle,metrics,refTable,eventsTable,foot,...(notes?[notes]:[]));
   }else{
    area.replaceChildren(hero,primaryMetrics,chartsRow,insightsRow,...(pendingNote?[pendingNote]:[]),
     live,historyTitle,metrics,eventsTable,foot,...(notes?[notes]:[]));
@@ -1295,7 +1240,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
    return;
  }
  if(key==='referrals'){
-  const mod=await import('./referrals.js?v=referrals-1');
+  const mod=await import('./referrals.js?v=referrals-2');
   if(ticket!==generation)return;
   await mod.renderReferralLinks({root:$('body'),api,notice,getToken:async()=>{
     await api('/auth/v1/user');
