@@ -311,22 +311,24 @@ function contactLinks(container,channels) {
    browser-side color-removal algorithm against food pixels. */
 const transparentWelcomeFood=async src=>src;
 function installWelcomeFoodCutouts(){}
+// Welcome food comes exclusively from the latest dashboard settings.
+// Retired cutouts must not flash on slow connections or appear as error fallbacks.
 const welcomeMobileMeals=[
- {listing:2468,name:'بوكس المشاركة',src:'/assets/welcome/2468.webp',fallback:'/assets/meals/2468.webp'},
- {listing:2465,name:'نوك أوت',src:'/assets/welcome/2465.webp',fallback:'/assets/meals/2465.webp'},
- {listing:2472,name:'ناشفيل',src:'/assets/welcome/2472.webp',fallback:'/assets/meals/2472.webp'}
+ {listing:2468,name:'بوكس المشاركة',src:''},
+ {listing:2465,name:'نوك أوت',src:''},
+ {listing:2472,name:'ناشفيل',src:''}
 ];
 const welcomeDefaults=[
- {name:'بوكس المشاركة',image:'/assets/welcome/2468.webp'},
- {name:'نوك أوت',image:'/assets/welcome/2465.webp'},
- {name:'ناشفيل',image:'/assets/welcome/2472.webp'}
+ {name:'بوكس المشاركة'},
+ {name:'نوك أوت'},
+ {name:'ناشفيل'}
 ];
 function syncWelcomeSettings(){
  if(!settings)return;
  welcomeMobileMeals.forEach((item,index)=>{
    const num=index+1;
    item.name=String(settings['welcome_meal_'+num]||welcomeDefaults[index].name);
-   item.src=asset(settings['welcome_image_'+num])||welcomeDefaults[index].image;
+   item.src=asset(settings['welcome_image_'+num])||'';
  });
 }
 let mobileWelcomeIndex=0;
@@ -385,15 +387,24 @@ async function centerWelcomePhoto(img,src){
 }
 
 function setWelcomeImage(img,index){
- const choice=welcomeMobileMeals[index];
+ const src=welcomeMobileMeals[index].src;
+ // Never substitute old food artwork if the dashboard URL is unavailable.
+ img.onerror=null;
+ img.style.removeProperty('--welcome-visual-offset');
+ if(!src){
+  img.removeAttribute('src');
+  img.style.visibility='hidden';
+  return;
+ }
  img.onerror=()=>{
-  if(img.dataset.fallbackFor!==choice.src){
-   img.dataset.fallbackFor=choice.src;img.src=choice.fallback;
-   void centerWelcomePhoto(img,choice.fallback);
-  }
+  if(img.getAttribute('src')!==src)return;
+  img.onerror=null;
+  img.removeAttribute('src');
+  img.style.visibility='hidden';
  };
- img.src=choice.src;
- void centerWelcomePhoto(img,choice.src);
+ img.style.removeProperty('visibility');
+ if(img.getAttribute('src')!==src)img.src=src;
+ void centerWelcomePhoto(img,src);
 }
 function updateWelcomeLabels(index){
  const label=tr(settings?.welcome_label||'من سنونو');
