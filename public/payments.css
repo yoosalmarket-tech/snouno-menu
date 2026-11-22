@@ -740,6 +740,7 @@ body.rich-menu-active .pay-footer .pay-cart-icon svg{
  transition:transform .18s ease,background-color .18s ease,box-shadow .18s ease;
 }
 .pay-restaurant-socials .pay-social-link img{width:28px;height:28px;object-fit:contain}
+.pay-restaurant-socials .pay-social-link img{filter:invert(1)}
 .pay-restaurant-socials .pay-social-link:hover{transform:translateY(-3px);background:#35302a;box-shadow:0 8px 18px #0003}
 .pay-restaurant-socials .pay-social-link:focus-visible{outline:3px solid #FDBE2D;outline-offset:3px}
 .pay-social-empty{text-align:center;font-size:12px;opacity:.7}
