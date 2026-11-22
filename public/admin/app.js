@@ -41,6 +41,7 @@ const sections = {
   menu_ads: ['إدارة الإعلانات', [['name','عنوان الإعلان'],['image','صورة الإعلان','image'],['dish_id','الطبق المرتبط','product']]],
   seo: ['تحسين الظهور SEO', []],
   seo_queries: ['كلمات البحث في Google', []],
+  referrals: ['روابط الإحالة', []],
   rankings: ['تقييمات الأطباق', []],
   events: ['إحصائيات التفاعل', []],
   submissions: ['رسائل التواصل', []],
@@ -61,7 +62,7 @@ let session=JSON.parse(localStorage.getItem(sessionKey)||sessionStorage.getItem(
 const adminRouteSlugs={
  orders:'orders',payment_settings:'payment-settings',overview:'overview',investment:'investment',dishes:'dishes',categories:'categories',
  menu_settings:'restaurant',menu_links:'links',menu_ads:'ads',
- seo:'seo',seo_queries:'search-queries',
+ seo:'seo',seo_queries:'search-queries',referrals:'referral-links',
  rankings:'ratings',events:'analytics',submissions:'messages',
  menu_staff:'staff',account:'account',assistant:'assistant',roles:'roles'
 };
@@ -73,7 +74,7 @@ function keyFromAdminLocation(){
  const hash=location.hash.replace(/^#/,'');
  return Object.hasOwn(sections,hash)?hash:null;
 }
-const ownerOnlySections=new Set(['payment_settings','menu_staff','roles','account','overview','investment','seo','seo_queries','assistant']);
+const ownerOnlySections=new Set(['payment_settings','menu_staff','roles','account','overview','investment','seo','seo_queries','assistant','referrals']);
 let permissions=[];
 function authorizedAdminSection(key){
  if(!Object.hasOwn(sections,key))return false;
@@ -153,6 +154,7 @@ function adminSidebarIcon(key){
   menu_settings:'<path d="M4 7h16M7 7V4m0 6V7M4 17h16m-5-3v6"/><circle cx="7" cy="7" r="2"/><circle cx="15" cy="17" r="2"/>',
   menu_links:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-2 2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l2-2"/>',
   menu_ads:'<path d="M3 11h5l10-5v12L8 13H3zM8 13l2 7h4M20 9v6"/>',
+   referrals:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-2 2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l2-2"/>',
    seo:'<circle cx="11" cy="11" r="7"/><path d="m16 16 5 5M8 11h6M11 8v6"/>',
    seo_queries:'<path d="M4 20h16M6 17V9m5 8V4m5 13v-6"/><path d="M3 6h5m11-3h2"/>',
   rankings:'<path d="M4 21V11m6 10V5m6 16v-8m5 8H2"/><path d="m3 7 4-4 4 3 4-3"/>',
@@ -221,7 +223,7 @@ function buildAdminSidebar(email){
   orders:'الدفع',payment_settings:'الدفع',overview:'نظرة عامة',investment:'نظرة عامة',assistant:'الذكاء الاصطناعي',dishes:'محتوى المنيو',categories:'محتوى المنيو',
   menu_settings:'محتوى المنيو',menu_links:'محتوى المنيو',menu_ads:'محتوى المنيو',
   seo:'تحسين الظهور في Google',seo_queries:'تحسين الظهور في Google',
-  rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
+  referrals:'التقارير والتفاعل',rankings:'التقارير والتفاعل',events:'التقارير والتفاعل',submissions:'التقارير والتفاعل',
   menu_staff:'إدارة الحساب',roles:'إدارة الحساب',account:'إدارة الحساب'
  };
  for(const [key,[label]] of Object.entries(sections)){
@@ -1291,6 +1293,15 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
      }
    });
    return;
+ }
+ if(key==='referrals'){
+  const mod=await import('./referrals.js?v=referrals-1');
+  if(ticket!==generation)return;
+  await mod.renderReferralLinks({root:$('body'),api,notice,getToken:async()=>{
+    await api('/auth/v1/user');
+    return session?.access_token||'';
+  }});
+  return;
  }
  if(key==='roles'){
   const mod=await import('./roles.js?v=edit-all-payment-06');

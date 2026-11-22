@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
     }
     const result =
       action === "submit"
-        ? await db.rpc("pay_submit", {
+        ? await db.rpc("pay_submit_with_referral", {
             p_id: id,
             p_hash: digest,
             p_customer: data.customer.trim(),
@@ -253,6 +253,7 @@ Deno.serve(async (req) => {
             p_items: data.items,
             p_total: data.total,
             p_path: path,
+            p_referral_source: typeof data.referral_source === "string" ? data.referral_source : null,
           })
         : await db.rpc("pay_customer_change", {
             p_id: id,

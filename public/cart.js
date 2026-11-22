@@ -7,6 +7,7 @@ import {
   field,
   invoice,
 } from "./payment-ui.js?v=06-12";
+import {getReferralSource} from "./referral-source.js?v=referrals-1";
 const endpoint = "https://wknpuzdyemwkllmxehyy.supabase.co",
   key = "sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip";
 const read = (key, fallback) => {
@@ -501,6 +502,7 @@ export function installCart({ catalog, name, description, closed, page }) {
         method: draft.payment_mode === "at_restaurant" ? null : method,
         total: total(),
         items: items(),
+        referral_source: getReferralSource(),
       };
       const fingerprint = JSON.stringify(payload);
       let ref = read("snounu-pending-request", null);
