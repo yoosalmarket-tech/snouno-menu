@@ -957,3 +957,91 @@ body.has-cart-footer:not(.rich-menu-active) #shell {
 @media(prefers-reduced-motion:reduce) {
   .pay-dialog.pay-cart-view .pay-row {transition:none!important}
 }
+
+/* CART UX 02 — compact My Orders shortcut replaces the empty yellow cart rail. */
+.pay-footer.pay-footer--orders-only {
+  inset:auto max(15px,env(safe-area-inset-right)) calc(73px + env(safe-area-inset-bottom)) auto;
+  left:auto;
+  right:max(15px,env(safe-area-inset-right));
+  width:max-content;
+  max-width:calc(100vw - 30px);
+  min-width:0;
+  min-height:50px;
+  height:auto;
+  margin:0;
+  padding:9px 16px;
+  border:2px solid #FDBE2D;
+  border-radius:999px;
+  background:#303037;
+  color:#fff5dc;
+  box-shadow:0 6px 20px #0004;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  text-align:center;
+  overflow:visible;
+  font:800 14px/1.4 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
+}
+body:not(.rich-menu-active) .pay-footer.pay-footer--orders-only {
+  inset:auto max(15px,env(safe-area-inset-right)) calc(73px + env(safe-area-inset-bottom)) auto;
+  width:max-content;
+  max-width:calc(100vw - 30px);
+  min-height:50px;
+  padding:9px 16px;
+  border:2px solid #FDBE2D;
+  border-radius:999px;
+  background:#303037;
+  color:#fff5dc;
+}
+body.rich-menu-active .pay-footer.pay-footer--orders-only {
+  inset:auto max(15px,env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) auto;
+  width:max-content;
+  max-width:calc(100vw - 30px);
+  min-height:50px;
+  padding:9px 16px;
+  border:2px solid #FDBE2D;
+  border-radius:999px;
+  background:#303037;
+  color:#fff5dc;
+  box-shadow:0 6px 20px #0006;
+  overflow:visible;
+}
+.pay-footer.pay-footer--orders-only > strong,
+body:not(.rich-menu-active) .pay-footer.pay-footer--orders-only > strong,
+body.rich-menu-active .pay-footer.pay-footer--orders-only > strong {
+  display:inline;
+  flex:0 0 auto;
+  min-width:0;
+  white-space:nowrap;
+  color:#fff5dc;
+  font:800 14px/1.4 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
+}
+.pay-footer.pay-footer--orders-only .pay-cart-icon,
+body:not(.rich-menu-active) .pay-footer.pay-footer--orders-only .pay-cart-icon,
+body.rich-menu-active .pay-footer.pay-footer--orders-only .pay-cart-icon {
+  display:inline-grid;
+  flex:0 0 23px;
+  width:23px;
+  height:23px;
+  min-width:23px;
+  min-height:23px;
+  margin:0;
+  place-items:center;
+  color:#FDBE2D;
+}
+.pay-footer.pay-footer--orders-only .pay-cart-icon svg {
+  display:block;
+  width:23px;
+  height:23px;
+}
+.pay-footer.pay-footer--orders-only:focus-visible {
+  outline:3px solid #FDBE2D;
+  outline-offset:3px;
+}
+@media (hover:hover) {
+  .pay-footer.pay-footer--orders-only:hover {
+    background:#404047;
+    border-color:#ffce57;
+  }
+}
