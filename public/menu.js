@@ -148,7 +148,7 @@ function rememberMode(value){
  localStorage.setItem(modeTestTimeKey,String(Date.now()));
  try{sessionStorage.setItem(modeSessionKey,'1');}catch{}
 }
-const firstVisitStartedAt=performance.now();
+let firstVisitStartedAt=performance.now();
 let firstVisitDecisionComplete=!firstVisitModeCheck;
 let richController=null,richImport=null,richBusy=false,richRevision=0;
 const richToggle=document.getElementById('rich-mode-toggle');
@@ -695,7 +695,7 @@ function renderSettings(){
  setText('desktop-welcome-accent',tr(s.welcome_desktop_accent||'على مزاجك.'));
  setText('desktop-welcome-description',tr(s.welcome_description||'اكتشف وجباتنا، اختر اللي بتحبه، واطلب مباشرة من سنونو.'));
  setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
- setWelcomeImage($('cover-next'),(mobileWelcomeIndex+1)%3);
+ // The offscreen second slide is loaded on demand by goToWelcomeMeal().
  setText('brand',tr(s.name));setText('greeting',tr(s.welcome));setText('quick',s.hotline);
  const buttonText=tr(s.welcome_button||'تصفح المنيو');
  $('browse').querySelector('span').textContent=buttonText;
@@ -1610,8 +1610,8 @@ async function revealPage(){
  $('page-loader').style.display='none';
  startWelcomeCarousel();
 }
-// First-visit test only loads shared menu data and every interactive meal
-// image in the first category. No rich CSS/JS or standard-menu cards.
+// First-visit bandwidth probe checks three interactive images, only
+// after entering the menu. Welcome's hero is prioritized independently.
 // Use the standard mode after three seconds.
 async function chooseFirstVisitMode(initialMenu){
  let timer,timedOut=false,samples=[];
@@ -1621,7 +1621,8 @@ async function chooseFirstVisitMode(initialMenu){
   const probe=initialMenu.then(async loaded=>{
    if(timedOut||performance.now()-firstVisitStartedAt>3000||!loaded||!categories.length)return false;
    const firstCategory=categories[0];
-   const firstMeals=dishes.filter(meal=>String(meal.category_id)===String(firstCategory.id));
+   // Test three representative meals, not the entire category.
+   const firstMeals=dishes.filter(meal=>String(meal.category_id)===String(firstCategory.id)).slice(0,3);
    if(!firstMeals.length)return false;
    const sources=firstMeals.map(meal=>asset(meal.rich_image||meal.image));
    if(sources.some(src=>!src))return false;
@@ -1648,8 +1649,21 @@ async function chooseFirstVisitMode(initialMenu){
  }finally{clearTimeout(timer);}
 }
 const initialMenu=load();
-const modeReady=firstVisitModeCheck?chooseFirstVisitMode(initialMenu):initialMenu;
-// Welcome has its own images. Only the menu needs to wait for the rich-mode decision.
+// Do not compete with the welcome hero by preloading interactive food imagery.
+// Perform the original three-second decision when the customer enters the menu.
+let modeReady=initialMenu;
+if(firstVisitModeCheck){
+ if(currentPage()==='welcome'){
+  const beginMenuSpeedTest=()=>{
+   if(currentPage()!=='menu'||firstVisitDecisionComplete||welcomeManualModeSelected)return;
+   window.removeEventListener('pagechange',beginMenuSpeedTest);
+   firstVisitStartedAt=performance.now();
+   void chooseFirstVisitMode(initialMenu);
+  };
+  window.addEventListener('pagechange',beginMenuSpeedTest);
+ }else modeReady=chooseFirstVisitMode(initialMenu);
+}
+// The welcome route is never blocked by the interactive image speed test.
 (currentPage()==='welcome'?initialMenu:modeReady).finally(revealPage);
 /* Install Snounu menu as a standalone home-screen app on phones.
    iOS uses Add to Home Screen; Android supports the native prompt when eligible.
