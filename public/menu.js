@@ -831,7 +831,12 @@ function injectPageStylesheet(id,url){
   if(!link){
    link=document.createElement('link');
    link.id=id;link.rel='stylesheet';link.href=url;
-   document.head.append(link);
+   // Match the original cascade: menu.css precedes desktop.css,
+   // while payment styles remain after both.
+   const desktop=id==='snounu-regular-styles'
+    ?document.querySelector('link[href^="/desktop.css"]'):null;
+   if(desktop)desktop.before(link);
+   else document.head.append(link);
   }
   link.addEventListener('load',()=>{link.dataset.loaded='true';resolve();},{once:true});
   link.addEventListener('error',()=>{link.remove();reject(new Error('Stylesheet could not load: '+url));},{once:true});
