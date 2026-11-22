@@ -1981,8 +1981,8 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
   top:70%!important;
   right:auto!important;
   bottom:auto!important;
-  width:92%!important;
-  max-width:92%!important;
+  width:64%!important;
+  max-width:64%!important;
   height:auto!important;
   max-height:none!important;
   object-fit:contain!important;
@@ -2000,6 +2000,6 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 @media(max-width:980px){
   #rich-menu .rm-dish[data-unavailable="true"] img.rm-unavailable-stamp{
     top:71%!important;
-    width:92%!important;
+    width:64%!important;
   }
 }
