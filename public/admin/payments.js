@@ -195,7 +195,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     const blobs=[];
     dialog.onclose=()=>{blobs.forEach(URL.revokeObjectURL);dialog.remove();};
 
-    const dialogHead=named("header",null,"ord-detail-header");
+    const dialogHead=named("div",null,"ord-detail-header");
     const heading=named("div",null,"ord-detail-title");
     heading.append(named("small","تفاصيل الطلب"),named("h2","طلب #"+o.number),named("span",date(o.created_at),"ord-detail-date"));
     const close=button("×",()=>dialog.close());close.className="ord-detail-close";
@@ -342,7 +342,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
         if(w)Promise.all([...w.document.images].map(img=>img.decode().catch(()=>{})))
           .then(()=>w.print());
       });
-      print.className="ord-detail-secondary";actionButtons.append(print);
+      print.className="ord-detail-print";actionButtons.append(print);
     }
     if(canManage&&o.status==="approved"&&o.fulfillment_status!=="completed"){
       const done=button("تأكيد تسليم الطلب",async()=>{

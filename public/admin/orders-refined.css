@@ -85,11 +85,11 @@
 /* New order details dialog */
 .pay-admin-dialog.ord-detail-dialog[open]{display:block!important;box-sizing:border-box;width:min(95vw,780px)!important;max-width:780px!important;max-height:min(91dvh,880px)!important;margin:auto!important;padding:0!important;overflow-y:auto;overflow-x:hidden;border:1px solid #e6e1d8!important;border-radius:18px!important;background:#fff!important;color:#28251f!important;font:14px/1.65 Snounu,Tahoma,sans-serif!important;box-shadow:0 35px 100px #0006!important}
 .pay-admin-dialog.ord-detail-dialog::backdrop{background:#161616aa;backdrop-filter:blur(5px)}
-.ord-detail-dialog .ord-detail-header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 22px;background:#fff;border-bottom:1px solid #eee9e0}
-.ord-detail-dialog .ord-detail-title small{display:block;color:#777067;font-size:11px}
+.ord-detail-dialog .ord-detail-header{position:sticky;top:0;z-index:5;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:14px;box-sizing:border-box;width:100%;height:auto;min-height:92px;padding:15px 22px;background:#fff;color:#262626;border-top:0;border-bottom:1px solid #eee9e0;overflow:visible}
+.ord-detail-dialog .ord-detail-title{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;flex:1 1 auto;overflow:visible;white-space:normal}.ord-detail-dialog .ord-detail-title small{display:block;color:#777067;font-size:12px;line-height:1.6;white-space:normal}
 .ord-detail-dialog .ord-detail-title h2{margin:2px 0!important;font-size:22px!important;font-weight:850}
 .ord-detail-dialog .ord-detail-date{display:block;font-size:12px;color:#8b8177}
-.ord-detail-dialog .ord-detail-close{width:36px;height:36px;display:grid;place-items:center;border:1px solid #e9e5dc;background:#f7f6f3;border-radius:9px;font:inherit;font-size:23px;cursor:pointer}
+.ord-detail-dialog .ord-detail-close{flex:0 0 40px;width:40px;height:40px;min-width:40px;min-height:40px;display:grid;place-items:center;margin:0!important;padding:0!important;border:1px solid #ddd4c7!important;background:#faf8f5!important;color:#262626!important;-webkit-text-fill-color:#262626!important;opacity:1!important;border-radius:10px;font-family:Arial,Tahoma,sans-serif;font-size:25px;font-weight:500;line-height:1;cursor:pointer}.ord-detail-dialog .ord-detail-close:hover{background:#fff1c7!important;border-color:#FDBE2D!important}.ord-detail-dialog .ord-detail-close:focus-visible{outline:3px solid #FDBE2D;outline-offset:2px}
 .ord-detail-dialog .ord-detail-body{display:grid;gap:17px;padding:20px 22px 24px}
 .ord-detail-dialog .ord-detail-hero{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px;background:#faf8f4;border:1px solid #f1ece4;border-radius:13px}
 .ord-detail-dialog .ord-detail-total{display:grid;gap:2px}
@@ -120,7 +120,7 @@
 .ord-detail-dialog .ord-detail-buttons,.ord-detail-dialog .ord-decision-buttons{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .ord-detail-dialog .ord-detail-buttons button,.ord-detail-dialog .ord-proof-body button{font:750 12px Snounu,Tahoma,sans-serif;border-radius:9px;padding:10px 13px;min-height:40px;cursor:pointer}
 .ord-detail-dialog .ord-detail-buttons button:disabled{opacity:.55;cursor:wait}
-.ord-detail-dialog .ord-detail-secondary,.ord-detail-dialog .ord-proof-body button{background:#fff;border:1px solid #dcd7cf;color:#2c2923}
+.ord-detail-dialog .ord-detail-secondary,.ord-detail-dialog .ord-proof-body button{background:#fff;border:1px solid #dcd7cf;color:#2c2923}.ord-detail-dialog .ord-detail-buttons .ord-detail-print{background:#FDBE2D!important;color:#262626!important;-webkit-text-fill-color:#262626!important;border:1px solid #FDBE2D!important;font-weight:800!important}.ord-detail-dialog .ord-detail-buttons .ord-detail-print:hover{background:#ebb11c!important;border-color:#ebb11c!important}.ord-detail-dialog .ord-detail-buttons .ord-detail-print:focus-visible{outline:3px solid #aa821b;outline-offset:2px}
 .ord-detail-dialog .ord-decision--approved{background:#FDBE2D;border:1px solid #FDBE2D;color:#201c15}
 .ord-detail-dialog .ord-decision--rejected{background:#fff1ef;border:1px solid #f1d5d1;color:#a53631}
 .ord-detail-dialog .ord-decision--cancelled{background:#f2f1ef;border:1px solid #e7e4dd;color:#605b55}
