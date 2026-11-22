@@ -596,6 +596,10 @@ export function installCart({ catalog, name, description, closed, page }) {
       try{
         addDirect(d,qty,[...chosen],note.value.trim());
         feedback.textContent=t("أُضيفت إلى السلة ✓","Added to cart ✓");
+        // Dismiss the regular meal sheet with its existing exit animation.
+        // Adding never opens a second popup or the cart itself.
+        const mealDialog=document.getElementById("dish");
+        if(mealDialog?.open)document.getElementById("close")?.click();
       }catch(err){feedback.textContent=err.message;}
     };
     draw();
