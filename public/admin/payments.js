@@ -315,6 +315,9 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     const actionButtons=named("div",null,"ord-detail-buttons");
 
     const proof=(o.pay_proofs||[]).slice().sort((a,b)=>b.uploaded_at.localeCompare(a.uploaded_at))[0];
+    let proofReviewed=false;
+    let approveTrigger=null;
+    let proofHint=null;
     if(proof){
       const proofSection=named("section",null,"ord-detail-section");
       proofSection.append(named("h3","إثبات الدفع"));
@@ -329,10 +332,41 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
           if(!result.ok)throw Error("تعذر تحميل إثبات الدفع");
           const blob=await result.blob();
           const url=URL.createObjectURL(blob);blobs.push(url);
+          if(blob.type!=="application/pdf"&&!blob.type.startsWith("image/"))
+            throw Error("نوع ملف الإثبات غير مدعوم للمعاينة");
           const media=named(blob.type==="application/pdf"?"iframe":"img");
-          media.src=url;media.title="إثبات الدفع";
-          proofBody.replaceChildren(media);
-        }catch(err){notice(err.message);preview.disabled=false;}
+          media.title="إثبات الدفع";
+          const rendered=new Promise((resolve,reject)=>{
+            if(blob.type==="application/pdf"){
+              const timeout=setTimeout(()=>reject(Error("لم يكتمل تحميل ملف PDF، حاول مجدداً")),15000);
+              media.addEventListener("load",()=>{clearTimeout(timeout);resolve();},{once:true});
+              media.addEventListener("error",()=>{clearTimeout(timeout);reject(Error("تعذّر عرض ملف PDF"));},{once:true});
+            }else{
+              media.addEventListener("load",resolve,{once:true});
+              media.addEventListener("error",()=>reject(Error("تعذّر عرض صورة الإثبات")),{once:true});
+            }
+          });
+          media.src=url;proofBody.replaceChildren(media);
+          await rendered;
+          // Record the successful proof preview on the server; only then enable approval.
+          await api(rootPath+"rpc/pay_record_proof_review",{
+            method:"POST",body:{p_id:o.id,p_path:proof.path}
+          });
+          proofReviewed=true;
+          if(approveTrigger){
+            approveTrigger.disabled=false;
+            approveTrigger.removeAttribute("title");
+          }
+          if(proofHint){
+            proofHint.textContent="تم عرض إثبات الدفع، يمكنك الآن اعتماد الدفع.";
+            proofHint.className="ord-proof-reviewed";
+          }
+          proofBody.append(named("p","تم عرض إثبات الدفع بنجاح","ord-proof-reviewed"));
+        }catch(err){
+          notice(err.message);
+          preview.disabled=false;
+          proofBody.replaceChildren(preview);
+        }
       });
       preview.className="ord-proof-preview";
       proofBody.append(preview);proofSection.append(proofBody);
@@ -354,7 +388,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
           dialog.close();await load();notice("تم تأكيد حضور العميل");
         }catch(e){arrived.disabled=false;notice(e.message);}
       });
-      arrived.className="ord-detail-secondary";actionButtons.append(arrived);
+      arrived.className="ord-detail-arrival";actionButtons.append(arrived);
     }
     if(o.status==="pending"&&canManage){
       const declineBox=named("div",null,"ord-decline-box");
@@ -371,6 +405,9 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
           if(target==="approved"&&o.payment_mode==="at_restaurant"&&!o.arrived_at){
             notice("أكّد وصول العميل أولاً قبل تسجيل الدفع.");return;
           }
+          if(target==="approved"&&o.payment_mode!=="at_restaurant"&&!proofReviewed){
+            notice("يجب عرض إثبات الدفع ومراجعته قبل اعتماد الدفع.");return;
+          }
           if(target==="rejected"&&!reason.value.trim()){reason.focus();return;}
           if(!confirm(label+" للطلب #"+o.number+"؟"))return;
           trigger.disabled=true;
@@ -382,7 +419,19 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
           }catch(e){trigger.disabled=false;notice(e.message);}
         });
         trigger.className="ord-decision ord-decision--"+target;
+        if(target==="approved"&&o.payment_mode!=="at_restaurant"){
+          approveTrigger=trigger;
+          trigger.disabled=!proofReviewed;
+          trigger.title=proof?"اعرض إثبات الدفع أولاً قبل الاعتماد":"لا يمكن الاعتماد بدون إثبات دفع مرفق";
+        }
         paymentActions.append(trigger);
+      }
+      if(o.payment_mode!=="at_restaurant"){
+        proofHint=named("p",
+          proof?"يجب عرض إثبات الدفع قبل اعتماد الدفع.":"لا يوجد إثبات دفع مرفق. لا يمكن اعتماد الدفع.",
+          "ord-proof-required"
+        );
+        declineBox.append(proofHint);
       }
       declineBox.append(reason,paymentActions);
       actionButtons.append(declineBox);

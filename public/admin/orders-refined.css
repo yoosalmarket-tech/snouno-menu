@@ -205,3 +205,43 @@
   .ord-detail-dialog .ord-proof-body > button.ord-proof-preview{transition:none}
   .ord-detail-dialog .ord-proof-body > button.ord-proof-preview:hover{transform:none}
 }
+
+/* Arrival confirmation: full-width yellow pill, matching the proof-preview action. */
+.ord-detail-dialog .ord-detail-buttons > button.ord-detail-arrival{
+  display:flex!important;
+  flex:1 1 100%!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px;
+  width:100%!important;
+  min-height:50px!important;
+  padding:12px 22px!important;
+  border:1px solid #FDBE2D!important;
+  border-radius:999px!important;
+  background:#FDBE2D!important;
+  color:#202020!important;
+  -webkit-text-fill-color:#202020!important;
+  font:800 14px/1.5 Snounu,Tahoma,Arial,sans-serif!important;
+  text-align:center!important;
+  cursor:pointer;
+  transition:background-color .2s,border-color .2s,transform .2s;
+}
+.ord-detail-dialog .ord-detail-buttons > button.ord-detail-arrival::before{
+  content:"✓";font:800 18px/1 Arial,Tahoma,sans-serif;
+}
+.ord-detail-dialog .ord-detail-buttons > button.ord-detail-arrival:hover{
+  background:#eeb422!important;border-color:#eeb422!important;transform:translateY(-1px);
+}
+.ord-detail-dialog .ord-detail-buttons > button.ord-detail-arrival:focus-visible{
+  outline:3px solid #c59c2d;outline-offset:3px;
+}
+.ord-detail-dialog .ord-detail-buttons > button.ord-detail-arrival:disabled{
+  opacity:.6;cursor:wait;transform:none;
+}
+.ord-detail-dialog .ord-proof-required{font-size:12px;line-height:1.6;color:#815b11;margin:0;padding:9px 11px;border:1px solid #f0dfb0;background:#fffbec;border-radius:8px}
+.ord-detail-dialog .ord-proof-reviewed{font-size:12px;line-height:1.6;color:#166534;margin:7px 0 0;padding:9px 11px;border:1px solid #c5e7cf;background:#effaf2;border-radius:8px}
+.ord-detail-dialog .ord-decision--approved:disabled{opacity:.5!important;cursor:not-allowed!important}
+@media(prefers-reduced-motion:reduce){
+  .ord-detail-dialog .ord-detail-buttons > button.ord-detail-arrival{transition:none}
+  .ord-detail-dialog .ord-detail-buttons > button.ord-detail-arrival:hover{transform:none}
+}
