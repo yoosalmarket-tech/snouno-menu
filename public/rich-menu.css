@@ -1823,7 +1823,8 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
 @media(min-width:981px){
  #rich-menu .rm-meal-nav{
   position:absolute!important;
-  bottom:clamp(15px,3svh,33px)!important;
+  /* Keep the arrow hit areas above the 44px credit link. */
+  bottom:calc(clamp(24px,3.8svh,42px) + 52px)!important;
   z-index:8!important;
   display:flex!important;align-items:center;justify-content:center;
   gap:10px;min-height:48px;
