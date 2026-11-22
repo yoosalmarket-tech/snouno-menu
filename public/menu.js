@@ -142,6 +142,7 @@ try{testedThisSession=sessionStorage.getItem(modeSessionKey)==='1';}catch{}
 const firstVisitModeCheck=!isPreview&&!['interactive','standard'].includes(explicitMode)
  &&(!testedThisSession||!testIsRecent||!['0','1'].includes(savedMode));
 let richDesired=!isPreview&&(explicitMode==='interactive'||(explicitMode!=='standard'&&!firstVisitModeCheck&&savedMode==='1'));
+let welcomeManualModeSelected=false;
 function rememberMode(value){
  localStorage.setItem(modePreferenceKey,value?'1':'0');
  localStorage.setItem(modeTestTimeKey,String(Date.now()));
@@ -847,6 +848,135 @@ const cancelBrowseFade=()=>{
  $('welcome').classList.remove('welcome-browsing-out');
  $('inside').classList.remove('menu-browsing-in');
 };
+// Hold either Browse button for 550ms to select the desired menu layout.
+// A quick tap still follows the original Browse flow without any interruption.
+function installWelcomeModeChooser(){
+ const buttons=[$('browse'),$('desktop-welcome-browse')].filter(Boolean);
+ if(!buttons.length||isPreview)return;
+ const panel=document.createElement('div');
+ panel.id='welcome-mode-chooser';
+ panel.className='welcome-mode-chooser';
+ panel.hidden=true;
+ panel.dir='rtl';
+ panel.setAttribute('role','menu');
+ panel.setAttribute('aria-label','اختر نوع المنيو');
+ panel.innerHTML=
+  '<p class="welcome-mode-title">كيف تحب تتصفح المنيو؟</p>'+
+  '<button type="button" role="menuitem" data-mode="standard"><span class="welcome-mode-choice-symbol" aria-hidden="true">▤</span><span class="welcome-mode-copy"><strong>القائمة العادية</strong><small>قائمة الوجبات والتفاصيل</small></span></button>'+
+  '<button type="button" role="menuitem" data-mode="interactive"><span class="welcome-mode-choice-symbol" aria-hidden="true">✦</span><span class="welcome-mode-copy"><strong>القائمة التفاعلية</strong><small>استعرض الوجبات بشكل تفاعلي</small></span></button>';
+ document.body.append(panel);
+ let trigger=null,timer=0,gesture=null;
+ const options=[...panel.querySelectorAll('[data-mode]')];
+ const clearTimer=()=>{clearTimeout(timer);timer=0;};
+ function close({restoreFocus=false}={}){
+  clearTimer();
+  panel.hidden=true;
+  if(trigger){
+   trigger.setAttribute('aria-expanded','false');
+   if(restoreFocus)trigger.focus();
+  }
+  trigger=null;
+ }
+ function position(){
+  if(panel.hidden||!trigger)return;
+  const r=trigger.getBoundingClientRect();
+  const w=panel.offsetWidth,h=panel.offsetHeight,pad=12;
+  const x=Math.max(pad,Math.min(innerWidth-w-pad,r.left+(r.width-w)/2));
+  const above=r.top-h-10;
+  const below=r.bottom+10;
+  const y=above>=pad?above:Math.max(pad,Math.min(innerHeight-h-pad,below));
+  panel.style.left=x+'px';
+  panel.style.top=y+'px';
+ }
+ function open(button,{focusFirst=false}={}){
+  if(currentPage()!=='welcome')return;
+  if(trigger&&trigger!==button)close();
+  trigger=button;
+  for(const item of buttons)item.setAttribute('aria-expanded',String(item===button));
+  panel.hidden=false;
+  position();
+  if(focusFirst)options[0].focus();
+ }
+ function enterMode(mode){
+  if(mode!=='standard'&&mode!=='interactive')return;
+  close();
+  welcomeManualModeSelected=true;
+  firstVisitDecisionComplete=true;
+  richDesired=mode==='interactive';
+  rememberMode(richDesired);
+  updateRichToggle();
+  cancelWelcomeReveal();
+  cancelBrowseFade();
+  const url='/menu?mode='+mode;
+  if(location.pathname+location.search!==url)history.pushState(null,'',url);
+  route();
+ }
+ options.forEach(option=>option.addEventListener('click',()=>enterMode(option.dataset.mode)));
+ for(const button of buttons){
+  button.setAttribute('aria-haspopup','menu');
+  button.setAttribute('aria-controls','welcome-mode-chooser');
+  button.setAttribute('aria-expanded','false');
+  button.title='اضغط مطوّلًا لاختيار نوع المنيو';
+  let swallowClick=false;
+  const cancelGesture=()=>{clearTimer();gesture=null;};
+  button.addEventListener('pointerdown',event=>{
+   if(event.button!==0||currentPage()!=='welcome')return;
+   swallowClick=false;
+   cancelGesture();
+   gesture={id:event.pointerId,x:event.clientX,y:event.clientY,opened:false};
+   timer=setTimeout(()=>{
+    timer=0;
+    if(!gesture||gesture.id!==event.pointerId)return;
+    gesture.opened=true;
+    open(button);
+    if(navigator.vibrate)try{navigator.vibrate(12)}catch{}
+   },550);
+  });
+  button.addEventListener('pointermove',event=>{
+   if(!gesture||event.pointerId!==gesture.id||gesture.opened)return;
+   if(Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>13)cancelGesture();
+  });
+  button.addEventListener('pointerup',event=>{
+   if(!gesture||event.pointerId!==gesture.id)return;
+   swallowClick=gesture.opened;
+   cancelGesture();
+  });
+  button.addEventListener('pointercancel',()=>{swallowClick=Boolean(gesture?.opened);cancelGesture();});
+  button.addEventListener('click',event=>{
+   if(!swallowClick)return;
+   swallowClick=false;
+   event.preventDefault();
+   event.stopImmediatePropagation(); // suppress the synthetic click after a hold
+  },true);
+  button.addEventListener('contextmenu',event=>{
+   event.preventDefault();
+   cancelGesture();
+   open(button,{focusFirst:event.pointerType!=='touch'});
+  });
+  button.addEventListener('keydown',event=>{
+   if(event.key==='ArrowDown'||event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10')){
+    event.preventDefault();
+    open(button,{focusFirst:true});
+   }
+  });
+ }
+ panel.addEventListener('keydown',event=>{
+  if(event.key==='Escape'){event.preventDefault();close({restoreFocus:true});}
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+   event.preventDefault();
+   const index=options.indexOf(document.activeElement);
+   options[(index+(event.key==='ArrowDown'?1:options.length-1))%options.length].focus();
+  }
+ });
+ document.addEventListener('pointerdown',event=>{
+  if(!panel.hidden&&!panel.contains(event.target)&&!buttons.some(b=>b.contains(event.target)))close();
+ },true);
+ window.addEventListener('resize',position);
+ window.addEventListener('scroll',()=>{if(!panel.hidden)close();},{passive:true});
+ window.addEventListener('pagechange',()=>close());
+}
+installWelcomeModeChooser();
+
 window.addEventListener('popstate',()=>{cancelBrowseFade();route();});
 window.addEventListener('hashchange',()=>{cancelBrowseFade();route();});
 document.addEventListener('click',event=>{
@@ -1489,6 +1619,8 @@ async function chooseFirstVisitMode(initialMenu){
    return !timedOut&&performance.now()-firstVisitStartedAt<=3000;
   }).catch(()=>false);
   const fast=await Promise.race([probe,deadline]);
+  // A deliberately chosen welcome mode always overrides the auto speed test.
+  if(welcomeManualModeSelected)return;
   if(!fast){
    timedOut=true;
    for(const img of samples)img.removeAttribute('src');
