@@ -1,6 +1,5 @@
 import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=transparent-flight-20261122';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
-import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
@@ -165,13 +164,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=credit-fade-20261122';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=arabic-categories-20261122';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=yoosal-credit-visited-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=arabic-categories-20261122')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -181,7 +180,7 @@ function newestFavorites(meals){
  return Array.from(favorites).reverse().map(id=>byId.get(id)).filter(Boolean);
 }
 function richData(){
- return {categories:[{...featuredCategory,items:newestLabeledMeals(dishes)},...categories],dishes,favorites,favoriteMeals:newestFavorites(dishes),settings,links,lang:currentLanguage,categoryEnglish,
+ return {categories:[{...featuredCategory,items:newestLabeledMeals(dishes)},...categories],dishes,favorites,favoriteMeals:newestFavorites(dishes),settings,links,
   displayName,displayDescription};
 }
 async function syncRichMode(){
@@ -270,67 +269,22 @@ richToggle?.addEventListener('change',()=>{
 window.addEventListener('pagechange',()=>{void syncRichMode();});
 
 
-let currentLanguage='ar'; // Start every new visit in Arabic; visitors may switch to English.
-const originalTextNodes=new WeakMap();
-const isEnglish=()=>currentLanguage==='en';
-const tr=value=>isEnglish()?enText(value):value;
-const displayName=d=>isEnglish()?(mealTranslation(d)?.[0]||d.name):d.name;
-const displayDescription=d=>isEnglish()?(mealTranslation(d)?.[1]||d.description):d.description;
-function translateStaticContent(){
- const nodes=['#welcome','#inside>header','#contact','#dock'];
- for(const selector of nodes){
-  const root=document.querySelector(selector);if(!root)continue;
-  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-  while(walker.nextNode()){
-   const node=walker.currentNode;
-   if(!originalTextNodes.has(node))originalTextNodes.set(node,node.nodeValue);
-   const base=originalTextNodes.get(node);
-   const trimmed=base.trim();
-   if(trimmed&&enText(trimmed)!==trimmed){
-     node.nodeValue=isEnglish()?base.replace(trimmed,enText(trimmed)):base;
-   }
-  }
- }
-}
+// Arabic is the only visitor-facing language; keep original meal records.
+const currentLanguage='ar';
+const isEnglish=()=>false;
+const tr=value=>value;
+const displayName=d=>d.name;
+const displayDescription=d=>d.description;
 function applyLanguage(){
- document.documentElement.lang=isEnglish()?'en':'ar';
-  syncRestaurantClosure();
- document.body.classList.toggle('lang-en',isEnglish());
- for(const toggle of document.querySelectorAll('.language-switch')){
-   toggle.querySelector('.language-label').textContent=isEnglish()?'AR':'EN';
-   toggle.setAttribute('aria-pressed',String(isEnglish()));
-   toggle.setAttribute('aria-label',isEnglish()?'Switch to Arabic':'Switch to English');
-   toggle.title=isEnglish()?'العربية':'English';
- }
- $('search').placeholder=tr('ابحث عن طبقك أو مشروبك المفضل...');
- $('search').setAttribute('aria-label',tr('البحث عن طبق'));
- for(const input of document.querySelectorAll('#contact input[placeholder],#contact textarea[placeholder]')){
-  if(!input.dataset.arPlaceholder)input.dataset.arPlaceholder=input.placeholder;
-  input.placeholder=tr(input.dataset.arPlaceholder);
- }
- $('menu').dir=isEnglish()?'ltr':'rtl';
- $('contact').dir=isEnglish()?'ltr':'rtl';
- if(settings?.name){
-   renderSettings();
-   renderCards();
-   updateWelcomeLabels(mobileWelcomeIndex);
- }
- translateStaticContent();
- const installLabel=$('install-app-label');
- if(installLabel)installLabel.textContent=isEnglish()?'Install the app':'تثبيت التطبيق';
- const promoTitle=$('install-promo-title'),promoText=$('install-promo-subtitle');
- if(promoTitle)promoTitle.textContent=isEnglish()?'Keep Snounu on your phone!':'خلي منيو سنونو على هاتفك!';
- if(promoText)promoText.textContent=isEnglish()?'Open the menu like an app, in one tap.':'افتح المنيو مثل التطبيق، بضغطة واحدة.';
+ document.documentElement.lang='ar';
+ document.documentElement.dir='rtl';
+ document.body.classList.remove('lang-en');
+ $('menu').dir='rtl';$('contact').dir='rtl';
+ syncRestaurantClosure();
+ if(settings?.name){renderSettings();renderCards();updateWelcomeLabels(mobileWelcomeIndex);}
  updateRichToggle();
  if(richController)richController.refresh();
 }
-for(const switcher of document.querySelectorAll('.language-switch')){
- switcher.onclick=()=>{
-   currentLanguage=isEnglish()?'ar':'en';
-   applyLanguage();
- };
-}
-
 function asset(src){if(!src)return '';if(isPreview&&src.startsWith('blob:'+location.origin+'/'))return src;try{const u=new URL(src,location.origin);return /^(https?:)$/.test(u.protocol)?u.href:'';}catch{return '';}}
 function setText(id,text){$(id).textContent=text||'';}
 function image(src,alt){const img=make('img');img.src=asset(src);img.alt=alt;return img;}
@@ -381,11 +335,7 @@ const prefersReducedWelcomeMotion=()=>matchMedia('(prefers-reduced-motion: reduc
 const welcomeVisible=()=>!isPreview&&!document.hidden&&currentPage()==='welcome'&&document.documentElement.classList.contains('loader-complete');
 function welcomeMealName(index){
  const choice=welcomeMobileMeals[index];
- if(!isEnglish())return choice.name;
- const defaults=welcomeDefaults[index];
- if(choice.name!==defaults.name)return tr(choice.name);
- const d=dishes.find(item=>Number(item.sonbol_listing_id)===choice.listing);
- return d?displayName(d):({2468:'Sharing Box',2465:'Knock Out',2472:'Nashville'}[choice.listing]);
+ return choice.name;
 }
 
 /* Optical centering for dashboard-uploaded transparent welcome photos.
@@ -1007,9 +957,8 @@ function renderChips(groups){
  const strip=$('chips');strip.replaceChildren();categoryButtons.clear();activeCategory=null;
  const head=make('div');head.className='category-nav-head';
  const titles=make('span');titles.className='category-nav-title';
- const english=make('strong','CATEGORIES');english.lang='en';english.dir='ltr';
  const arabic=make('span','التصنيفات');arabic.lang='ar';arabic.dir='rtl';
- titles.append(english,arabic);
+ titles.append(arabic);
  const controls=make('div');controls.className='category-nav-controls';
  const previous=make('button',isEnglish()?'←':'→');previous.type='button';previous.className='category-nav-arrow';previous.id='category-previous';
  previous.setAttribute('aria-label',isEnglish()?'Previous category':'الصنف السابق');
@@ -1023,11 +972,9 @@ function renderChips(groups){
  rail.setAttribute('aria-label',isEnglish()?'Meal categories':'أصناف المنيو');
  for(const {category,section} of groups){
    const button=make('button');button.type='button';button.className='chip';
-   const en=make('span',(categoryEnglish[category.name]||category.name).toLocaleUpperCase('en'));
-   en.className='chip-en';en.lang='en';en.dir='ltr';
    const ar=make('span',category.name);
    ar.className='chip-ar';ar.lang='ar';ar.dir='rtl';
-   button.append(en,ar);
+   button.append(ar);
    button.id='category-button-'+category.id;
    button.dataset.categoryId=category.id;
    button.dataset.trackAction='category_select';
@@ -1175,8 +1122,8 @@ function detail(d){
  if(d.description)content.append(make('p',displayDescription(d)));
  if(d.ingredients){content.append(make('h3',tr('المكونات')));const groups=make('div');groups.className='ingredients';
    for(const [group,items] of ingredientGroups(d.ingredients)){
-     const row=make('div');row.setAttribute('aria-label',tr(ingredientEnglish[group]||group));
-     for(const item of items){const chip=make('span',isEnglish()?(ingredientEnglish[item]||item):item);chip.title=isEnglish()?(ingredientEnglish[group]||group):group;chip.dataset.color=/طماطم/.test(item)?'red':group==='خضار'?'green':group==='ألبان'?'white':'gold';row.append(chip);}
+     const row=make('div');row.setAttribute('aria-label',group);
+     for(const item of items){const chip=make('span',item);chip.title=group;chip.dataset.color=/طماطم/.test(item)?'red':group==='خضار'?'green':group==='ألبان'?'white':'gold';row.append(chip);}
      groups.append(row);
    }content.append(groups);
  }else if(d.id){
