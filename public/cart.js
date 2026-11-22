@@ -337,8 +337,8 @@ export function installCart({ catalog, name, description, closed, page }) {
       title.prepend(cartIcon);
       badge.replaceChildren(title, el("span", amount(total())));
     }
-    // The full-width rail only reserves page space when there are meals.
-    document.body.classList.toggle("has-cart-footer", show && !empty);
+    // The same-sized basket / My Orders rail always reserves its footprint.
+    document.body.classList.toggle("has-cart-footer", show);
     if (show) {
       badge.hidden = false;
       badge.classList.add("visible");
