@@ -204,15 +204,23 @@ export function installCart({ catalog, name, description, closed, page }) {
    if(typeof layer.showPopover==="function")layer.showPopover();
    else layer.removeAttribute("popover");
   }catch{layer.removeAttribute("popover");}
-  // Allow an initially hidden cart footer to arrive before measuring its icon.
-  await new Promise(resolve=>setTimeout(resolve,isNewFooter?225:16));
+  // The image begins flying as the popup closes, rather than waiting
+  // for the cart footer to finish its entrance.
+  await new Promise(resolve=>setTimeout(resolve,32));
   if(cancelled||!layer.isConnected)return false;
   const icon=badge.querySelector(".pay-cart-icon");
   if(!icon||!badge.classList.contains("visible"))return false;
   const destination=icon.getBoundingClientRect();
   if(!destination.width||!destination.height)return false;
   const dx=destination.left+destination.width/2-(origin.left+origin.width/2);
-  const dy=destination.top+destination.height/2-(origin.top+origin.height/2);
+  // Subtract the cart footer's current entrance translation to target
+  // the icon's final resting coordinate, even on the first addition.
+  let footerShiftY=0;
+  try{
+   const transform=getComputedStyle(badge).transform;
+   if(transform&&transform!=="none")footerShiftY=new DOMMatrixReadOnly(transform).m42||0;
+  }catch{}
+  const dy=destination.top+destination.height/2-footerShiftY-(origin.top+origin.height/2);
   const finalScale=Math.min(.30,Math.max(.095,Math.min(destination.width/origin.width,destination.height/origin.height)));
   const arc=Math.min(110,Math.max(45,Math.abs(dx)*.2));
   flight=ghost.animate([
@@ -228,7 +236,9 @@ export function installCart({ catalog, name, description, closed, page }) {
   window.removeEventListener("pagehide",cancelFlight);
   document.removeEventListener("visibilitychange",cancelOnHidden);
   window.removeEventListener("richmodechange",cancelOnModeChange);
-  if(layer.matches(":popover-open"))layer.hidePopover();
+  try{
+   if(typeof layer.hidePopover==="function"&&layer.matches(":popover-open"))layer.hidePopover();
+  }catch{}
   layer.remove();
  }
 }
@@ -415,14 +425,13 @@ export function installCart({ catalog, name, description, closed, page }) {
         await closePayDialog(dialog,rich);
         modal();
         showCart(); // Preserve the existing edit-and-return flow.
-        celebrateFooter();
         return;
       }
       // Launch the image clone before sliding its source dialog down.
       const flight=rich?flyMealToCart(photo,origin,!footerWasVisible):Promise.resolve(false);
       const closing=closePayDialog(dialog,rich);
-      const [,arrived]=await Promise.all([closing,flight]);
-      if(!arrived)celebrateFooter();
+      await Promise.all([closing,flight]);
+      // The glow must not play if no image arrived (or the flight was cancelled).
     };
     draw();
   }
