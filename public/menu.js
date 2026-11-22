@@ -1,5 +1,5 @@
 import {installCart} from './cart.js?v=cart-motion-20261122';
-import {visitYoosalWithBell} from './credit-bell.js?v=1';
+import {handleYoosalCreditClick} from './credit-bell.js?v=2';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
@@ -165,13 +165,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=credit-bell-20261122';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=credit-two-step-20261122';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=credit-bell-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=credit-two-step-20261122')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -764,9 +764,9 @@ function renderSettings(){
  credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit;
  contactLinks($('links'),['whatsapp']);contactLinks($('social-links'),['instagram','facebook']);
 }
-// Keep the standard and interactive credits consistent: one click, one soft chime.
-$('credit-link').setAttribute('aria-label','زيارة موقع وكالة يوصل');
-$('credit-link').onclick=visitYoosalWithBell;
+// First click highlights Yoosal in orange; second click plays the bell and visits.
+$('credit-link').setAttribute('aria-label','اضغط لتحديد وكالة يوصل');
+$('credit-link').onclick=handleYoosalCreditClick;
 // Stop the welcome loader as soon as a user leaves the welcome route.
  // Without this cancellation, its 2.1s animated yellow canvas can continue
  // over the menu after the shorter Browse transition has finished.

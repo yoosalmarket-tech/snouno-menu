@@ -1,5 +1,5 @@
-// A short, soft two-note original chime, synthesized locally with Web Audio.
-// No downloaded audio file or tracking. One click plays it and visits Yoosal.
+// A short, soft original bell, synthesized locally with Web Audio.
+// First click arms a Yoosal credit and changes its color. Second click visits.
 let redirectStarted=false;
 export function visitYoosalWithBell(){
  if(redirectStarted)return;
@@ -37,4 +37,20 @@ export function visitYoosalWithBell(){
   // Even if a browser blocks audio, the destination still opens on this click.
  }
  window.setTimeout(()=>window.location.assign(destination),duration);
+}
+
+/**
+ * Two-step Yoosal credit interaction, shared by the regular and interactive menus.
+ * The first click highlights only the agency name; the second click plays the
+ * existing soft bell and navigates. State is scoped to the clicked button.
+ */
+export function handleYoosalCreditClick(event){
+  const button=event.currentTarget;
+  if(!button)return;
+  if(!button.classList.contains('is-armed')){
+    button.classList.add('is-armed');
+    button.setAttribute('aria-label','اضغط مرة ثانية لزيارة موقع وكالة يوصل');
+    return;
+  }
+  visitYoosalWithBell();
 }

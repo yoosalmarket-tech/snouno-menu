@@ -1348,3 +1348,10 @@ body.lang-en .restaurant-closure-banner{direction:ltr}
  font-weight:700!important;
 }
 #credit-link strong{font-family:inherit!important;font-weight:700!important}
+
+/* First click highlights only "وكالة يوصل"; a second click follows the link. */
+#credit-link strong{transition:color .22s ease}
+#credit-link.is-armed strong,.dark #credit-link.is-armed strong{
+  color:#E56932!important;
+}
+@media(prefers-reduced-motion:reduce){#credit-link strong{transition:none}}

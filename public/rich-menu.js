@@ -1,6 +1,6 @@
 /* Opt-in immersive Snounu menu: spring inertia, horizontal 3D dish feed,
    swipe-driven category transitions, and a perspective thumbnail rail. */
-import {visitYoosalWithBell} from './credit-bell.js?v=1';
+import {handleYoosalCreditClick} from './credit-bell.js?v=2';
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -75,9 +75,9 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  };
  // Anchor the horizontal selector below categories, outside the animated scene.
  root.insertBefore(at(root,'.rm-thumbs'),u.wrap);
- // A single click plays the soft bell and navigates to Yoosal.
+ // First click turns the agency name orange; second click opens Yoosal with the bell.
  const creditButton=at(root,'.rm-interactive-credit-link');
- creditButton.addEventListener('click',visitYoosalWithBell);
+ creditButton.addEventListener('click',handleYoosalCreditClick);
  let groups=[],groupIndex=0,front=0,k=2.2,target=0,velocity=-.02;
  let active=false,frame=0,lastTime=0,pointer=null,lastWheel=-Infinity,wheelAxis=null,wheelHandled=false,wheelDistance=0,swapping=false,swapToken=0;
  let motionDirection=1,visualDirection=1;
