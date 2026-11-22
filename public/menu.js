@@ -1,5 +1,5 @@
 import {installCart, closePayDialog} from './cart.js?v=interactive-motion-01';
-import {handleYoosalCreditClick} from './credit-bell.js?v=4';
+import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
@@ -171,7 +171,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=credit-fade-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=yoosal-credit-visited-20261122')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -761,7 +761,7 @@ function renderSettings(){
  $('logo').src=logo;$('welcome-logo').src=logo;$('desktop-welcome-logo').src=logo;
  renderAds();
  setText('location-name',tr(s.name)+' — '+(isEnglish()?'Gaza':'غزة'));setText('address',tr(s.address));setText('hours',tr(s.hours));setText('hotline',s.hotline);setText('intro',tr(s.contact));const credit=$('credit-link'), agency='وكالة يوصل',parts=s.credit.split(agency);
- credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit;
+ credit.replaceChildren(parts[0]);if(parts.length>1)credit.append(make('strong',agency),parts.slice(1).join(agency));$('credit').hidden=!s.credit||yoosalCreditVisited();
  contactLinks($('links'),['whatsapp']);contactLinks($('social-links'),['instagram','facebook']);
 }
 // First click highlights Yoosal in orange; second click plays the bell and visits.

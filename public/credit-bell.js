@@ -1,23 +1,31 @@
 // A short, soft original bell, synthesized locally with Web Audio.
 // First click arms a Yoosal credit and changes its color. Second click visits.
 let redirectStarted=false;
+let creditVisitedInTab=false;
+const creditVisitedKey='snounu-yoosal-credit-visited';
 const creditSelector='#credit-link, .rm-interactive-credit-link';
-function resetYoosalCreditStates(){
+export function yoosalCreditVisited(){
+  if(creditVisitedInTab)return true;
+  try{return sessionStorage.getItem(creditVisitedKey)==='1';}catch{return false;}
+}
+function hidePreviouslyVisitedCredit(){
+  const visited=yoosalCreditVisited();
+  document.documentElement.classList.toggle('yoosal-credit-visited',visited);
   redirectStarted=false;
   for(const button of document.querySelectorAll(creditSelector)){
     button.classList.remove('is-armed','is-departing');
     button.setAttribute('aria-label','زيارة موقع وكالة يوصل');
   }
-  // A cached page may return with the interactive credit footer hidden.
-  // Restore only when the existing menu has a configured, nonempty credit.
   const richCredit=document.querySelector('#rich-menu .rm-interactive-credit');
-  if(richCredit?.dataset.creditConfigured==='1'){
-    richCredit.hidden=false;
-  }
+  if(richCredit?.dataset.creditConfigured==='1')richCredit.hidden=visited;
+  const normalCredit=document.getElementById('credit');
+  if(normalCredit&&visited)normalCredit.hidden=true;
 }
-// In both standard loads and back-forward-cache restores, return to yellow.
-window.addEventListener('pagehide',resetYoosalCreditStates);
-window.addEventListener('pageshow',resetYoosalCreditStates);
+// Keep it hidden on return (including Safari/Chrome back-forward cache).
+// The flag lasts for this browser tab, and is not stored indefinitely.
+hidePreviouslyVisitedCredit();
+window.addEventListener('pagehide',hidePreviouslyVisitedCredit);
+window.addEventListener('pageshow',hidePreviouslyVisitedCredit);
 
 export function visitYoosalWithBell(){
  if(redirectStarted)return;
@@ -70,10 +78,14 @@ export function handleYoosalCreditClick(event){
     button.setAttribute('aria-label','اضغط مرة ثانية لزيارة موقع وكالة يوصل');
     return;
   }
-  // The second click fades the still-orange credit out as the chime plays.
-  // Keep is-armed until navigation so the agency name does not flash yellow.
+  // On the second click, remember the choice for this tab. Let the orange
+  // credit finish fading before hiding it; never restore it when navigating back.
   if(button.classList.contains('is-departing'))return;
+  creditVisitedInTab=true;
+  try{sessionStorage.setItem(creditVisitedKey,'1');}catch{}
   button.classList.add('is-departing');
   button.setAttribute('aria-label','جارٍ فتح موقع وكالة يوصل');
+  // The existing fade lasts 280ms; hiding after 320ms avoids a yellow flash.
+  window.setTimeout(hidePreviouslyVisitedCredit,320);
   visitYoosalWithBell();
 }

@@ -1364,3 +1364,10 @@ body.lang-en .restaurant-closure-banner{direction:ltr}
   pointer-events:none!important;
 }
 @media(prefers-reduced-motion:reduce){#credit-link{transition:none!important}}
+
+/* After visiting Yoosal, do not show the credit again in this tab.
+   Works for regular menu, interactive mode, refresh and browser Back. */
+html.yoosal-credit-visited #credit,
+html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
+  display:none!important;
+}

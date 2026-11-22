@@ -1,6 +1,6 @@
 /* Opt-in immersive Snounu menu: spring inertia, horizontal 3D dish feed,
    swipe-driven category transitions, and a perspective thumbnail rail. */
-import {handleYoosalCreditClick} from './credit-bell.js?v=4';
+import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -642,7 +642,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   if(parts.length>1)creditButton.append(mk('strong',null,agency),document.createTextNode(parts.slice(1).join(agency)));
   const creditFooter=creditButton.closest('.rm-interactive-credit');
   creditFooter.dataset.creditConfigured=creditText?'1':'0';
-  creditFooter.hidden=!creditText;
+  creditFooter.hidden=!creditText||yoosalCreditVisited();
   const oldGroup=group()?.id,oldDish=dish()?.id;
   const all=snapshot.dishes||[];
   groups=(snapshot.categories||[]).map(cat=>({
