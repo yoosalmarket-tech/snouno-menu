@@ -615,10 +615,13 @@ export function installCart({ catalog, name, description, closed, page }) {
   };
   function showCart() {
     const b = layout(t("سلّتك", "Your cart"));
+    dialog.classList.add("pay-cart-view");
+    let nextButton = null;
     for (const l of lines()) {
       const { line, qty, d, price, selected, note } = l;
       const row = el("section");
       row.className = "pay-row";
+      row.dataset.cartLine = line;
       if (d?.image) {
         const i = el("img");
         i.src = d.image;
@@ -634,49 +637,75 @@ export function installCart({ catalog, name, description, closed, page }) {
       );
       const controls = el("div");
       controls.className = "pay-controls";
-      const change = (n) => {
-        if (n <= 0) cart = cart.filter((i) => i.line !== line);
-        else cart.find((i) => i.line === line).qty = Math.min(n, maxQty);
-        save();
-        if (!cart.length) {
-          void dismiss();
+      const number = el("span", qty);
+      number.className = "pay-cart-line-qty";
+      number.setAttribute("aria-live", "polite");
+      let removing = false;
+      const change = async n => {
+        if (removing) return;
+        const current = cart.find(i => i.line === line);
+        if (!current) return;
+        if (n <= 0) {
+          removing = true;
+          row.inert = true;
+          // Fade out the removed meal while its height collapses naturally.
+          if (motion()) {
+            const css = getComputedStyle(row);
+            const height = row.getBoundingClientRect().height;
+            row.style.overflow = "hidden";
+            const fade = row.animate([
+              {height:height+"px",opacity:1,transform:"translateY(0)",paddingTop:css.paddingTop,paddingBottom:css.paddingBottom,borderBottomWidth:css.borderBottomWidth},
+              {height:"0px",opacity:0,transform:"translateY(-8px)",paddingTop:"0px",paddingBottom:"0px",borderBottomWidth:"0px"}
+            ],{duration:300,easing:"cubic-bezier(.25,.8,.25,1)",fill:"forwards"});
+            await fade.finished.catch(() => {});
+          }
+          const oldHeight = dialog.getBoundingClientRect().height;
+          cart = cart.filter(i => i.line !== line);
+          save();
+          showCart(); // Display the empty basket rather than closing abruptly.
+          const newHeight = dialog.getBoundingClientRect().height;
+          if (dialog.open && motion() && Math.abs(newHeight-oldHeight)>2) {
+            dialog.animate([{height:oldHeight+"px"},{height:newHeight+"px"}],
+              {duration:270,easing:"cubic-bezier(.22,1,.36,1)"});
+          }
           return;
         }
-        showCart();
+        current.qty = Math.min(n, maxQty);
+        save();
+        number.textContent = current.qty;
+        plus.disabled = current.qty >= maxQty;
+        // Do not rebuild/reanimate the modal on quantity-only edits.
+        if (nextButton) nextButton.textContent = t("متابعة", "Continue") + " · " + amount(total());
       };
+      const minus=button("−",()=>void change((cart.find(i=>i.line===line)?.qty||0)-1));
+      const plus=button("+",()=>void change((cart.find(i=>i.line===line)?.qty||0)+1));
+      minus.setAttribute("aria-label",t("تقليل الكمية","Decrease quantity"));
+      plus.setAttribute("aria-label",t("زيادة الكمية","Increase quantity"));
+      plus.disabled=qty>=maxQty;
       controls.append(
-        button("−", () => change(qty - 1)),
-        el("span", qty),
-        button("+", () => change(qty + 1)),
+        minus,number,plus,
         button(t("تعديل", "Edit"), () => add(d, l)),
-        button(t("حذف", "Remove"), () => change(0)),
+        button(t("حذف", "Remove"), () => void change(0)),
       );
       row.append(info, controls);
       b.append(row);
     }
     if (!count()) b.append(el("p", t("سلّتك فارغة", "Your cart is empty")));
     else {
-      const next = button(
+      nextButton = button(
         t("متابعة", "Continue") + " · " + amount(total()),
         () => checkout(),
       );
-      next.className = "pay-primary";
-      next.disabled = closed() || lines().some((l) => !l.d?.available);
-      b.append(next);
-      if (next.disabled)
-        b.append(
-          el(
-            "p",
-            t("الطلب غير متاح حالياً", "Ordering is currently unavailable"),
-          ),
-        );
+      nextButton.className = "pay-primary";
+      nextButton.disabled = closed() || lines().some((l) => !l.d?.available);
+      b.append(nextButton);
+      if (nextButton.disabled)
+        b.append(el("p", t("الطلب غير متاح حالياً", "Ordering is currently unavailable")));
     }
-    if(document.body.classList.contains("rich-menu-active")){
-      const orders=button(t("طلباتي", "My orders")+(tracking.length?" · "+tracking.length:""),showHistory);
-      orders.className="pay-cart-orders";
-      orders.setAttribute("aria-label",t("عرض طلباتي السابقة","View my previous orders"));
-      b.append(orders);
-    }
+    const orders=button(t("طلباتي", "My orders")+(tracking.length?" · "+tracking.length:""),showHistory);
+    orders.className="pay-cart-orders";
+    orders.setAttribute("aria-label",t("عرض طلباتي السابقة","View my previous orders"));
+    b.append(orders);
     // Old browser records may still say pending after the restaurant has finished an order.
     const ticket = generation;
     let shortcut, checkingBasket = false;
