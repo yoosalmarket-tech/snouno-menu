@@ -1904,3 +1904,20 @@ body.rich-menu-active:not([data-preview]) #rich-menu .rm-app > .rm-thumbs{
 body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
 @media(max-width:980px){#rich-menu .rm-closure-note{font-size:11px;padding:6px 9px;margin:3px 0;gap:7px}}
 
+
+/* 2026-11-22 Interactive controls. */
+#rich-menu .rm-exit,#rich-menu .rm-instruction{display:none!important}
+#rich-menu .rm-app > .rm-interactive-credit[hidden]{display:none!important}
+#rich-menu .rm-interactive-credit-link{
+  min-height:44px!important;background:transparent!important;border:0!important;
+  border-radius:0!important;color:#c4bdb2!important;
+  font:400 12px/1.55 "Qatar2022 Arabic",Tahoma,Arial,sans-serif!important;
+  padding:10px 14px!important;text-shadow:none!important;box-shadow:none!important;
+  max-width:min(95vw,480px)!important;
+}
+#rich-menu .rm-interactive-credit-link strong{font-weight:800!important;color:#FDBE2D!important}
+#rich-menu .rm-interactive-credit-hint{font-size:12px!important}
+/* Decrease Y by moving the info, share and favorite controls slightly upward. */
+#rich-menu .rm-info-actions{position:relative!important;top:calc(-1 * clamp(8px,1.5svh,18px))!important}
+@media(max-width:980px){#rich-menu .rm-info-actions{top:calc(-1 * clamp(5px,1svh,12px))!important}}
+@media(max-height:650px){#rich-menu .rm-info-actions{top:-4px!important}}

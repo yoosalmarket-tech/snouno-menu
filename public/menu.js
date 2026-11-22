@@ -1,4 +1,4 @@
-import {installCart} from './cart.js?v=receipt-clean-20261122';
+import {installCart} from './cart.js?v=rich-ui-20261122';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
@@ -164,13 +164,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=availability2-20261120';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=rich-ui-20261122';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=edit-all-payment-03')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=rich-ui-20261122')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -189,6 +189,7 @@ async function syncRichMode(){
  if(!target||!richToggle)return;
  const version=++richRevision;
  document.body.classList.toggle('rich-menu-active',enabled&&currentPage()==='menu');
+ window.dispatchEvent(new Event('richmodechange'));
  updateRichToggle();
  // The two menu modes share menu data, but never build each other's meal imagery.
  if(settings?.name&&dishes.length){

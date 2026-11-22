@@ -115,9 +115,10 @@ export function installCart({ catalog, name, description, closed, page }) {
       );
   };
   function refresh() {
-    const show = page() === "menu" && count() > 0;
+    const rich = document.body.classList.contains("rich-menu-active");
+    const show = page() === "menu" && (count() > 0 || (rich && tracking.length > 0));
     badge.replaceChildren(
-      el("strong", t("عرض السلة", "View cart") + " · " + count()),
+      el("strong", count() > 0 ? t("عرض السلة", "View cart") + " · " + count() : t("السلة وطلباتي", "Cart and orders")),
       el("span", amount(total()) + "  ‹"),
     );
     badge.firstChild.prepend(el("span", "🛒 "));
@@ -134,7 +135,7 @@ export function installCart({ catalog, name, description, closed, page }) {
         }, 220);
       else badge.hidden = true;
     }
-    history.hidden = !tracking.length || page() === "welcome";
+    history.hidden = !tracking.length || page() === "welcome" || rich;
     const pendingOrders = tracking.filter((r) => r.status === "pending").length;
     history.dataset.pending = String(pendingOrders > 0);
     history.replaceChildren(
@@ -182,8 +183,11 @@ export function installCart({ catalog, name, description, closed, page }) {
     photo.className = "pay-meal-photo";
     photo.alt = name(d);
     photo.src = d.image || d.rich_image || "/assets/logo.webp";
+    const photoStage=el("div");
+    photoStage.className="pay-meal-photo-stage";
+    photoStage.append(photo);
     body.append(
-      photo,
+      photoStage,
       el("p", description(d)),
       el("strong", amount(d.price)),
       form,
@@ -307,6 +311,11 @@ export function installCart({ catalog, name, description, closed, page }) {
   }
   function showHistory() {
     const b = layout(t("طلباتي", "My orders"));
+    if(document.body.classList.contains("rich-menu-active")){
+      const back=button(t("العودة إلى السلة", "Back to cart"),showCart);
+      back.className="pay-cart-back";b.append(back);
+    }
+    if(!tracking.length)b.append(el("p",t("لا توجد طلبات سابقة","No previous orders")));
     for (const ref of tracking)
       b.append(button("#" + (ref.number || "…") + " — " + t(...(statuses[ref.status] || statuses.pending)), () => status(ref)));
   }
@@ -445,6 +454,12 @@ export function installCart({ catalog, name, description, closed, page }) {
             t("الطلب غير متاح حالياً", "Ordering is currently unavailable"),
           ),
         );
+    }
+    if(document.body.classList.contains("rich-menu-active")){
+      const orders=button(t("طلباتي", "My orders")+(tracking.length?" · "+tracking.length:""),showHistory);
+      orders.className="pay-cart-orders";
+      orders.setAttribute("aria-label",t("عرض طلباتي السابقة","View my previous orders"));
+      b.append(orders);
     }
     // Old browser records may still say pending after the restaurant has finished an order.
     const ticket = generation;
@@ -1284,6 +1299,7 @@ export function installCart({ catalog, name, description, closed, page }) {
   setInterval(notifications, 15000);
   document.addEventListener("visibilitychange", notifications);
   window.addEventListener("pagechange", refresh);
+  window.addEventListener("richmodechange", refresh);
   window.addEventListener("storage", () => {
     cart = restore();
     tracking = read("snounu-orders-v1", []);

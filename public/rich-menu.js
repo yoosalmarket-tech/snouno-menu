@@ -9,7 +9,6 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  const root=mk('div','rm-app');root.dir='ltr';root.id='rich-interactive-stage';
  root.innerHTML=[
  '<div class="rm-top"><svg class="rm-band" viewBox="0 0 390 66" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 H390 V48 Q195 75 0 48 Z" fill="#FDBE2D"/></svg>',
- '<button type="button" class="rm-exit" aria-label="العودة إلى المنيو العادي" title="العودة إلى المنيو العادي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>',
  '<span class="rm-top-caption" lang="en">SNOUNU / INTERACTIVE</span><a class="rm-top-logo-home" href="/welcome" data-page="welcome" aria-label="العودة إلى شاشة ترحيب سنونو" title="العودة إلى شاشة الترحيب"><img class="rm-top-logo" src="/assets/logo.webp" alt="مطعم سنونو"></a></div>',
  '<nav class="rm-categories" aria-label="تصنيفات الأطباق"><div class="rm-categories-header">',
  '<div class="rm-categories-label"><strong lang="en">CATEGORIES</strong><span dir="rtl">التصنيفات</span></div>',
@@ -36,7 +35,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  '<button type="button" class="rm-info-details">◷ مواعيد ومعلومات المطعم</button>',
  '<button type="button" class="rm-info-fav" aria-pressed="false" aria-label="المفضلة">♡</button></div>',
  '<p class="rm-closure-note" role="status"><span class="rm-closure-mark" aria-hidden="true">◷</span><span class="rm-closure-note-copy"></span></p>',
- '<small class="rm-instruction" dir="rtl">اسحب يمين ويسار للتنقل بين الوجبات، وفوق وتحت لتغيير التصنيفات</small></section>',
+ '</section>',
  '<footer class="rm-interactive-credit" aria-label="حقوق تصميم المنيو">',
  '<button type="button" class="rm-interactive-credit-link" aria-label="انقر مرتين لزيارة موقع وكالة يوصل">تصميم <strong>وكالة يوصل</strong> لتسويق المطاعم</button>',
  '<small class="rm-interactive-credit-hint" role="status" aria-live="polite"></small></footer>'
@@ -276,9 +275,6 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
  function info(){
   trackVisibleMeal();
   const m=dish();if(!m)return;
-  const instruction=at(root,'.rm-instruction');
-  instruction.textContent=isEnglish()?'Swipe left or right for meals, up or down for categories.':'اسحب يمين ويسار للتنقل بين الوجبات، وفوق وتحت لتغيير التصنيفات';
-  instruction.dir=isEnglish()?'ltr':'rtl';
   u.title.textContent=getName(m);
   const unavailable=m.available===false;
   u.availability.hidden=!unavailable;
@@ -607,7 +603,6 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   else if(event.key==='ArrowUp'){if(!event.repeat)changeGroup(groupIndex-1);}
   else if(dish())configureMeal?.(dish());
  }
- at(root,'.rm-exit').addEventListener('click',()=>{if(typeof onExit==='function')onExit();});
  let pendingMealOpen=0;
  // Finish the original burger's pointer/click sequence before opening the
  // modal. Otherwise its synthetic click can hit the newly opened backdrop.
@@ -630,7 +625,6 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   surface.addEventListener('wheel',wheel,{passive:false});
  }
  u.stage.addEventListener('keydown',key);
- at(root,'.rm-exit').id='rich-exit';
  u.catPrev.id='rich-category-previous';u.catNext.id='rich-category-next';
  u.railUp.id='rich-meal-previous';u.railDown.id='rich-meal-next';
  u.customize.id='rich-order-now';u.customize.dataset.trackAction='order_now_click';
@@ -656,6 +650,13 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   resetEdgeSwipes();cancelPointer();++swapToken;swapping=false;
   root.classList.remove('rm-category-out','rm-category-in');
   snapshot=getData();
+  // Match the editable footer text and emphasis of the regular menu.
+  const agency='وكالة يوصل';
+  const creditText=String(snapshot.settings?.credit||'');
+  const parts=creditText.split(agency);
+  creditButton.replaceChildren(document.createTextNode(parts[0]||''));
+  if(parts.length>1)creditButton.append(mk('strong',null,agency),document.createTextNode(parts.slice(1).join(agency)));
+  creditButton.closest('.rm-interactive-credit').hidden=!creditText;
   const oldGroup=group()?.id,oldDish=dish()?.id;
   const all=snapshot.dishes||[];
   groups=(snapshot.categories||[]).map(cat=>({
