@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=06-12";
+} from "../payment-ui.js?v=receipt80-20261122";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
@@ -196,7 +196,7 @@ export async function orders({ root, api, notice, endpoint, canManage = false })
     }
     if (o.status === "approved")
       dialog.append(
-        button("طباعة الفاتورة", () => {
+        button("طباعة الإيصال الحراري (80 مم)", () => {
           const w = invoice(o);
           if (w)
             Promise.all(
@@ -569,7 +569,6 @@ export async function settings({ root, api, notice, endpoint }) {
     ["address","عنوان المطعم *",cfg.address],
     ["phone","هاتف المطعم *",cfg.phone],
     ["logo","مسار أو رابط شعار الفاتورة",cfg.logo],
-    ["thermal","طباعة 80 مم افتراضياً",cfg.paper === "80mm","checkbox"],
     ["cancellation","السماح بإلغاء الطلب قيد المراجعة",cfg.cancellation,"checkbox"],
     ["live_updates","إشعارات الحالة الفورية داخل المنيو",cfg.live_updates,"checkbox"],
     ...formats.map(m => [m,"قبول "+m.split("/")[1].toUpperCase(),cfg.formats.includes(m),"checkbox"]),
@@ -588,8 +587,7 @@ export async function settings({ root, api, notice, endpoint }) {
     values.formats = formats.filter(m => values[m]);
     if (!values.formats.length) throw Error("اختر على الأقل نوعاً واحداً لإثبات الدفع");
     formats.forEach(m => delete values[m]);
-    values.paper = values.thermal ? "80mm" : "A4";
-    delete values.thermal;
+    values.paper = "80mm";
     await api(rootPath + "pay_settings?id=eq.1", { method: "PATCH", body: values });
   });
 }
