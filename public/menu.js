@@ -1,5 +1,5 @@
 import {installCart, closePayDialog} from './cart.js?v=interactive-motion-01';
-import {handleYoosalCreditClick} from './credit-bell.js?v=2';
+import {handleYoosalCreditClick} from './credit-bell.js?v=3';
 import {mealTranslation,categoryEnglish,ingredientEnglish,enText} from './translations.js?v=delivery-options-edit10-20261119';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
 import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
@@ -165,13 +165,13 @@ function updateRichToggle(){
 }
 async function richAssets(){
  if(richImport)return richImport;
- const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=interactive-motion-02';
+ const link=document.createElement('link');link.rel='stylesheet';link.href='/rich-menu.css?v=credit-return-20261122';
  link.dataset.richStyles='1';
  const css=new Promise((resolve,reject)=>{
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=credit-two-step-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=credit-return-20261122')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;

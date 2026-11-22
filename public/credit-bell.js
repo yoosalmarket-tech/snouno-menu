@@ -1,6 +1,24 @@
 // A short, soft original bell, synthesized locally with Web Audio.
 // First click arms a Yoosal credit and changes its color. Second click visits.
 let redirectStarted=false;
+const creditSelector='#credit-link, .rm-interactive-credit-link';
+function resetYoosalCreditStates(){
+  redirectStarted=false;
+  for(const button of document.querySelectorAll(creditSelector)){
+    button.classList.remove('is-armed');
+    button.setAttribute('aria-label','زيارة موقع وكالة يوصل');
+  }
+  // A cached page may return with the interactive credit footer hidden.
+  // Restore only when the existing menu has a configured, nonempty credit.
+  const richCredit=document.querySelector('#rich-menu .rm-interactive-credit');
+  if(richCredit?.dataset.creditConfigured==='1'){
+    richCredit.hidden=false;
+  }
+}
+// In both standard loads and back-forward-cache restores, return to yellow.
+window.addEventListener('pagehide',resetYoosalCreditStates);
+window.addEventListener('pageshow',resetYoosalCreditStates);
+
 export function visitYoosalWithBell(){
  if(redirectStarted)return;
  redirectStarted=true;
@@ -52,5 +70,8 @@ export function handleYoosalCreditClick(event){
     button.setAttribute('aria-label','اضغط مرة ثانية لزيارة موقع وكالة يوصل');
     return;
   }
+  // Restore yellow on the second click before the bell and navigation.
+  button.classList.remove('is-armed');
+  button.setAttribute('aria-label','زيارة موقع وكالة يوصل');
   visitYoosalWithBell();
 }
