@@ -1448,10 +1448,19 @@ async function refreshSeoWelcomeAlts(){
 }
 async function load(){
  try{
-  const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
+  // Dispatch all five requests together, but don't make the LCP food photo
+  // wait for categories, meals, contact links, or advertisements to finish.
+  const paths=['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'];
+  const requests=paths.map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
-  }));
-  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  });
+  [settings]=await requests[0];
+  if(!settings)throw new Error('Missing restaurant settings');
+  if(currentPage()==='welcome'){
+   syncWelcomeSettings();
+   setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
+  }
+  [categories,dishes,links,advertisements]=await Promise.all(requests.slice(1));installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   // The SEO fetch runs after initial menu data, outside the 3-second decision.
   setTimeout(()=>void refreshSeoWelcomeAlts(),3200);
   void syncRichMode();
