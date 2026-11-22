@@ -283,7 +283,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
           proofBody.replaceChildren(media);
         }catch(err){notice(err.message);preview.disabled=false;}
       });
-      preview.className="ord-detail-secondary";
+      preview.className="ord-proof-preview";
       proofBody.append(preview);proofSection.append(proofBody);
       inner.append(hero,summary,meals);
       if(detailNotes.childElementCount)inner.append(detailNotes);

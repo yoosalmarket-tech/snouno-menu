@@ -158,3 +158,50 @@
 .pay-orders-refined .ord-refresh:hover{background:#edaf18;border-color:#edaf18;color:#262626}
 .pay-orders-refined .ord-refresh:focus-visible{outline:3px solid #FDBE2D;outline-offset:2px}
 .pay-orders-refined .ord-refresh:disabled{opacity:.65;cursor:wait;color:#262626}
+
+/* Clear, full-width green payment-proof preview action. */
+.ord-detail-dialog .ord-proof-body > button.ord-proof-preview{
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  gap:10px;
+  width:100%!important;
+  min-height:50px!important;
+  padding:12px 22px!important;
+  border:1px solid #15803d!important;
+  border-radius:999px!important;
+  background:#15803d!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  font:800 14px/1.5 Snounu,Tahoma,Arial,sans-serif!important;
+  text-align:center!important;
+  cursor:pointer;
+  transition:background-color .2s,border-color .2s,transform .2s;
+}
+.ord-detail-dialog .ord-proof-body > button.ord-proof-preview::before{
+  content:"↗";
+  display:inline-block;
+  direction:ltr;
+  font-family:Arial,sans-serif;
+  font-weight:800;
+  font-size:17px;
+  line-height:1;
+}
+.ord-detail-dialog .ord-proof-body > button.ord-proof-preview:hover{
+  background:#166534!important;
+  border-color:#166534!important;
+  transform:translateY(-1px);
+}
+.ord-detail-dialog .ord-proof-body > button.ord-proof-preview:focus-visible{
+  outline:3px solid #86efac;
+  outline-offset:3px;
+}
+.ord-detail-dialog .ord-proof-body > button.ord-proof-preview:disabled{
+  opacity:.65;
+  cursor:wait;
+  transform:none;
+}
+@media(prefers-reduced-motion:reduce){
+  .ord-detail-dialog .ord-proof-body > button.ord-proof-preview{transition:none}
+  .ord-detail-dialog .ord-proof-body > button.ord-proof-preview:hover{transform:none}
+}
