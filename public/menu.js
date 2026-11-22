@@ -1,4 +1,3 @@
-import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=cart-ux-04-20261122';
 import {englishCategoryName} from './category-labels.js?v=1';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
@@ -819,7 +818,45 @@ function openRestaurantInfo() {
  installPayDialogDrag(d);
  openPayDialog(d,document.body.classList.contains('rich-menu-active'));
 }
-let cartUi;
+// Menu-only assets are loaded on demand. Welcome never downloads checkout code
+// or the full regular-menu and payment stylesheets.
+let cartUi,cartModule,mainStylesPromise,menuAssetsPromise;
+function injectPageStylesheet(id,url){
+ return new Promise((resolve,reject)=>{
+  let link=document.getElementById(id);
+  if(link?.dataset.loaded==='true'){resolve();return;}
+  if(!link){
+   link=document.createElement('link');
+   link.id=id;link.rel='stylesheet';link.href=url;
+   document.head.append(link);
+  }
+  link.addEventListener('load',()=>{link.dataset.loaded='true';resolve();},{once:true});
+  link.addEventListener('error',()=>{link.remove();reject(new Error('Stylesheet could not load: '+url));},{once:true});
+ });
+}
+function ensureMainStyles(){
+ if(!mainStylesPromise)mainStylesPromise=injectPageStylesheet('snounu-regular-styles','/menu.css?v=smaller-label-20261122')
+  .catch(error=>{mainStylesPromise=null;throw error;});
+ return mainStylesPromise;
+}
+function initialiseCart(){
+ if(!isPreview&&!cartUi&&cartModule&&settings?.name)
+  cartUi=cartModule.installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});
+}
+function ensureMenuAssets(){
+ if(!menuAssetsPromise){
+  menuAssetsPromise=Promise.all([
+   ensureMainStyles(),
+   injectPageStylesheet('snounu-payment-styles','/payments.css?v=cart-ux-04-20261122'),
+   import('./cart.js?v=cart-ux-04-20261122')
+  ]).then(([, ,module])=>{cartModule=module;initialiseCart();return module;})
+   .catch(error=>{menuAssetsPromise=null;throw error;});
+ }
+ return menuAssetsPromise;
+}
+function closePayDialog(...args){return cartModule?.closePayDialog(...args);}
+function openPayDialog(...args){return cartModule?.openPayDialog(...args);}
+function installPayDialogDrag(...args){return cartModule?.installPayDialogDrag(...args);}
 const pages=['welcome','menu','contact'];
 function currentPage(){
  const path=location.pathname.replace(/^\/|\/$/g,'');
@@ -1460,7 +1497,11 @@ async function load(){
    syncWelcomeSettings();
    setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
   }
-  [categories,dishes,links,advertisements]=await Promise.all(requests.slice(1));installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  [categories,dishes,links,advertisements]=await Promise.all(requests.slice(1));
+  if(currentPage()==='menu')await ensureMenuAssets();
+  else if(currentPage()==='contact')await ensureMainStyles();
+  initialiseCart();
+  installRestaurantClosureUpdates();renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   // The SEO fetch runs after initial menu data, outside the 3-second decision.
   setTimeout(()=>void refreshSeoWelcomeAlts(),3200);
   void syncRichMode();
