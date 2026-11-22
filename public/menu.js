@@ -1130,6 +1130,11 @@ function renderChips(groups){
 }
 function price(d){
  const p=make('div');p.className='price';
+ if(d.available===false){
+  p.classList.add('price-unavailable');
+  p.title='غير متوفر';
+  p.setAttribute('aria-label','غير متوفر، السعر '+money(d.price));
+ }
  const amount=(tag,value)=>{const el=make(tag,money(value));el.dir='ltr';return el;};
  p.append(amount('bdi',d.price));
  // Preserve historical previous prices for increases as well as discounts.
@@ -1191,8 +1196,7 @@ function mealCard(d,context='regular'){
    const nameRow=make('div');nameRow.className='meal-name-row';
    nameRow.append(make('strong',displayName(d)));
    if(d.available===false){
-    const stamp=make('span','غير متوفر');stamp.className='meal-unavailable-stamp';
-    stamp.setAttribute('aria-hidden','true');article.append(stamp);
+    // Regular cards use a struck-through gray price, not the interactive stamp.
     open.setAttribute('aria-label',displayName(d)+' — غير متوفر');
    }
    open.append(nameRow,make('p',displayDescription(d)),price(d));
@@ -1244,15 +1248,12 @@ function detail(d){
    const frame=make('figure');frame.className='dish-photo';frame.classList.toggle('meal-unavailable',d.available===false);
    frame.append(image(d.image==='/assets/knockout.webp'?'/assets/knockout-detail.webp':d.image,displayName(d)));
    if(categoryLabel){const tag=make('span',categoryLabel);tag.className='photo-tag';frame.append(tag);}
-   if(d.available===false){
-    const stamp=make('span','غير متوفر');stamp.className='meal-unavailable-stamp';
-    stamp.setAttribute('aria-hidden','true');frame.append(stamp);
-   }
+   // No availability stamp in regular meal details; the price shows the state.
    box.append(frame);
  }
  const content=make('div');content.className='content';
  const lead=make('div');lead.className='dish-lead';lead.append(make('h2',displayName(d)));
- // Unavailable status is shown as a red stamp over the meal photo.
+ // Regular details use a gray struck-through price to signal unavailability.
  if(d.rating!=null)lead.append(startingScore(d.rating));
  content.append(lead);if(d.price!=null)content.append(price(d));
  if(d.description)content.append(make('p',displayDescription(d)));

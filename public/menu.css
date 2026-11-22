@@ -1376,37 +1376,21 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
 .category-nav-title span{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
 .chip .chip-ar{font-family:"Snounu Qatar Credit",Snounu,Tahoma,sans-serif!important}
 
-/* Red unavailable stamp rendered as real text: no external PNG required. */
-#menu .meal-unavailable-stamp,
-#details .meal-unavailable-stamp{
- position:absolute;z-index:6;display:grid;place-items:center;
- left:50%;top:42%;width:max-content;max-width:94%;height:auto;
- padding:9px 8px;
- transform:translate(-50%,-50%) rotate(-17deg);
- background:transparent;
- color:#FF304A;
- font:900 clamp(18px,4.3vw,34px)/1.25 "Snounu Qatar Credit",Snounu,Tahoma,sans-serif;
- white-space:nowrap;
- -webkit-text-stroke:.65px #30060B;
- text-shadow:0 2px 0 #30060B,0 0 3px rgba(0,0,0,.85);
- pointer-events:none;
- filter:drop-shadow(0 2px 3px rgba(0,0,0,.65));
- mix-blend-mode:normal;
- opacity:1;
+/* Standard menu only: gray and crossed-out current price for unavailable meals.
+   This deliberately does not affect the red stamp in interactive mode. */
+#menu .card.meal-unavailable .price.price-unavailable,
+#menu .card.meal-unavailable .price.price-unavailable :is(bdi,del),
+#details .price.price-unavailable,
+#details .price.price-unavailable :is(bdi,del){
+ color:#8b9098!important;
 }
-#menu .meal-unavailable-stamp::before,#menu .meal-unavailable-stamp::after,
-#details .meal-unavailable-stamp::before,#details .meal-unavailable-stamp::after{
- content:"";position:absolute;left:0;right:0;height:5px;background:#FF304A;
- box-shadow:0 1px 0 #30060B,0 -1px 0 #30060B;
+#menu .card.meal-unavailable .price.price-unavailable > bdi,
+#details .price.price-unavailable > bdi{
+ text-decoration:line-through;
+ text-decoration-color:currentColor;
+ text-decoration-thickness:2px;
+ text-decoration-skip-ink:none;
 }
-#menu .meal-unavailable-stamp::before,#details .meal-unavailable-stamp::before{top:0}
-#menu .meal-unavailable-stamp::after,#details .meal-unavailable-stamp::after{bottom:0}
-#menu .card.meal-unavailable,#details .dish-photo.meal-unavailable{position:relative}
-#details .dish-photo.meal-unavailable .meal-unavailable-stamp{
- top:64%;font-size:clamp(30px,7.3vw,58px);padding:14px 12px;
-}
-#details .dish-photo.meal-unavailable .meal-unavailable-stamp::before,
-#details .dish-photo.meal-unavailable .meal-unavailable-stamp::after{height:8px}
 
 /* Welcome Browse: press-and-hold mode chooser. Rendered in <body> to avoid
    clipping under mobile welcome curves and desktop transformed sections. */
