@@ -694,7 +694,7 @@ function renderSettings(){
  setText('welcome-subtitle',tr(s.welcome_subtitle||'جاهز تختار وجبتك المفضّلة؟'));
  setText('desktop-welcome-accent',tr(s.welcome_desktop_accent||'على مزاجك.'));
  setText('desktop-welcome-description',tr(s.welcome_description||'اكتشف وجباتنا، اختر اللي بتحبه، واطلب مباشرة من سنونو.'));
- setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
+ if(isPreview||currentPage()==='welcome')setWelcomeImage($('cover-photo'),mobileWelcomeIndex);
  // The offscreen second slide is loaded on demand by goToWelcomeMeal().
  setText('brand',tr(s.name));setText('greeting',tr(s.welcome));setText('quick',s.hotline);
  const buttonText=tr(s.welcome_button||'تصفح المنيو');
