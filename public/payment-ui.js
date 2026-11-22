@@ -117,16 +117,11 @@ export function invoice(o) {
   pair("العميل",o.customer);
   pair("الجوال",o.phone,true);
   pair("نوع الطلب",o.service_type==="delivery"?"توصيل":o.service_type==="dine_in"?"داخل المطعم":"غير محدد");
-  if(o.payment_mode==="at_restaurant"&&o.arrival_eta_minutes){
-    pair("مدة الوصول",o.arrival_eta_minutes+" دقيقة");
-    if(o.expected_arrival_at)pair("موعد الوصول",date(o.expected_arrival_at));
-  }
   if(o.service_type==="delivery"){
     pair("عنوان التوصيل",o.delivery_address);
     pair("أقرب معلم",o.delivery_landmark);
     pair("هاتف احتياطي",o.backup_phone,true);
   }
-  pair("طريقة الدفع",o.method||"غير محددة");
   receipt.append(info,make("h3","تفاصيل الطلب","section-title"));
   const table=make("table",null,"items"),thead=make("thead"),labels=make("tr");
   for(const name of ["الوجبة","العدد","المجموع"])labels.append(make("th",name));

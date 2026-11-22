@@ -66,7 +66,7 @@ function rememberSource(code){
 export async function renderReferralLinks({root,api,notice,getToken}){
   root.replaceChildren();
   const intro=$el("section",undefined,"rf-intro");
-  intro.append($el("h2","روابط الإحالة"),$el("p","تقرير المحتوى العضوي: اختر اسم رابط محفوظ لمعرفة زياراته وعدد الطلبات والمدفوعات المعتمدة الناتجة عن زياراته المسجّلة."));
+  intro.append($el("h2","تتبع مصادر الزيارات والمبيعات"),$el("p","تقرير المحتوى العضوي: اختر اسم رابط محفوظ لمعرفة زياراته وعدد الطلبات والمدفوعات المعتمدة الناتجة عن زياراته المسجّلة."));
   // The old free-text source lookup from Investment now lives here as a saved-source selector.
   const report=$el("section",undefined,"rf-report analytics-report ga-source-search");
   report.id="referral-source-report";
