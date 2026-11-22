@@ -1,4 +1,4 @@
-import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=cart-ux-01-20261122';
+import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=cart-ux-02-20261122';
 import {englishCategoryName} from './category-labels.js?v=1';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
