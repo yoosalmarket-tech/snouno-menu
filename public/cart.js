@@ -156,40 +156,93 @@ export function installCart({ catalog, name, description, closed, page }) {
         { duration: 200 },
       );
   };
-  // Make adding a meal feel rewarding without delaying cart persistence.
-  // Animations are decorative: the item is saved before any motion runs.
-  async function showAddedFeedback(confirm, photoStage) {
-    confirm.classList.add("pay-add-confirmed");
-    photoStage?.classList.add("pay-photo-added");
-    if (!motion() || !document.body.classList.contains("rich-menu-active")) return;
-    try {
-      await confirm.animate([
-        {transform:"scale(.97)",filter:"brightness(1.02)"},
-        {transform:"scale(1.045)",filter:"brightness(1.12)",offset:.43},
-        {transform:"scale(1)",filter:"none"}
-      ],{duration:380,easing:"cubic-bezier(.2,.8,.25,1)"}).finished;
-    } catch { /* A closed popup or reduced browser support must not block checkout. */ }
-  }
-  let footerBounce;
-  function celebrateFooter() {
-    if (!motion() || !badge.classList.contains("visible")) return;
-    if (!document.body.classList.contains("rich-menu-active")) return;
-    footerBounce?.cancel();
-    footerBounce = badge.animate([
-      { transform: "translateY(0)" },
-      { transform: "translateY(-5px)", offset: .35 },
-      { transform: "translateY(1px)", offset: .72 },
-      { transform: "translateY(0)" },
-    ], { duration: 360, easing: "ease-out" });
-  }
+  let glowCleanupTimer=0;
+  function celebrateFooter(){
+ if(!motion()||!badge.classList.contains("visible")||
+ !document.body.classList.contains("rich-menu-active"))return;
+ const icon=badge.querySelector(".pay-cart-icon");
+ if(!icon)return;
+ clearTimeout(glowCleanupTimer);
+ badge.classList.remove("pay-arrival-glow");
+ void icon.offsetWidth;
+ badge.classList.add("pay-arrival-glow");
+ glowCleanupTimer=setTimeout(()=>badge.classList.remove("pay-arrival-glow"),550);
+}
+  async function flyMealToCart(photo,origin,isNewFooter){
+ if(!motion()||!document.body.classList.contains("rich-menu-active")||
+ !photo?.complete||!photo.naturalWidth||!origin.width||!origin.height||document.hidden)return false;
+ const layer=document.createElement("div");
+ layer.className="pay-flight-layer";
+ layer.setAttribute("popover","manual");
+ const ghost=document.createElement("img");
+ ghost.className="pay-flight-image";
+ ghost.src=photo.currentSrc||photo.src;
+ ghost.alt="";
+ ghost.decoding="async";
+ ghost.style.left=`${origin.left}px`;
+ ghost.style.top=`${origin.top}px`;
+ ghost.style.width=`${origin.width}px`;
+ ghost.style.height=`${origin.height}px`;
+ const style=getComputedStyle(photo);
+ ghost.style.objectFit=style.objectFit;
+ ghost.style.objectPosition=style.objectPosition;
+ ghost.style.borderRadius=style.borderRadius;
+ layer.append(ghost);
+ document.body.append(layer);
+ let flight=null,cancelled=false;
+ const cancelFlight=()=>{cancelled=true;flight?.cancel();layer.remove();};
+ const cancelOnHidden=()=>{if(document.hidden)cancelFlight();};
+ const cancelOnModeChange=()=>{
+  if(!document.body.classList.contains("rich-menu-active"))cancelFlight();
+ };
+ window.addEventListener("pagehide",cancelFlight);
+ document.addEventListener("visibilitychange",cancelOnHidden);
+ window.addEventListener("richmodechange",cancelOnModeChange);
+ try{
+  // Top-layer popovers remain visible above the closing modal dialog.
+  try{
+   if(typeof layer.showPopover==="function")layer.showPopover();
+   else layer.removeAttribute("popover");
+  }catch{layer.removeAttribute("popover");}
+  // Allow an initially hidden cart footer to arrive before measuring its icon.
+  await new Promise(resolve=>setTimeout(resolve,isNewFooter?225:16));
+  if(cancelled||!layer.isConnected)return false;
+  const icon=badge.querySelector(".pay-cart-icon");
+  if(!icon||!badge.classList.contains("visible"))return false;
+  const destination=icon.getBoundingClientRect();
+  if(!destination.width||!destination.height)return false;
+  const dx=destination.left+destination.width/2-(origin.left+origin.width/2);
+  const dy=destination.top+destination.height/2-(origin.top+origin.height/2);
+  const finalScale=Math.min(.30,Math.max(.095,Math.min(destination.width/origin.width,destination.height/origin.height)));
+  const arc=Math.min(110,Math.max(45,Math.abs(dx)*.2));
+  flight=ghost.animate([
+   {transform:"translate3d(0px,0px,0px) scale(1)",offset:0},
+   {transform:`translate3d(${dx*.47}px,${dy*.40-arc}px,0px) scale(.62)`,offset:.47},
+   {transform:`translate3d(${dx}px,${dy}px,0px) scale(${finalScale})`,offset:1}
+  ],{duration:670,easing:"cubic-bezier(.2,.74,.26,1)",fill:"forwards"});
+  await flight.finished;
+  if(cancelled)return false;
+  celebrateFooter(); // Trigger only on actual arrival.
+  return true;
+ }catch{return false;}finally{
+  window.removeEventListener("pagehide",cancelFlight);
+  document.removeEventListener("visibilitychange",cancelOnHidden);
+  window.removeEventListener("richmodechange",cancelOnModeChange);
+  if(layer.matches(":popover-open"))layer.hidePopover();
+  layer.remove();
+ }
+}
   function refresh() {
     const rich = document.body.classList.contains("rich-menu-active");
     const show = page() === "menu" && (count() > 0 || (rich && tracking.length > 0));
     badge.replaceChildren(
       el("strong", count() > 0 ? t("عرض السلة", "View cart") + " · " + count() : t("السلة وطلباتي", "Cart and orders")),
-      el("span", amount(total()) + "  ‹"),
+      el("span", amount(total())),
     );
-    badge.firstChild.prepend(el("span", "🛒 "));
+    const cartIcon=el("span","🛒");
+    cartIcon.className="pay-cart-icon";
+    cartIcon.setAttribute("aria-hidden","true");
+    badge.firstChild.prepend(cartIcon);
     document.body.classList.toggle("has-cart-footer", show);
     if (show) {
       badge.hidden = false;
@@ -349,22 +402,27 @@ export function installCart({ catalog, name, description, closed, page }) {
           options,
           note: instruction,
         });
-      confirm.disabled = true;
-      form.inert = true;
-      const ticket = generation;
-      save();
-      confirm.textContent = existing
-        ? t("تم حفظ التعديل ✓", "Changes saved ✓")
-        : t("أُضيفت إلى السلة ✓", "Added to cart ✓");
-      await showAddedFeedback(confirm, photoStage);
-      if (ticket !== generation || !dialog.open || dialog.inert) return;
-      if (existing) {
-        showCart();
+      const origin=photo.getBoundingClientRect();
+      const footerWasVisible=badge.classList.contains("visible");
+      const rich=document.body.classList.contains("rich-menu-active");
+      confirm.disabled=true;
+      form.inert=true;
+      save(); // Cart is saved before any visual animation runs.
+      confirm.textContent=existing
+        ?t("تم حفظ التعديل ✓","Changes saved ✓")
+        :t("أُضيفت إلى السلة ✓","Added to cart ✓");
+      if(existing){
+        await closePayDialog(dialog,rich);
+        modal();
+        showCart(); // Preserve the existing edit-and-return flow.
         celebrateFooter();
         return;
       }
-      await dismiss();
-      celebrateFooter();
+      // Launch the image clone before sliding its source dialog down.
+      const flight=rich?flyMealToCart(photo,origin,!footerWasVisible):Promise.resolve(false);
+      const closing=closePayDialog(dialog,rich);
+      const [,arrived]=await Promise.all([closing,flight]);
+      if(!arrived)celebrateFooter();
     };
     draw();
   }

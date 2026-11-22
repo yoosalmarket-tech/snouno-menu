@@ -646,3 +646,57 @@ body.rich-menu-active .pay-dialog::backdrop{
  background:rgba(9,8,11,.73);
 }
 body.rich-menu-active .pay-footer.visible{animation:none!important}
+
+/* INTERACTIVE ANIMATIONS 02.2 / 02.4.1: separate food flight and icon glow */
+.pay-flight-layer,.pay-flight-layer[popover]{
+ position:fixed!important;inset:0!important;display:block;
+ margin:0!important;padding:0!important;
+ width:100vw!important;height:100dvh!important;
+ max-width:none!important;max-height:none!important;overflow:visible!important;
+ pointer-events:none!important;border:0!important;background:transparent!important;
+ box-shadow:none!important;z-index:2147483600!important;
+}
+.pay-flight-layer[popover]:not(:popover-open){display:none}
+.pay-flight-image{
+ display:block;position:absolute;margin:0;padding:0;max-width:none;max-height:none;
+ background:transparent;transform-origin:center center;pointer-events:none;
+ user-select:none;-webkit-user-drag:none;will-change:transform;
+}
+body.rich-menu-active .pay-footer .pay-cart-icon{
+ position:relative;display:inline-grid;place-items:center;
+ min-width:29px;min-height:29px;margin-inline-end:7px;
+ isolation:isolate;transform-origin:center center;vertical-align:middle;
+}
+body.rich-menu-active .pay-footer .pay-cart-icon::before{
+ content:"";position:absolute;z-index:-1;width:94px;height:63px;
+ border-radius:50%;pointer-events:none;
+ background:radial-gradient(ellipse,
+  rgba(255,249,209,.94) 0%,rgba(255,231,151,.47) 38%,rgba(253,190,45,0) 77%);
+ filter:blur(7px);opacity:0;transform:scale(.48);
+}
+@keyframes pay-cart-icon-arrival{
+ 0%{transform:translateY(0) scale(1)}
+ 36%{transform:translateY(-6px) scale(1.10)}
+ 71%{transform:translateY(1px) scale(.985)}
+ 100%{transform:translateY(0) scale(1)}
+}
+@keyframes pay-cart-icon-glow{
+ 0%{opacity:0;transform:scale(.48)}
+ 34%{opacity:.95;transform:scale(1)}
+ 66%{opacity:.54;transform:scale(1.13)}
+ 100%{opacity:0;transform:scale(1.28)}
+}
+@media(prefers-reduced-motion:no-preference){
+ body.rich-menu-active .pay-footer.pay-arrival-glow .pay-cart-icon{
+  animation:pay-cart-icon-arrival .5s cubic-bezier(.22,.7,.2,1) both;
+ }
+ body.rich-menu-active .pay-footer.pay-arrival-glow .pay-cart-icon::before{
+  animation:pay-cart-icon-glow .52s ease-out both;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ body.rich-menu-active .pay-footer.pay-arrival-glow .pay-cart-icon,
+ body.rich-menu-active .pay-footer.pay-arrival-glow .pay-cart-icon::before{
+  animation:none!important;
+ }
+}
