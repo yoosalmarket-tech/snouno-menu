@@ -1,0 +1,30 @@
+/* Referral Links — owner-only organic campaign attribution */
+.rf-intro h2{margin:0 0 5px;font-size:1.35rem}
+.rf-intro p,.rf-note{color:#666;font-size:.91rem;line-height:1.7}
+.rf-form,.rf-card,.rf-old-sources{background:#fff;border:1px solid #e8e3d8;border-radius:19px;padding:20px;margin:18px 0;box-shadow:0 4px 16px #00000008}
+.rf-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:end}
+.rf-field{display:flex;flex-direction:column;gap:6px;min-width:0;font-weight:650;font-size:.9rem}
+.rf-field>input,.rf-field>select{width:100%;min-width:0;box-sizing:border-box;border:1px solid #ddd7cb;background:#fff;border-radius:11px;padding:11px;color:#252525;font:inherit}
+.rf-field>input:focus,.rf-field>select:focus,.rf-url-row input:focus{outline:2px solid #FDBE2D;outline-offset:1px}
+.rf-form .rf-primary{width:100%;padding:12px;background:#FDBE2D;border:0;border-radius:12px;color:#181818;font:inherit;font-weight:750;cursor:pointer}
+.rf-form .rf-primary:disabled{opacity:.65;cursor:wait}
+.rf-tools{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-top:20px}
+.rf-tools button,.rf-url-row button,.rf-card-actions button{border:1px solid #ddd7cb;border-radius:11px;padding:10px 14px;background:#fff;color:#222;cursor:pointer;font:inherit}
+.rf-tools button:hover,.rf-url-row button:hover,.rf-card-actions button:hover{border-color:#FDBE2D}
+.rf-tools .rf-field{min-width:170px}
+.rf-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+.rf-metric{border-radius:14px;background:#faf8f3;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.rf-metric small{font-size:.81rem;color:#655f55}
+.rf-metric strong{font-size:1.16rem;color:#201f1d;direction:ltr;text-align:right;overflow-wrap:anywhere}
+.rf-card-head{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.rf-card h3{margin:0;font-size:1.1rem;overflow-wrap:anywhere}
+.rf-card-head small{display:block;color:#777;direction:ltr;text-align:right;font-size:.78rem;overflow-wrap:anywhere}
+.rf-tag{background:#fff5d5;border-radius:20px;padding:5px 10px;color:#58430c;font-size:.78rem}
+.rf-url-row{display:flex;gap:8px;align-items:center;margin:14px 0}
+.rf-url-row input{flex:1;min-width:0;border:1px solid #dedbd3;border-radius:10px;padding:10px;text-align:left;background:#fafafa;font-size:.78rem}
+.rf-url-row a{display:inline-flex;padding:9px 12px;text-decoration:none;border-radius:10px;background:#FDBE2D;color:#171717;font-size:.85rem;white-space:nowrap}
+.rf-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.rf-card-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.rf-card-actions .rf-delete{color:#b42318}
+.rf-old-sources p{font-size:.88rem;overflow-wrap:anywhere}
+@media(max-width:760px){.rf-form{grid-template-columns:1fr;padding:15px}.rf-totals{grid-template-columns:1fr 1fr}.rf-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.rf-url-row{flex-wrap:wrap}.rf-url-row input{flex-basis:100%}.rf-card{padding:14px}.rf-card-head{flex-wrap:wrap}}
