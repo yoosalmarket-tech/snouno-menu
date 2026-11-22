@@ -185,6 +185,9 @@ function richData(){
   displayName,displayDescription};
 }
 async function syncRichMode(){
+ if(currentPage()==='menu'){
+  try{await ensureMenuAssets();}catch(error){console.warn('Snounu menu assets:',error);return;}
+ }
  const enabled=richDesired&&!isPreview;
  const target=$('rich-menu');
  if(!target||!richToggle)return;
@@ -953,11 +956,14 @@ function installWelcomeModeChooser(){
   richDesired=mode==='interactive';
   rememberMode(richDesired);
   updateRichToggle();
-  cancelWelcomeReveal();
-  cancelBrowseFade();
-  const url='/menu?mode='+mode;
-  if(location.pathname+location.search!==url)history.pushState(null,'',url);
-  route();
+  void ensureMenuAssets().then(()=>{
+   if(currentPage()!=='welcome')return;
+   cancelWelcomeReveal();
+   cancelBrowseFade();
+   const url='/menu?mode='+mode;
+   if(location.pathname+location.search!==url)history.pushState(null,'',url);
+   route();
+  }).catch(error=>console.error('Unable to prepare menu:',error));
  }
  options.forEach(option=>option.addEventListener('click',()=>enterMode(option.dataset.mode)));
  for(const button of buttons){
@@ -970,6 +976,8 @@ function installWelcomeModeChooser(){
   button.addEventListener('pointerdown',event=>{
    if(event.button!==0||currentPage()!=='welcome')return;
    swallowClick=false;
+   // A real browse intent can begin loading menu assets before the tap ends.
+   void ensureMenuAssets().catch(error=>console.warn('Menu preload:',error));
    cancelGesture();
    gesture={id:event.pointerId,x:event.clientX,y:event.clientY,opened:false};
    timer=setTimeout(()=>{
@@ -1025,14 +1033,25 @@ function installWelcomeModeChooser(){
 }
 installWelcomeModeChooser();
 
-window.addEventListener('popstate',()=>{cancelBrowseFade();route();});
-window.addEventListener('hashchange',()=>{cancelBrowseFade();route();});
+function routeAfterAssets(){
+ cancelBrowseFade();
+ const next=currentPage();
+ if(next==='menu')void ensureMenuAssets().then(route).catch(error=>console.error('Menu resources:',error));
+ else if(next==='contact')void ensureMainStyles().then(route).catch(error=>console.error('Contact styles:',error));
+ else route();
+}
+window.addEventListener('popstate',routeAfterAssets);
+window.addEventListener('hashchange',routeAfterAssets);
 document.addEventListener('click',event=>{
  const link=event.target.closest('a[data-page]');
  if(!link||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
  event.preventDefault();
  const destination=link.dataset.page;
- const navigate=()=>{
+ const navigate=async()=>{
+  try{
+   if(destination==='menu')await ensureMenuAssets();
+   else if(destination==='contact')await ensureMainStyles();
+  }catch(error){console.error('Unable to prepare destination styles:',error);return;}
   if(destination!=='welcome')cancelWelcomeReveal();
   const url=pageUrl(destination);
   if(location.pathname+location.search!==url)history.pushState(null,'',url);
