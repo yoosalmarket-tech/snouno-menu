@@ -1991,7 +1991,7 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
   border:0!important;
   background:transparent!important;
   pointer-events:none!important;
-  transform:translate(-50%,-50%) rotate(-17deg)!important;
+  transform:translate(-50%,-50%)!important;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))!important;
   mix-blend-mode:normal!important;
   opacity:1!important;
