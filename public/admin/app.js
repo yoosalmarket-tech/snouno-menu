@@ -1273,7 +1273,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
   return;
  }
  if(key==='orders'||key==='payment_settings'){
-  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=payment-settings-v3-20261122');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint,canManage:role==='owner'||permissions.includes('orders.approve')||permissions.includes('orders.reject')||permissions.includes('orders.update_status')});return;
+  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=payment-settings-v3-20261122');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint,canManage:role==='owner'||permissions.includes('orders.approve')||permissions.includes('orders.reject')||permissions.includes('orders.update_status'),grants:role==='owner'?['owner']:permissions});return;
  }
  if(key==='seo'||key==='seo_queries'){
    $('body').replaceChildren();
