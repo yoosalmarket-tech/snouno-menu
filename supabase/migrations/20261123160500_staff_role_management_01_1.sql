@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION private.menu_staff_new_identity()
 RETURNS trigger LANGUAGE plpgsql SET search_path = ''
 AS $function$
 BEGIN
-  IF NEW.full_name IS NULL OR length(trim(NEW.full_name)) < 2 THEN
+  IF NEW.full_name IS NULL OR length(trim(NEW.full_name)) NOT BETWEEN 2 AND 120 THEN
     RAISE EXCEPTION 'Employee full name is required';
   END IF;
   NEW.full_name := trim(NEW.full_name);
