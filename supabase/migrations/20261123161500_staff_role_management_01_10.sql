@@ -156,6 +156,9 @@ AS $function$
 $function$;
 REVOKE ALL ON FUNCTION private.menu_has_permission(text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION private.menu_has_permission(text) TO authenticated;
+-- Upgrade built-in permissions on day one while keeping the original editor role's
+-- access unchanged. Owner has server-enforced full access regardless of displayed labels.
+
 
 -- New, atomic role editor RPC. Names, descriptions and grants change together.
 -- Owner alone can grant permissions until delegable-role rules are introduced.
