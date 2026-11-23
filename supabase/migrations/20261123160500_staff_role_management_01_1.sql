@@ -202,7 +202,7 @@ BEGIN
  IF old_data IS DISTINCT FROM new_data THEN
    PERFORM private.menu_write_staff_audit(lower(TG_OP)||'_'||TG_TABLE_NAME,TG_TABLE_NAME,ident,old_data,new_data);
  END IF;
- RETURN COALESCE(NEW,OLD);
+ IF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
 END $function$;
 DROP TRIGGER IF EXISTS menu_staff_activity_changes ON public.menu_staff;
 CREATE TRIGGER menu_staff_activity_changes AFTER INSERT OR UPDATE OR DELETE ON public.menu_staff
