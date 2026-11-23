@@ -74,12 +74,30 @@ function keyFromAdminLocation(){
  const hash=location.hash.replace(/^#/,'');
  return Object.hasOwn(sections,hash)?hash:null;
 }
-const ownerOnlySections=new Set(['payment_settings','menu_staff','roles','account','overview','investment','seo','seo_queries','assistant','referrals']);
+const ownerOnlySections=new Set(['payment_settings','menu_staff','roles','account']);
+const access={
+  orders:['orders.view','orders.view_financial','orders.approve','orders.reject','orders.update_status','orders'],
+  overview:['dashboard.view_overview','reports.view_visitors','reports.view_products'],
+  investment:['reports.view_sales','orders.view_financial'],
+  referrals:['marketing.manage_campaign_links','marketing.generate_tagged_urls','marketing.view_sources'],
+  assistant:['assistant.access'],
+  dishes:['meals.view','meals.add','meals.edit_details','meals.change_prices','meals.change_availability','meals.delete','meals.reorder','meals.manage_images','meals.manage_ingredients','dishes'],
+  categories:['meals.view','meals.manage_categories','categories'],
+  menu_settings:['content.edit_welcome','content.edit_contact','content.manage_hours','content.manage_closures','content.manage_images','menu_settings'],
+  menu_links:['content.edit_social','menu_links'],
+  menu_ads:['content.manage_ads','menu_ads'],
+  seo:['marketing.edit_seo','marketing.edit_image_seo'],
+  seo_queries:['marketing.view_search_console'],
+  rankings:['reports.view_customers','rankings'],
+  events:['reports.view_visitors','reports.view_products','reports.view_conversions','reports.view_attribution','events'],
+  submissions:['reports.view_customers','submissions']
+};
 let permissions=[];
 function authorizedAdminSection(key){
  if(!Object.hasOwn(sections,key))return false;
  if(role==='owner')return true;
- return !ownerOnlySections.has(key)&&permissions.includes(key);
+ if(ownerOnlySections.has(key))return false;
+ return (access[key]||[]).some(p=>permissions.includes(p));
 }
 function closeAdminMobileNav({restoreFocus=false}={}){
  const open=document.body.classList.contains('admin-mobile-open');
@@ -1227,9 +1245,9 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
  const ticket=++generation; section=key; notice(''); if(!sameSection||key==='account'||key==='events')$('body').replaceChildren(); $('title').textContent=sections[key][0]; $('admin-title-action').replaceChildren(); $('admin-page-note').replaceChildren(); $('admin-page-note').hidden=true;
  for(const b of $('tabs').querySelectorAll('[data-section]'))b.setAttribute('aria-current',String(b.dataset.section===key));
  if(key==='assistant'){
-   const assistantModule=await import('./assistant.js?v=edit-all-payment-15');
+   const assistantModule=await import('./assistant.js?v=staff-role-management-01');
    if(ticket!==generation)return;
-   assistantModule.renderAssistant({
+   assistantModule.renderAssistant({staffMode:role!=='owner',
      root:$('body'),
      getToken:async()=>{
        await api('/auth/v1/user'); // refresh the owner session as needed
@@ -1255,7 +1273,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
   return;
  }
  if(key==='orders'||key==='payment_settings'){
-  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=payment-settings-v3-20261122');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint,canManage:role==='owner'});return;
+  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=payment-settings-v3-20261122');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint,canManage:role==='owner'||permissions.includes('orders.approve')||permissions.includes('orders.reject')||permissions.includes('orders.update_status')});return;
  }
  if(key==='seo'||key==='seo_queries'){
    $('body').replaceChildren();
