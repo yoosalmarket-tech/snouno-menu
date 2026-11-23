@@ -45,7 +45,7 @@ const sections = {
   rankings: ['تقييمات الأطباق', []],
   events: ['إحصائيات التفاعل', []],
   submissions: ['رسائل التواصل', []],
-  menu_staff: ['المستخدمون', [['full_name','اسم الموظف الكامل'],['email','البريد الإلكتروني','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]],
+  menu_staff: ['المستخدمون', [['full_name','اسم الموظف الكامل'],['email','البريد الإلكتروني','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password'],['role','الدور','role']]],
   account: ['حساب المالك', []]
 };
 // Keep an existing dashboard session when updating the brand-prefixed storage key.
@@ -1393,6 +1393,7 @@ async function edit(key,row,inline=false){
  const cats=key==='dishes'?await api('/rest/v1/categories?select=id,name&order=position,name'):[];
  if(key==='dishes'&&!cats.length){notice('أضف صنفاً أولاً لتضع الطبق فيه.');return;}
  const dishes=key==='menu_ads'?await api('/rest/v1/dishes?select=id,name&order=name'):[];
+ const staffRoles=key==='menu_staff'?await api('/rest/v1/menu_roles?select=role,label&role=neq.owner&order=label'):[];
  const uploads={};
  const sizes={image:key==='menu_ads'?'1080 × 285':'1200 × 740',rich_image:'صورة PNG/WebP شفافة 900 × 900 أو أكبر',logo:'564 × 183',favicon_url:'مربع 256 × 256 أو 512 × 512',welcome_image_1:'صورة شفافة 720 × 720',welcome_image_2:'صورة شفافة 720 × 720',welcome_image_3:'صورة شفافة 720 × 720'};
  if(key==='menu_links')form.append(node('p',row.name));
@@ -1402,16 +1403,17 @@ async function edit(key,row,inline=false){
  }
 
  for(const [field,caption,type='text'] of sections[key][1]){
-   const label=node('label',caption);const input=node(type==='textarea'?'textarea':['select','product'].includes(type)?'select':'input');
+   const label=node('label',caption);const input=node(type==='textarea'?'textarea':['select','product','role'].includes(type)?'select':'input');
    input.name=field;if(input.tagName==='INPUT')input.type=({image:'text',integer:'number',optionalRating:'number',optionalPrice:'number',position:'range'}[type]||type);
    if(type==='select')for(const cat of cats){const option=node('option',cat.name);option.value=cat.id;input.append(option);}
+   if(type==='role')for(const role of staffRoles){const option=node('option',role.label);option.value=role.role;input.append(option);}
    if(type==='product'){
      const empty=node('option','عرض الإعلان');empty.value='';input.append(empty);
      for(const dish of dishes){const option=node('option',dish.name);option.value=dish.id;input.append(option);}
    }
    if(type==='locked'){input.readOnly=true;input.title='للقراءة فقط';}
    if(type==='checkbox'){input.checked=row[field]??true;label.classList.add('availability-field');}
-   else input.value=row[field]??(type==='select'?cats[0].id:field==='position'?0:'');
+   else input.value=row[field]??(type==='select'?cats[0].id:type==='role'?'editor':field==='position'?0:'');
    if(type==='position'){
      input.min='5';input.max='95';input.step='1';
      input.value=row[field]??(field.startsWith('rich_badge_')?(field.endsWith('_x')?77:36):(field.includes('_x_')?82:28));
@@ -1422,7 +1424,7 @@ async function edit(key,row,inline=false){
    if(type==='number'){input.step='0.01';input.min='0';}
    if(type==='optionalPrice'||type==='optionalRating'){input.step=type==='optionalPrice'?'0.01':'0.1';input.min=0;if(type==='optionalRating')input.max=5;}
    if(type==='password')input.minLength=12;
-   input.required=['name','price','email','password','url','category_id','position'].includes(field);
+   input.required=['name','price','email','password','full_name','role','url','category_id','position'].includes(field);
    label.append(input);
    if(field==='rich_image')label.append(node('small','خاص بالوضع التفاعلي فقط. حمّل صورة PNG/WebP شفافة مع الحفاظ على صورة الطبق العادي كما هي؛ عند تركه فارغاً نعرض الصورة العادية.'));
    if(field==='available')label.append(node('small','عند إيقاف «متوفر» تتحول صورة هذه الوجبة إلى أبيض وأسود في المنيو العادي والتفاعلي دون التأثير على باقي الوجبات.'));
