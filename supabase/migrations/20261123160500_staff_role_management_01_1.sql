@@ -189,18 +189,24 @@ AS $function$
 DECLARE old_data jsonb; new_data jsonb; ident text;
 BEGIN
  IF TG_OP IN ('UPDATE','DELETE') THEN
-   old_data:=CASE WHEN TG_TABLE_NAME='menu_staff' THEN
-     jsonb_build_object('name',OLD.full_name,'role',OLD.role,'status',OLD.status)
-     ELSE jsonb_build_object('name',OLD.label,'permissions',OLD.permissions) END;
+   IF TG_TABLE_NAME='menu_staff' THEN
+     old_data:=jsonb_build_object('name',OLD.full_name,'role',OLD.role,'status',OLD.status);
+   ELSE
+     old_data:=jsonb_build_object('name',OLD.label,'permissions',OLD.permissions);
+   END IF;
  END IF;
  IF TG_OP IN ('UPDATE','INSERT') THEN
-   new_data:=CASE WHEN TG_TABLE_NAME='menu_staff' THEN
-     jsonb_build_object('name',NEW.full_name,'role',NEW.role,'status',NEW.status)
-     ELSE jsonb_build_object('name',NEW.label,'permissions',NEW.permissions) END;
+   IF TG_TABLE_NAME='menu_staff' THEN
+     new_data:=jsonb_build_object('name',NEW.full_name,'role',NEW.role,'status',NEW.status);
+   ELSE
+     new_data:=jsonb_build_object('name',NEW.label,'permissions',NEW.permissions);
+   END IF;
  END IF;
- ident:=CASE WHEN TG_OP='DELETE' THEN
-   CASE WHEN TG_TABLE_NAME='menu_staff' THEN OLD.email ELSE OLD.role END
- ELSE CASE WHEN TG_TABLE_NAME='menu_staff' THEN NEW.email ELSE NEW.role END END;
+ IF TG_OP='DELETE' THEN
+   IF TG_TABLE_NAME='menu_staff' THEN ident:=OLD.email; ELSE ident:=OLD.role; END IF;
+ ELSE
+   IF TG_TABLE_NAME='menu_staff' THEN ident:=NEW.email; ELSE ident:=NEW.role; END IF;
+ END IF;
  IF old_data IS DISTINCT FROM new_data THEN
    PERFORM private.menu_write_staff_audit(lower(TG_OP)||'_'||TG_TABLE_NAME,TG_TABLE_NAME,ident,old_data,new_data);
  END IF;
