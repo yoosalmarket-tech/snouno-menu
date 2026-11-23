@@ -1,6 +1,6 @@
 -- STAFF & ROLE MANAGEMENT 01.10 — granular permission catalog and role persistence.
 -- Non-destructive: retain legacy section keys until each dashboard endpoint is migrated.
-CREATE TABLE public.menu_permission_catalog (
+CREATE TABLE IF NOT EXISTS public.menu_permission_catalog (
   key text PRIMARY KEY CHECK (key ~ '^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$'),
   group_key text NOT NULL,
   label_ar text NOT NULL,
