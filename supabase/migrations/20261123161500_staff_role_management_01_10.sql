@@ -92,7 +92,7 @@ INSERT INTO public.menu_permission_catalog(key,group_key,label_ar,label_en,sort_
 
 ALTER TABLE public.menu_roles DROP CONSTRAINT IF EXISTS menu_roles_permitted;
 ALTER TABLE public.menu_roles ADD CONSTRAINT menu_roles_permitted
-CHECK (cardinality(permissions)<=100 AND array_position(permissions,NULL) IS NULL);
+CHECK (cardinality(permissions)<=120 AND array_position(permissions,NULL) IS NULL);
 
 -- Migrate existing users' effective nine-group access to matching granular grants.
 -- Legacy keys remain for now to avoid breaking the original dashboard until rollout.
