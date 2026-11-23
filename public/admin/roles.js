@@ -1,26 +1,56 @@
 // STAFF & ROLE MANAGEMENT 01.6 — editable role metadata and named staff.
 // Security is enforced by Supabase RPCs; the UI is never the authority.
-const CAPABILITIES=[
- ['dishes','محتوى المنيو','الوجبات والأسعار والصور والتوفر','content'],
- ['categories','الأصناف','ترتيب الأصناف وتعديلها','content'],
- ['menu_settings','إعدادات المطعم','معلومات المطعم وساعات العمل','content'],
- ['menu_links','روابط التواصل','إدارة روابط التواصل','content'],
- ['menu_ads','الإعلانات','إدارة إعلانات المنيو','content'],
- ['rankings','التقييمات','قراءة تقييمات الزوار','reports'],
- ['submissions','رسائل الزوار','قراءة رسائل الزوار','reports'],
- ['events','إحصائيات التفاعل','قراءة تحليلات المنيو','reports'],
- ['orders','الطلبات للقراءة فقط','قراءة الطلبات بدون اعتماد الدفع','orders'],
-];
-const GROUPS={content:'المحتوى',reports:'التقارير',orders:'الطلبات'};
+const CAPABILITIES=[];
+const GROUPS={
+ dashboard:'لوحة التحكم والتقارير',meals:'الوجبات والأصناف',orders:'الطلبات والمدفوعات',
+ content:'محتوى الموقع',marketing:'التسويق وSEO',assistant:'المساعد الذكي',
+ staff:'الموظفون والأدوار',system:'إدارة النظام'
+};
+// Suggested templates are editable starting points, not fixed built-in roles.
 const TEMPLATES=[
- ['مدير المطعم','Restaurant Manager',['dishes','categories','menu_settings','menu_links','menu_ads','rankings','submissions','events','orders']],
- ['مدير الفرع','Branch Manager',['dishes','categories','orders','events']],
- ['أمين الصندوق','Cashier',['orders']],
- ['خدمة العملاء','Customer Service',['orders','submissions']],
- ['مدير التسويق','Marketing Manager',['menu_ads','events','rankings']],
- ['محرر المحتوى','Content Editor',['dishes','categories','menu_ads']],
- ['محلل البيانات','Analyst',['events','rankings','orders']],
- ['مشاهد فقط','Read-only Viewer',['events','orders']]
+ ['مدير المطعم','Restaurant Manager',[
+  'dashboard.view_overview','reports.view_sales','reports.view_products','reports.view_customers',
+  'meals.view','meals.add','meals.edit_details','meals.change_prices','meals.change_availability',
+  'meals.delete','meals.reorder','meals.manage_categories','meals.manage_images','meals.manage_ingredients',
+  'orders.view','orders.view_customers','orders.view_receipts','orders.approve','orders.reject',
+  'orders.update_status','orders.cancel','orders.print_invoices','orders.view_history','orders.view_financial',
+  'content.edit_welcome','content.manage_ads','content.edit_contact','content.manage_hours','content.manage_closures',
+  'content.edit_social','staff.view','staff.view_activity'
+ ]],
+ ['مدير الفرع','Branch Manager',[
+  'dashboard.view_overview','reports.view_products','meals.view','meals.change_availability',
+  'orders.view','orders.view_customers','orders.view_receipts','orders.approve','orders.reject',
+  'orders.update_status','orders.print_invoices','orders.view_financial'
+ ]],
+ ['أمين الصندوق','Cashier',[
+  'orders.view','orders.view_customers','orders.view_receipts','orders.approve','orders.reject',
+  'orders.print_invoices','orders.view_history','orders.view_financial'
+ ]],
+ ['خدمة العملاء','Customer Service',[
+  'orders.view','orders.view_customers','orders.view_receipts','orders.update_status','orders.cancel'
+ ]],
+ ['مدير التسويق الرقمي','Marketing Manager',[
+  'dashboard.view_overview','reports.view_visitors','reports.view_conversions','reports.view_products',
+  'reports.view_attribution','content.manage_ads','content.manage_promotions',
+  'marketing.view_ga4','marketing.view_search_console','marketing.manage_campaign_links',
+  'marketing.generate_tagged_urls','marketing.view_sources','marketing.view_conversions',
+  'marketing.edit_seo','marketing.edit_image_seo','marketing.export_reports',
+  'assistant.access','assistant.ask_meals','assistant.ask_marketing','assistant.generate_campaigns'
+ ]],
+ ['محرر المحتوى','Content Editor',[
+  'meals.view','meals.add','meals.edit_details','meals.manage_images','meals.manage_categories',
+  'meals.manage_ingredients','content.edit_welcome','content.manage_ads',
+  'content.edit_banners','content.manage_promotions','content.manage_images','content.edit_social'
+ ]],
+ ['محلل البيانات','Analyst',[
+  'dashboard.view_overview','reports.view_visitors','reports.view_products',
+  'reports.view_conversions','reports.view_attribution','reports.export',
+  'marketing.view_ga4','marketing.view_search_console','marketing.view_sources',
+  'marketing.view_conversions','marketing.export_reports'
+ ]],
+ ['مشاهد فقط','Read-only Viewer',[
+  'dashboard.view_overview','reports.view_visitors','reports.view_products','meals.view'
+ ]]
 ];
 const el=(tag,text,cls)=>{
  const n=document.createElement(tag);if(text!==undefined&&text!==null)n.textContent=String(text);
@@ -132,10 +162,13 @@ export async function renderRoles({root,api,notice}){
    return form;
  }
  async function reload(){
-  [roles,members]=await Promise.all([
+  const [roleRows,staffRows,catalog]=await Promise.all([
     api('/rest/v1/menu_roles?select=id,role,label,label_ar,label_en,description,permissions,built_in&order=built_in.desc,label'),
-    api('/rest/v1/menu_staff?select=email,user_id,full_name,role,status,added_at&order=email')
+    api('/rest/v1/menu_staff?select=email,user_id,full_name,role,status,added_at&order=email'),
+    api('/rest/v1/menu_permission_catalog?select=key,group_key,label_ar,label_en,sort_order&order=sort_order')
   ]);
+  roles=roleRows;members=staffRows;
+  CAPABILITIES.splice(0,CAPABILITIES.length,...catalog.map(p=>[p.key,p.label_ar,p.label_en,p.group_key]));
   createPanel.replaceChildren(el('h3','إنشاء دور جديد'),el('p','اختر قالباً قابلاً للتعديل، أو أنشئ دوراً من الصفر.'));
   const templateSelect=el('select');templateSelect.setAttribute('aria-label','قوالب الأدوار');
   const blank=el('option','دور فارغ');blank.value='';templateSelect.append(blank);
@@ -146,8 +179,7 @@ export async function renderRoles({root,api,notice}){
   let draft={label_ar:'',label_en:'',description:'',permissions:[]};
   let createEditor=editor(draft,async values=>{
     const roleId='role_'+crypto.randomUUID().replace(/-/g,'').slice(0,12);
-    await send('menu_role_save',{p_role:roleId,p_label:values.label_ar.slice(0,60),p_permissions:values.permissions});
-    await send('menu_role_save_details',{p_role:roleId,p_label_ar:values.label_ar,p_label_en:values.label_en,p_description:values.description});
+    await send('menu_role_save_v2',{p_role:roleId,p_name_ar:values.label_ar,p_name_en:values.label_en,p_description:values.description,p_permissions:values.permissions});
   });
   createPanel.append(createEditor);
   templateSelect.onchange=()=>{
@@ -155,8 +187,7 @@ export async function renderRoles({root,api,notice}){
     draft=entry?{label_ar:entry[0],label_en:entry[1],description:'',permissions:entry[2]}:{label_ar:'',label_en:'',description:'',permissions:[]};
     const next=editor(draft,async values=>{
       const roleId='role_'+crypto.randomUUID().replace(/-/g,'').slice(0,12);
-      await send('menu_role_save',{p_role:roleId,p_label:values.label_ar.slice(0,60),p_permissions:values.permissions});
-      await send('menu_role_save_details',{p_role:roleId,p_label_ar:values.label_ar,p_label_en:values.label_en,p_description:values.description});
+      await send('menu_role_save_v2',{p_role:roleId,p_name_ar:values.label_ar,p_name_en:values.label_en,p_description:values.description,p_permissions:values.permissions});
     });
     createEditor.replaceWith(next);createEditor=next;
   };
@@ -172,10 +203,11 @@ export async function renderRoles({root,api,notice}){
     const editButton=button('تعديل الدور','role-save',()=>{
        card.querySelector('.role-editor')?.remove();
        card.append(editor(role,async changes=>{
-         if(role.role!=='owner')await send('menu_role_save',{
-           p_role:role.role,p_label:changes.label_ar.slice(0,60),p_permissions:changes.permissions
+         if(role.role!=='owner')await send('menu_role_save_v2',{
+           p_role:role.role,p_name_ar:changes.label_ar,p_name_en:changes.label_en,
+           p_description:changes.description,p_permissions:changes.permissions
          });
-         await send('menu_role_save_details',{
+         if(role.role==='owner')await send('menu_role_save_details',{
            p_role:role.role,p_label_ar:changes.label_ar,p_label_en:changes.label_en,
            p_description:changes.description
          });
@@ -184,8 +216,7 @@ export async function renderRoles({root,api,notice}){
     const duplicate=button('نسخ الدور','role-plain-button',async()=>{
       const roleId='role_'+crypto.randomUUID().replace(/-/g,'').slice(0,12);
       try{
-        await send('menu_role_save',{p_role:roleId,p_label:('نسخة '+role.label).slice(0,60),p_permissions:role.permissions});
-        await send('menu_role_save_details',{p_role:roleId,p_label_ar:('نسخة '+(role.label_ar||role.label)).slice(0,100),p_label_en:role.label_en||'',p_description:role.description||''});
+        await send('menu_role_save_v2',{p_role:roleId,p_name_ar:('نسخة '+(role.label_ar||role.label)).slice(0,100),p_name_en:role.label_en||'',p_description:role.description||'',p_permissions:role.permissions.filter(x=>CAPABILITIES.some(p=>p[0]===x))});
         notice('تم إنشاء نسخة من الدور');await reload();
       }catch(error){notice('تعذّر النسخ: '+error.message);}
     });
