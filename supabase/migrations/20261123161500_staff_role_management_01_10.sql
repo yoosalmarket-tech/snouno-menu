@@ -137,7 +137,7 @@ WITH mapping(legacy,granular) AS (VALUES
      SELECT unnest(r.permissions) token
      UNION ALL
      SELECT m.granular token FROM mapping m WHERE m.legacy=ANY(r.permissions)
-   ) grants ORDER BY token
+   ) AS permission_grants ORDER BY token
  ) AS new_permissions FROM public.menu_roles r
 )
 UPDATE public.menu_roles r
