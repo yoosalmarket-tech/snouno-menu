@@ -73,7 +73,8 @@ const table = (headers, rows) => {
   }
   return t;
 };
-export async function orders({root,api,notice,endpoint,canManage=false}){
+export async function orders({root,api,notice,endpoint,canManage=false,grants=[]}){
+  const may=key=>canManage && (grants.includes('owner') || grants.includes(key));
   root.className="pay-orders-refined";
   const statusesArabic={
     pending:"قيد المراجعة",approved:"تم اعتماد الدفع",rejected:"رفض الدفع",cancelled:"ملغي"
@@ -378,7 +379,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       if(detailNotes.childElementCount)inner.append(detailNotes);
     }
 
-    if(canManage && o.service_type==="dine_in" && !o.arrived_at &&
+    if(may("orders.update_status") && o.service_type==="dine_in" && !o.arrived_at &&
       ["pending","approved"].includes(o.status)){
       const arrived=button("تأكيد حضور العميل",async()=>{
         if(!confirm("هل حضر العميل بالفعل للطلب #"+o.number+"؟"))return;
@@ -390,7 +391,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       });
       arrived.className="ord-detail-arrival";actionButtons.append(arrived);
     }
-    if(o.status==="pending"&&canManage){
+    if(o.status==="pending"&&["orders.approve","orders.reject","orders.cancel"].some(may)){
       const declineBox=named("div",null,"ord-decline-box");
       const reason=input("");
       reason.placeholder="سبب الرفض (مطلوب عند الرفض)";
@@ -401,6 +402,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
         ["rejected","رفض الدفع"],
         ["cancelled","إلغاء الطلب"]
       ]){
+        if(!may(({approved:'orders.approve',rejected:'orders.reject',cancelled:'orders.cancel'})[target]))continue;
         const trigger=button(label,async()=>{
           if(target==="approved"&&o.payment_mode==="at_restaurant"&&!o.arrived_at){
             notice("أكّد وصول العميل أولاً قبل تسجيل الدفع.");return;
@@ -436,7 +438,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       declineBox.append(reason,paymentActions);
       actionButtons.append(declineBox);
     }
-    if(o.status==="approved"){
+    if(o.status==="approved" && may("orders.print_invoices")){
       const print=button("طباعة الإيصال (80 مم)",()=>{
         const w=invoice(o);
         if(w)Promise.all([...w.document.images].map(img=>img.decode().catch(()=>{})))
@@ -444,7 +446,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       });
       print.className="ord-detail-print";actionButtons.append(print);
     }
-    if(canManage&&o.status==="approved"&&o.fulfillment_status!=="completed"){
+    if(may("orders.update_status")&&o.status==="approved"&&o.fulfillment_status!=="completed"){
       const done=button("تأكيد تسليم الطلب",async()=>{
         if(!confirm("هل استلم العميل طلبه بالفعل؟ هذه الرسالة ستصل إلى شاشة العميل."))return;
         done.disabled=true;
@@ -467,7 +469,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
           (report.resolved_at?" · مغلق":" · مفتوح")),
           named("small",date(report.created_at)),
           named("p",report.message));
-        if(canManage&&!report.resolved_at){
+        if(may("orders.update_status")&&!report.resolved_at){
           const resolve=button("وضع علامة تم حل المشكلة",async()=>{
             resolve.disabled=true;
             try{
