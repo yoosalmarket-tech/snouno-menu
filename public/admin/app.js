@@ -45,7 +45,7 @@ const sections = {
   rankings: ['تقييمات الأطباق', []],
   events: ['إحصائيات التفاعل', []],
   submissions: ['رسائل التواصل', []],
-  menu_staff: ['المستخدمون', [['email','بريد المحرر','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]],
+  menu_staff: ['المستخدمون', [['full_name','اسم الموظف الكامل'],['email','البريد الإلكتروني','email'],['password','كلمة مرور للحساب الجديد (12 حرفاً على الأقل)','password']]],
   account: ['حساب المالك', []]
 };
 // Keep an existing dashboard session when updating the brand-prefixed storage key.
@@ -210,7 +210,7 @@ function setupDashboardInstall(){
  }
 }
 setupDashboardInstall();
-function buildAdminSidebar(email){
+function buildAdminSidebar(email,fullName='',roleLabel=''){
  const tabs=$('tabs');tabs.replaceChildren();
  const brand=node('a');brand.className='admin-sidebar-brand';brand.href='/welcome';brand.target='_blank';brand.rel='noopener noreferrer';
  const brandLogo=node('img');brandLogo.src='/assets/snounu-icon.png';brandLogo.alt='';brandLogo.width=43;brandLogo.height=43;
@@ -256,7 +256,7 @@ function buildAdminSidebar(email){
  const profile=node('div');profile.className='admin-sidebar-profile';
  const avatar=node('span',role==='owner'?'م':'ف');avatar.className='admin-profile-avatar';
  const info=node('span');info.className='admin-profile-info';
- info.append(node('strong',role==='owner'?'مدير الموقع':'فريق المطعم'),node('small',String(email||'')));
+ info.append(node('strong',fullName||roleLabel||(role==='owner'?'مدير الموقع':'فريق المطعم')),node('small',(roleLabel?roleLabel+' · ':'')+String(email||'')));
  const logout=action('',async()=>{try{await api('/auth/v1/logout',{method:'POST'});}finally{persist(null);loggedOut();notice('تم تسجيل الخروج');}});
  logout.id='logout';logout.className='admin-profile-logout';logout.title='تسجيل الخروج';logout.setAttribute('aria-label','تسجيل الخروج');
  const logoutIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -274,8 +274,8 @@ async function enter(){
   const user=await api('/auth/v1/user');
   if(!user?.email)throw new Error('تعذّر التحقق من الحساب');
   session.user=user;persist(session);
-  const own=await api('/rest/v1/menu_staff?select=role&email=eq.'+encodeURIComponent(user.email.toLowerCase()));
-  if(!own.length) throw new Error('لا توجد صلاحية لهذا الحساب');
+  const own=await api('/rest/v1/menu_staff?select=role,full_name,status&email=eq.'+encodeURIComponent(user.email.toLowerCase()));
+  if(!own.length||own[0].status==='disabled') throw new Error('لا توجد صلاحية نشطة لهذا الحساب');
   role=own[0].role;
   permissions=[];
   const capabilities=await api('/rest/v1/rpc/menu_my_capabilities',{method:'POST',body:{}});
@@ -289,7 +289,7 @@ async function enter(){
     const icon=document.getElementById('snounu-favicon');
     if(icon&&rows[0]?.favicon_url)icon.href=rows[0].favicon_url;
    }).catch(()=>{});
-  buildAdminSidebar(user.email);
+  buildAdminSidebar(user.email,own[0].full_name||'',capabilities.label||'');
   const requested=keyFromAdminLocation();
   const firstAvailable=Object.keys(sections).find(key=>authorizedAdminSection(key));
   if(!firstAvailable){$('body').textContent='لا توجد أقسام متاحة لصلاحيات حسابك. تواصل مع مالك المطعم.';return;}
@@ -1249,7 +1249,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
   return;
  }
  if(key==='roles'){
-  const mod=await import('./roles.js?v=edit-all-payment-06');
+  const mod=await import('./roles.js?v=staff-role-management-01');
   if(ticket!==generation)return;
   await mod.renderRoles({root:$('body'),api,notice});
   return;
@@ -1365,7 +1365,10 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
     card.append(copy);
    }
    if(key==='menu_staff'){
+    card.append(node('strong',row.full_name||row.email));
     card.append(node('span',row.role==='owner'?'مالك':row.role==='editor'?'محرر':row.role));
+    card.append(node('small',row.email));
+    if(row.status==='disabled')card.append(node('small','الحساب معطّل'));
     if(row.role!=='owner')card.append(action('تغيير الدور',()=>openSection('roles')));
    }
    else if(!feedback) card.append(action('تعديل',()=>edit(key,row)));
