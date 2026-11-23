@@ -39,7 +39,7 @@ function renderReply(target,text){
   }
 }
 
-export function renderAssistant({root,getToken}){
+export function renderAssistant({root,getToken,staffMode=false}){
   root.replaceChildren();
   const panel=create('section','snounu-ai');
   panel.setAttribute('aria-label','مساعد سنونو الذكي');
@@ -107,12 +107,13 @@ export function renderAssistant({root,getToken}){
   archiveStatus.setAttribute('role','status');
   archive.append(archiveLabel,archiveList,archiveStatus);
   const tools=create('div','snounu-ai-actions');
-  tools.append(briefPanel,reset);
+  if(!staffMode)tools.append(briefPanel);
+  tools.append(reset);
   toolbar.append(title,tools);
   const rail=create('div','snounu-ai-rail');
-  rail.append(archive);
+  if(!staffMode)rail.append(archive);
   const wide=()=>window.matchMedia?.('(min-width: 1050px)').matches??false;
-  archive.open=wide();
+  archive.open=!staffMode&&wide();
   panel.addEventListener('keydown',event=>{
     if(event.key==='Escape'){
       const open=event.target.closest('details[open]');
@@ -156,8 +157,10 @@ export function renderAssistant({root,getToken}){
   send.setAttribute('aria-label','إرسال السؤال');send.title='إرسال السؤال';
   send.type='submit';controls.append(counter,send);
   form.append(prompt,controls);
-  const privacy=create('p','snounu-ai-privacy','تُرسل رسائلك وتعليمات المطعم إلى Groq. المحادثات محفوظة بحسابك. حدّك اليومي ١٠٠ إجابة.');
-  briefPanel.append(privacy);
+  const privacy=create('p','snounu-ai-privacy',staffMode?
+   'تُرسل الأسئلة إلى Groq. محادثات الموظفين غير محفوظة، وتُطبق الصلاحيات على كل مصدر بيانات. حدّك اليومي ٢٠ إجابة.':
+   'تُرسل رسائلك وتعليمات المطعم إلى Groq. المحادثات محفوظة بحسابك. حدّك اليومي ١٠٠ إجابة.');
+  if(staffMode)panel.append(privacy);else briefPanel.append(privacy);
   const chat=create('div','snounu-ai-chat');
   chat.append(log,form);
   panel.append(toolbar,rail,chat);
