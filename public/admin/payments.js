@@ -350,9 +350,11 @@ export async function orders({root,api,notice,endpoint,canManage=false,grants=[]
           media.src=url;proofBody.replaceChildren(media);
           await rendered;
           // Record the successful proof preview on the server; only then enable approval.
-          await api(rootPath+"rpc/pay_record_proof_review",{
-            method:"POST",body:{p_id:o.id,p_path:proof.path}
-          });
+          if(may('orders.approve')) {
+            await api(rootPath+"rpc/pay_record_proof_review",{
+              method:"POST",body:{p_id:o.id,p_path:proof.path}
+            });
+          }
           proofReviewed=true;
           if(approveTrigger){
             approveTrigger.disabled=false;
