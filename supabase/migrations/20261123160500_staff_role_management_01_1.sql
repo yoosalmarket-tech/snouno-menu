@@ -115,7 +115,7 @@ DECLARE person record;
 BEGIN
   IF NEW.status='approved' AND OLD.status IS DISTINCT FROM 'approved' THEN
     -- Only the authenticated employee approving the transaction is attributable.
-    IF auth.uid() IS NULL OR NOT private.menu_has_permission('orders.approve') THEN
+    IF auth.uid() IS NULL OR private.menu_role() IS NULL THEN
       RAISE EXCEPTION 'Payment approval requires an authorized employee';
     END IF;
     SELECT s.full_name,s.email,s.role,r.id AS role_id,r.label
