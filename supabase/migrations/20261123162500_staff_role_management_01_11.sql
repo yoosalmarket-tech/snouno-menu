@@ -104,7 +104,8 @@ DROP TRIGGER IF EXISTS menu_guard_settings_changes ON public.menu_settings;
 CREATE TRIGGER menu_guard_settings_changes BEFORE INSERT OR UPDATE OR DELETE ON public.menu_settings
 FOR EACH ROW EXECUTE FUNCTION private.menu_guard_settings_changes();
 
--- Segregate price-containing tables and receipts from general order permission.
+-- Retain existing broad order read behavior for compatibility during migration.
+-- Financial information must be separately guarded before granular read permissions can be trusted.
 DROP POLICY IF EXISTS owner_read ON public.pay_orders;
 CREATE POLICY owner_read ON public.pay_orders FOR SELECT TO authenticated
 USING ((SELECT private.menu_can('orders')));
