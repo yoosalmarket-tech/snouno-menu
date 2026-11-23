@@ -48,6 +48,7 @@ BEGIN
       THEN RAISE EXCEPTION 'Permission denied: meals.delete'; END IF;
     RETURN OLD;
  END IF;
+ IF NEW.id IS DISTINCT FROM OLD.id THEN RAISE EXCEPTION 'Meal identifier cannot change'; END IF;
  FOR field IN SELECT k,v FROM jsonb_each(to_jsonb(NEW)) AS x(k,v)
  LOOP
    IF field.v IS NOT DISTINCT FROM (to_jsonb(OLD)->field.k) THEN CONTINUE; END IF;
