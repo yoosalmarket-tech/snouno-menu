@@ -151,7 +151,7 @@ export async function renderRoles({root,api,notice}){
   });
   createPanel.append(createEditor);
   templateSelect.onchange=()=>{
-    const entry=TEMPLATES[Number(templateSelect.value)];
+    const entry=templateSelect.value===''?null:TEMPLATES[Number(templateSelect.value)];
     draft=entry?{label_ar:entry[0],label_en:entry[1],description:'',permissions:entry[2]}:{label_ar:'',label_en:'',description:'',permissions:[]};
     const next=editor(draft,async values=>{
       const roleId='role_'+crypto.randomUUID().replace(/-/g,'').slice(0,12);
