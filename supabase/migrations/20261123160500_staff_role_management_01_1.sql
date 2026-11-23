@@ -230,6 +230,18 @@ FOR EACH ROW EXECUTE FUNCTION private.menu_audit_payment();
 
 -- Do not retroactively attribute old approved transactions to a guessed employee.
 
+-- Keep Auth email updates synchronized with stable user IDs.
+CREATE OR REPLACE FUNCTION private.sync_snounu_staff_email()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $function$
+BEGIN
+ IF OLD.email IS DISTINCT FROM NEW.email AND OLD.email IS NOT NULL AND NEW.email IS NOT NULL THEN
+  UPDATE public.menu_staff SET email=lower(NEW.email),user_id=NEW.id
+  WHERE user_id=NEW.id OR email=lower(OLD.email);
+ END IF;
+ RETURN NEW;
+END $function$;
+
 -- Account disabling must affect already-issued sessions at the database layer.
 CREATE OR REPLACE FUNCTION private.menu_role()
 RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
