@@ -428,7 +428,7 @@ export async function orders({root,api,notice,endpoint,canManage=false,grants=[]
         }
         paymentActions.append(trigger);
       }
-      if(o.payment_mode!=="at_restaurant"){
+      if(o.payment_mode!=="at_restaurant" && may('orders.approve')){
         proofHint=named("p",
           proof?"يجب عرض إثبات الدفع قبل اعتماد الدفع.":"لا يوجد إثبات دفع مرفق. لا يمكن اعتماد الدفع.",
           "ord-proof-required"
