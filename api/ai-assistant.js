@@ -128,7 +128,9 @@ class ProviderError extends Error {
 }
 async function converse(question,history,access,key,brief){
   const allowedTools=functions.filter(t=>canUseTool(access,t.function.name));
-  const messages=[{role:'system',content:instructions}];
+  const messages=[{role:'system',content:access.owner?instructions:
+    instructions.replace("You advise Snounu's owner","You advise a Snounu restaurant employee")
+      +" Only use information authorized by the available tools. Do not invent or infer inaccessible sales, payment, revenue, or customer data. When financial permissions are absent, never provide financial amounts, approximations, or performance figures derived from private records."}];
   if(brief.trim())messages.push({role:'user',content:'Saved restaurant marketing brief (owner settings):\n'+brief});
   messages.push(...history,{role:'user',content:question});
   const signal=AbortSignal.timeout(42000);
