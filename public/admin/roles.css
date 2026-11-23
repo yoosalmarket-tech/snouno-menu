@@ -62,3 +62,8 @@
  .role-person{min-width:0}
  .role-permission-group>.roles-actions{gap:6px}
 }
+
+.role-effective-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:6px;
+padding:12px;border:1px solid #e6decf;border-radius:12px}
+.role-effective-preview strong{grid-column:1/-1;font-size:13px}
+.role-effective-preview small{font-size:12px;color:var(--muted,#655a4b)}
