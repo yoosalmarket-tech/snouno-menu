@@ -84,6 +84,7 @@ BEGIN
    IF private.menu_role() IS DISTINCT FROM 'owner' THEN RAISE EXCEPTION 'Protected settings'; END IF;
    RETURN NEW;
  END IF;
+ IF NEW.id IS DISTINCT FROM OLD.id THEN RAISE EXCEPTION 'Restaurant settings identifier cannot change'; END IF;
  FOR field IN SELECT k,v FROM jsonb_each(to_jsonb(NEW)) AS x(k,v) LOOP
    IF field.v IS NOT DISTINCT FROM (to_jsonb(OLD)->field.k) THEN CONTINUE; END IF;
    need:=CASE
