@@ -227,3 +227,87 @@ CREATE TRIGGER menu_payment_activity_changes AFTER UPDATE OF status ON public.pa
 FOR EACH ROW EXECUTE FUNCTION private.menu_audit_payment();
 
 -- Do not retroactively attribute old approved transactions to a guessed employee.
+
+-- Account disabling must affect already-issued sessions at the database layer.
+CREATE OR REPLACE FUNCTION private.menu_role()
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
+AS $function$
+ SELECT s.role FROM public.menu_staff s
+ JOIN auth.users u ON (u.id=s.user_id OR (s.user_id IS NULL AND lower(u.email)=s.email))
+ WHERE u.id=(SELECT auth.uid()) AND u.email_confirmed_at IS NOT NULL
+   AND s.status='active'
+$function$;
+
+CREATE OR REPLACE FUNCTION private.menu_can(p_section text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
+AS $function$
+ SELECT coalesce(
+  (SELECT s.role='owner' OR p_section=ANY(r.permissions)
+   FROM public.menu_staff s
+   JOIN public.menu_roles r ON r.role=s.role
+   JOIN auth.users u ON (u.id=s.user_id OR (s.user_id IS NULL AND lower(u.email)=s.email))
+   WHERE u.id=auth.uid() AND u.email_confirmed_at IS NOT NULL
+     AND s.status='active'),false)
+$function$;
+
+CREATE OR REPLACE FUNCTION public.menu_my_capabilities()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $function$
+DECLARE r record;
+BEGIN
+ IF auth.uid() IS NULL THEN
+   RETURN jsonb_build_object('role','','permissions','[]'::jsonb);
+ END IF;
+ SELECT s.role,mr.label,mr.permissions,s.full_name,s.status INTO r
+ FROM public.menu_staff s JOIN public.menu_roles mr ON mr.role=s.role
+ JOIN auth.users u ON (u.id=s.user_id OR (s.user_id IS NULL AND lower(u.email)=s.email))
+ WHERE u.id=auth.uid() AND u.email_confirmed_at IS NOT NULL AND s.status='active';
+ IF NOT FOUND THEN
+   RETURN jsonb_build_object('role','','permissions','[]'::jsonb);
+ END IF;
+ RETURN jsonb_build_object('role',r.role,'label',r.label,'full_name',r.full_name,
+                           'permissions',to_jsonb(r.permissions));
+END $function$;
+REVOKE ALL ON FUNCTION public.menu_my_capabilities() FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.menu_my_capabilities() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.menu_staff_set_status(p_user_id uuid,p_status text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $function$
+DECLARE target_role text;
+BEGIN
+ IF auth.uid() IS NULL OR private.menu_role() IS DISTINCT FROM 'owner'
+   THEN RAISE EXCEPTION 'Access denied'; END IF;
+ IF p_status NOT IN ('active','disabled') THEN RAISE EXCEPTION 'Invalid account status'; END IF;
+ SELECT role INTO target_role FROM public.menu_staff WHERE user_id=p_user_id FOR UPDATE;
+ IF target_role IS NULL THEN RAISE EXCEPTION 'Employee not found'; END IF;
+ IF target_role='owner' THEN RAISE EXCEPTION 'Owner account is protected'; END IF;
+ UPDATE public.menu_staff SET status=p_status WHERE user_id=p_user_id;
+END $function$;
+REVOKE ALL ON FUNCTION public.menu_staff_set_status(uuid,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.menu_staff_set_status(uuid,text) TO authenticated;
+
+-- Audited menu changes must exclude secrets and customer personal details.
+CREATE OR REPLACE FUNCTION private.menu_audit_dish_updates()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $function$
+BEGIN
+ IF TG_OP='DELETE' THEN
+   PERFORM private.menu_write_staff_audit('meal_deleted','dishes',OLD.id::text,
+      jsonb_build_object('name',OLD.name,'price',OLD.price,'available',OLD.available),NULL);
+   RETURN OLD;
+ END IF;
+ IF NEW.price IS DISTINCT FROM OLD.price THEN
+   PERFORM private.menu_write_staff_audit('meal_price_changed','dishes',NEW.id::text,
+      jsonb_build_object('price',OLD.price),jsonb_build_object('price',NEW.price));
+ END IF;
+ IF NEW.available IS DISTINCT FROM OLD.available THEN
+   PERFORM private.menu_write_staff_audit('meal_availability_changed','dishes',NEW.id::text,
+      jsonb_build_object('available',OLD.available),
+      jsonb_build_object('available',NEW.available));
+ END IF;
+ RETURN NEW;
+END $function$;
+DROP TRIGGER IF EXISTS menu_dish_activity_changes ON public.dishes;
+CREATE TRIGGER menu_dish_activity_changes AFTER UPDATE OR DELETE ON public.dishes
+FOR EACH ROW EXECUTE FUNCTION private.menu_audit_dish_updates();
