@@ -98,8 +98,9 @@ export async function renderRoles({root,api,notice}){
      const groupRows=CAPABILITIES.filter(item=>item[3]===group);
      const details=el('details',null,'role-permission-group');details.open=true;
      const summary=el('summary',label+' · '+groupRows.length);
+     details.dataset.group=group;
      const actions=el('div',null,'roles-actions');
-     const toggle=checked=>groupElements.find(g=>g.group===group)?.items.forEach(({checkbox})=>{if(!checkbox.disabled)checkbox.checked=checked;});
+     const toggle=checked=>{groupElements.find(g=>g.group===group)?.items.forEach(({checkbox})=>{if(!checkbox.disabled)checkbox.checked=checked;});updatePreview();};
      actions.append(button('تحديد الكل','role-plain-button',()=>toggle(true)),
        button('إلغاء التحديد','role-plain-button',()=>toggle(false)));
      const list=el('div',null,'roles-permissions');
@@ -131,12 +132,24 @@ export async function renderRoles({root,api,notice}){
      }
    };
    const preview=el('p','','role-access-preview');
+   const areaPreview=el('div',null,'role-effective-preview');
+   function updateAreas(){
+     areaPreview.replaceChildren(el('strong','معاينة الوصول الفعلي'));
+     for(const [name,label] of Object.entries(GROUPS)){
+       const keys=allChecks.filter(cb=>CAPABILITIES.some(p=>p[0]===cb.value&&p[3]===name));
+       const granted=keys.filter(cb=>cb.checked).length;
+       const row=el('small',label+': '+granted+' / '+keys.length);
+       areaPreview.append(row);
+     }
+   }
+
    function updatePreview(){
      preview.textContent=owner?'المالك · وصول كامل محمي':allChecks.filter(x=>x.checked).length+' من '+allChecks.length+' صلاحيات محددة';
+     updateAreas();
    }
    for(const cb of allChecks)cb.onchange=updatePreview;
    updatePreview();
-   form.append(search,selected,preview);
+   form.append(search,selected,preview,areaPreview);
    const foot=el('div',null,'roles-actions');
    const save=el('button','حفظ التعديلات','role-save');save.type='submit';
    const cancel=button('إلغاء','role-plain-button',()=>reload());
