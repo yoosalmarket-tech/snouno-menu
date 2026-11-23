@@ -114,6 +114,13 @@ export function invoice(o) {
   };
   pair("رقم الطلب","#"+o.number,true);
   pair("تاريخ الدفع",date(o.approved_at));
+  // Approval attribution is frozen in the invoice JSON at approval time.
+  // Historical invoices without an approval snapshot remain unchanged.
+  if(snap.approval?.employee_name && snap.approval?.role_name){
+    pair("تم اعتماد الدفع بواسطة",snap.approval.employee_name);
+    pair("الصلاحية",snap.approval.role_name);
+    pair("تاريخ الاعتماد",date(snap.approval.approved_at));
+  }
   pair("العميل",o.customer);
   pair("الجوال",o.phone,true);
   pair("نوع الطلب",o.service_type==="delivery"?"توصيل":o.service_type==="dine_in"?"داخل المطعم":"غير محدد");
