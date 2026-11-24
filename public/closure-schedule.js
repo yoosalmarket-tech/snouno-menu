@@ -28,11 +28,12 @@ export function normalizeClosureRules(value){
   end:rule.allDay===true?'00:00':rule.end
  }));
 }
+const gazaFormatter=new Intl.DateTimeFormat('en-GB',{
+ timeZone:CLOSURE_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',
+ hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+});
 export function gazaParts(at=new Date()){
- const parts=new Intl.DateTimeFormat('en-GB',{
-  timeZone:CLOSURE_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',
-  hour:'2-digit',minute:'2-digit',hourCycle:'h23'
- }).formatToParts(at);
+ const parts=gazaFormatter.formatToParts(at);
  const values=Object.fromEntries(parts.map(p=>[p.type,p.value]));
  return {date:values.year+'-'+values.month+'-'+values.day,
   minute:Number(values.hour)*60+Number(values.minute)};
@@ -43,10 +44,10 @@ const previousDate=date=>{
  return d.toISOString().slice(0,10);
 };
 const weekday=date=>new Date(date+'T12:00:00Z').getUTCDay(); // 0 = Sunday
-export function isRestaurantClosed(rules,at=new Date()){
+function closedForRules(rules,at){
  const {date,minute}=gazaParts(at);
  const previous=previousDate(date);
- return normalizeClosureRules(rules).some(rule=>{
+ return rules.some(rule=>{
   const matches=d=>rule.kind==='date'
    ?rule.date===d:rule.weekdays.includes(weekday(d));
   if(rule.allDay)return matches(date);
@@ -55,4 +56,38 @@ export function isRestaurantClosed(rules,at=new Date()){
   // Crossing midnight: a Sunday 22:00–02:00 closure also covers Monday 00:00–02:00.
   return (matches(date)&&minute>=start)||(matches(previous)&&minute<end);
  });
+}
+
+export function isRestaurantClosed(rules,at=new Date()){
+ return closedForRules(normalizeClosureRules(rules),at);
+}
+// Search absolute minute boundaries so overnight and Gaza DST transitions stay correct.
+// A bounded horizon deliberately returns null rather than inventing an opening time.
+let nextOpeningCache;
+export function nextRestaurantOpening(rules,at=new Date(),maxDays=31){
+ const timestamp=at.getTime();
+ if(!Number.isFinite(timestamp)||!Number.isInteger(maxDays)||maxDays<1||maxDays>31)return null;
+ const normalized=normalizeClosureRules(rules);
+ if(!closedForRules(normalized,at))return null;
+ const key=JSON.stringify(normalized)+':'+maxDays;
+ const minute=Math.floor(timestamp/60000)*60000;
+ if(nextOpeningCache?.key===key&&minute>=nextOpeningCache.from&&minute<nextOpeningCache.until){
+  return nextOpeningCache.result===null?null:new Date(nextOpeningCache.result);
+ }
+ const end=timestamp+maxDays*86400000;
+ let result=null;
+ for(let candidate=minute+60000;candidate<=end;candidate+=60000){
+  if(!closedForRules(normalized,new Date(candidate))){result=candidate;break;}
+ }
+ nextOpeningCache={key,from:minute,until:result??minute+60000,result};
+ return result===null?null:new Date(result);
+}
+export function closureNoticeMessage(rules,english=false,at=new Date()){
+ const message=english?'Browse and add meals to your cart. Check advance ordering availability at checkout.':'تقدر تضيف وجباتك للسلة وتتحقق من توفر الطلب المسبق عند الدفع.';
+ const next=nextRestaurantOpening(rules,at);
+ if(!next)return message;
+ const date=new Intl.DateTimeFormat(english?'en-GB':'ar-PS',{
+  timeZone:CLOSURE_TIME_ZONE,weekday:'long',day:'numeric',month:'long',hour:'numeric',minute:'2-digit'
+ }).format(next);
+ return message+(english?' Next opening: ':' موعد الافتتاح القادم: ')+date;
 }

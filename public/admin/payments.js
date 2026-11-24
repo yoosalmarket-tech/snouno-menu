@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=customer-service-01";
+} from "../payment-ui.js?v=advance-analytics-01-20261124";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
@@ -80,7 +80,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
   };
   const stages={
     awaiting_visit:"بانتظار الحضور",awaiting_payment:"بانتظار الدفع",
-    awaiting_approval:"مراجعة الدفع",preparing:"قيد التحضير",
+    awaiting_approval:"مراجعة الدفع",queued:"بانتظار الدور",preparing:"قيد التحضير",ready:"جاهز للتسليم",
     completed:"تم التسليم",stopped:"متوقف"
   };
   const date=s=>s?new Date(s).toLocaleString("ar-PS",{
@@ -107,6 +107,10 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
   stageFilter.setAttribute("aria-label","مرحلة الطلب");
   stageFilter.append(...list({"":"كل مراحل الطلب",...stages}));
 
+  const advanceFilter=el("select");
+  advanceFilter.setAttribute("aria-label","الطلبات المسبقة");
+  advanceFilter.append(...list({"":"جميع الطلبات","advance":"الطلبات المسبقة","queue":"قائمة الانتظار الحالية"}));
+  let queuePositions={};
   const header=named("div",null,"ord-page-toolbar");
   const intro=named("div",null,"ord-page-intro");
   intro.append(named("h2","إدارة الطلبات"),named("p","الطلبات والمدفوعات في جدول واضح. اضغط عرض للاطلاع على التفاصيل."));
@@ -117,7 +121,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     const wrap=named("label",null,"ord-filter");
     wrap.append(named("span",title),control);return wrap;
   };
-  filterRow.append(labeled("ابحث عن طلب",search),labeled("حالة الدفع",statusFilter),labeled("مرحلة الطلب",stageFilter));
+  filterRow.append(labeled("ابحث عن طلب",search),labeled("حالة الدفع",statusFilter),labeled("مرحلة الطلب",stageFilter),labeled("الطلبات المسبقة",advanceFilter));
   const metrics=named("div",null,"ord-metrics");
   const state=named("p","جارٍ تحميل الطلبات…","ord-state");
   state.setAttribute("role","status");
@@ -196,6 +200,10 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       tr.dataset.status=o.status||"";
       const number=named("td",null,"ord-number");number.dataset.label="رقم الطلب";
       const orderNum=named("strong","#"+o.number);orderNum.dir="ltr";number.append(orderNum);
+      if(o.advance_order)number.append(named("small","طلب مسبق"));
+      if(o.advance_exception&&o.status==="pending")number.append(named("small","بحاجة لمراجعة الحجز"));
+      if(o.refund_resolution==="review_required")number.append(named("small","تسوية دفعة معلّقة"));
+      if(queuePositions[o.id]!=null)number.append(named("small","الدور #"+queuePositions[o.id]));
 
       const customer=named("td",null,"ord-customer");customer.dataset.label="العميل";
       customer.append(named("strong",o.customer||"عميل"));
@@ -276,6 +284,10 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     if(o.method && o.payment_mode==="at_restaurant" && o.method!=="الدفع عند الوصول")fulfillment.append(line("وسيلة الدفع",o.method));
     data.append(customer,fulfillment);
     const extras=named("div",null,"ord-info-extra");
+    if(o.advance_order)extras.append(line("نوع الحجز","طلب مسبق"),line("موعد الافتتاح عند الطلب",date(o.advance_opening_at)));
+    if(queuePositions[o.id]!=null)extras.append(line("ترتيب الدور",queuePositions[o.id]));
+    if(o.invoice?.employee_name)extras.append(line("الموظف الذي اعتمد الدفع",o.invoice.employee_name));
+    if(o.invoice?.employee_role)extras.append(line("دور الموظف",o.invoice.employee_role));
     if(o.arrival_eta_minutes&&o.payment_mode==="at_restaurant")extras.append(line("مدة الوصول",o.arrival_eta_minutes+" دقيقة"));
     if(o.expected_arrival_at)extras.append(line("وقت الوصول المتوقع",date(o.expected_arrival_at)));
     if(o.service_type==="delivery"){
@@ -390,6 +402,18 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       });
       arrived.className="ord-detail-arrival";actionButtons.append(arrived);
     }
+    if(canManage&&o.advance_exception&&o.status==="pending"){
+      const admit=button("قبول الحجز في قائمة الانتظار",async()=>{
+        if(!confirm("قبول الحجز بعد مراجعة إثبات الدفع وتوفر السعة؟"))return;
+        admit.disabled=true;
+        try{await api(rootPath+"rpc/pay_admit_advance",{method:"POST",body:{p_id:o.id}});dialog.close();await load();}catch(e){admit.disabled=false;notice(e.message);}
+      });actionButtons.append(admit);
+    }
+    if(canManage&&o.refund_resolution==="review_required"){
+      for(const [value,label] of [["refunded","تسجيل رد الدفعة يدوياً"],["no_refund_required","تسجيل عدم الحاجة لرد الدفعة"]]){
+        const resolve=button(label,async()=>{if(!confirm("هل تمت التسوية فعلاً خارج النظام؟"))return;resolve.disabled=true;try{await api(rootPath+"rpc/pay_refund_resolution",{method:"POST",body:{p_id:o.id,p_resolution:value}});dialog.close();await load();}catch(e){resolve.disabled=false;notice(e.message);}});actionButtons.append(resolve);
+      }
+    }
     if(o.status==="pending"&&canManage){
       const declineBox=named("div",null,"ord-decline-box");
       const reason=input("");
@@ -402,6 +426,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
         ["cancelled","إلغاء الطلب"]
       ]){
         const trigger=button(label,async()=>{
+          if(target==="approved"&&o.advance_exception){notice("يجب قبول الحجز في قائمة الانتظار أولاً.");return;}
           if(target==="approved"&&o.payment_mode==="at_restaurant"&&!o.arrived_at){
             notice("أكّد وصول العميل أولاً قبل تسجيل الدفع.");return;
           }
@@ -451,7 +476,16 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       });
       print.className="ord-detail-print";actionButtons.append(print);
     }
-    if(canManage&&o.status==="approved"&&o.fulfillment_status!=="completed"){
+    if(canManage&&o.queue_managed&&o.status==="approved"&&["queued","preparing"].includes(o.fulfillment_status)){
+      const stage=o.fulfillment_status==="queued"?"preparing":"ready";
+      const change=button(stage==="preparing"?"بدء تجهيز الطلب":"تأكيد جهوزية الطلب",async()=>{
+        if(!confirm("تأكيد تحديث حالة الطلب #"+o.number+"؟"))return;
+        change.disabled=true;
+        try{await api(rootPath+"rpc/pay_queue_stage",{method:"POST",body:{p_id:o.id,p_stage:stage}});dialog.close();await load();}
+        catch(e){change.disabled=false;notice(e.message);}
+      });change.className="ord-decision ord-decision--approved";actionButtons.append(change);
+    }
+    if(canManage&&o.status==="approved"&&o.fulfillment_status!=="completed"&&(!o.queue_managed||o.fulfillment_status==="ready")){
       const done=button("تأكيد تسليم الطلب",async()=>{
         if(!confirm("هل استلم العميل طلبه بالفعل؟ هذه الرسالة ستصل إلى شاشة العميل."))return;
         done.disabled=true;
@@ -515,11 +549,17 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     reload.disabled=true;state.textContent="جارٍ تحميل الطلبات...";
     results.setAttribute("aria-busy","true");
     const q=new URLSearchParams({
-      select:"id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
+      select:"id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,advance_order,advance_opening_at,queue_managed,queue_joined_at,advance_exception,refund_resolution,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
       order:"created_at.desc",limit:"26",offset:String(page*25)
     });
     if(statusFilter.value)q.set("status","eq."+statusFilter.value);
     if(stageFilter.value)q.set("fulfillment_status","eq."+stageFilter.value);
+    if(advanceFilter.value==="advance")q.set("advance_order","eq.true");
+    if(advanceFilter.value==="queue"){
+      q.set("queue_joined_at","not.is.null");q.set("advance_exception","eq.false");q.set("order","queue_joined_at.asc,number.asc");
+      if(!statusFilter.value)q.set("status","in.(pending,approved)");
+      if(!stageFilter.value)q.set("fulfillment_status","not.in.(completed,stopped)");
+    }
     const term=search.value.replace(/[^\p{L}\p{N} +\-]/gu,"").trim();
     if(term){
       const clauses=[
@@ -529,7 +569,8 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       q.set("or","("+clauses.join(",")+")");
     }
     try{
-      const rows=await api(rootPath+"pay_orders?"+q);
+      const [rows,positions]=await Promise.all([api(rootPath+"pay_orders?"+q),api(rootPath+"rpc/pay_staff_queue",{method:"POST",body:{}})]);
+      queuePositions=positions||{};
       if(ticket!==revision||disposed||!root.isConnected)return;
       const visible=rows.slice(0,25);
       metrics.replaceChildren(
@@ -572,6 +613,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
   };
   statusFilter.onchange=()=>{page=0;void load();};
   stageFilter.onchange=()=>{page=0;void load();};
+  advanceFilter.onchange=()=>{page=0;void load();};
 
   // The admin router removes this panel when navigating away; clean up immediately.
   if(root.parentNode){
@@ -907,6 +949,10 @@ export async function settings({ root, api, notice, endpoint }) {
   const formats = ["image/jpeg","image/png","image/webp","application/pdf"];
   const {form: configForm,fields: configFields}=createForm("إعدادات الطلب والإيصال", [
     ["max_quantity","الحد الأقصى للكمية لكل بند (1–99)",cfg.max_quantity || 99,"number"],
+    ["advance_enabled","تفعيل الطلب المسبق",cfg.advance_enabled,"checkbox"],
+    ["advance_suspended","إيقاف الطلبات المسبقة مؤقتاً",cfg.advance_suspended,"checkbox"],
+    ["advance_capacity","الحد الأقصى للطلبات المسبقة النشطة",cfg.advance_capacity||30,"number"],
+    ["advance_window_hours","الحد الأقصى قبل الافتتاح (بالساعات)",cfg.advance_window_hours||24,"number"],
     ["restaurant","اسم المطعم *",cfg.restaurant],
     ["address","عنوان المطعم *",cfg.address],
     ["phone","هاتف المطعم *",cfg.phone],
@@ -920,6 +966,8 @@ export async function settings({ root, api, notice, endpoint }) {
       fields.max_quantity.focus();
       throw Error("الحد الأقصى للكمية يجب أن يكون بين 1 و99");
     }
+    if(!Number.isInteger(values.advance_capacity)||values.advance_capacity<1||values.advance_capacity>500)throw Error("سعة الطلبات المسبقة يجب أن تكون بين 1 و500");
+    if(!Number.isInteger(values.advance_window_hours)||values.advance_window_hours<1||values.advance_window_hours>168)throw Error("مدة الطلب المسبق يجب أن تكون بين 1 و168 ساعة");
     for (const k of ["restaurant","address","phone"]) {
       if (!values[k]) {
         fields[k].setAttribute("aria-invalid","true"); fields[k].focus();
@@ -942,6 +990,7 @@ export async function settings({ root, api, notice, endpoint }) {
     block("إعدادات الطلبات","اضبط حد الكمية وأدوات التواصل الفوري.",
       ["max_quantity"].map(k=>ownLabel(configFields[k]))
         .concat(["cancellation","live_updates"].map(k=>switchify(configFields[k]))),"ps3-order-settings"),
+    block("الطلبات المسبقة","تحكم بالطلبات خلال الإغلاق. راجع قائمة الانتظار في إدارة الطلبات.",["advance_enabled","advance_suspended"].map(k=>switchify(configFields[k])).concat(["advance_capacity","advance_window_hours"].map(k=>ownLabel(configFields[k]))),"ps3-order-settings"),
     block("صيغ إثبات الدفع","اختر أنواع الملفات المسموح للزبائن برفعها عند التحويل.",
       formats.map(k=>switchify(configFields[k])),"ps3-format-settings")
   );
@@ -1000,6 +1049,9 @@ export async function sales(host, api) {
       table(["الوجبة", "الكمية", "المبيعات المعتمدة"],
         (s.meals || []).map(r => [r.name, r.quantity, amount(r.value)])));
     host.append(details);
+    const advance=await api(rootPath+"rpc/pay_advance_analytics",{method:"POST",body:{p_days:28}});
+    const section=el("section");section.className="pay-sales-details";section.append(el("h3","أداء الطلبات المسبقة · آخر 28 يوماً"),table(["المؤشر","القيمة"],[
+      ["زيارات المنيو أثناء الإغلاق (مشاهدات وليست أفراداً)",advance.closed_views],["إضافات السلة أثناء الإغلاق",advance.closed_cart_additions],["بدء الدفع أثناء الإغلاق",advance.checkout_starts],["الطلبات المسبقة المستلمة",advance.submitted],["الطلبات المسبقة المعتمدة",advance.approved],["المبيعات المعتمدة",amount(advance.revenue)],["نسبة الإرسال إلى بدء الدفع (تقريبية)",advance.checkout_ratio==null?"—":advance.checkout_ratio+"%"],["متوسط وقت الانتظار حتى التحضير (دقائق)",advance.wait_minutes??"—"],["المرفوضة",advance.rejected],["الملغاة",advance.cancelled]]),el("h3","الوجبات الأكثر طلباً"),table(["الوجبة","الكمية المعتمدة"],(advance.meals||[]).map(m=>[m.name,m.quantity])),el("h3","أوقات الطلب المسبق (توقيت غزة)"),table(["الساعة","عدد الطلبات"],(advance.hours||[]).map(h=>[h.hour,h.count])));host.append(section);
   } catch (e) {
     host.append(el("p", e.message));
   }

@@ -115,6 +115,7 @@ export function invoice(o) {
   pair("رقم الطلب","#"+o.number,true);
   pair("تاريخ الدفع",date(o.approved_at));
   if(snap.employee_name)pair("الموظف الذي اعتمد الدفع",snap.employee_name);
+  if(snap.employee_role)pair("دور الموظف",snap.employee_role);
   pair("العميل",o.customer);
   pair("الجوال",o.phone,true);
   pair("نوع الطلب",o.service_type==="delivery"?"توصيل":o.service_type==="dine_in"?"داخل المطعم":"غير محدد");

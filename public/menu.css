@@ -1326,7 +1326,7 @@ body.rich-menu-active:not([data-preview]) #rich-menu{
 body.dark #menu .meal-order-unavailable,body.dark #details .meal-order-unavailable{background:#3a3835;border-color:#635c50;color:#cbc2b3}
 #details .dish-lead .meal-availability-pill{margin-inline-start:8px}
 .restaurant-closure-banner{display:flex;align-items:center;justify-content:flex-start;gap:12px;margin:0 0 14px;padding:12px 14px;border:1px solid #776749;border-radius:15px;background:#2d2925;color:#fff7e6;box-shadow:0 6px 22px #0002;direction:rtl;text-align:start}
-.restaurant-closure-banner[hidden]{display:none!important}
+.restaurant-closure-banner[hidden],body.rich-menu-active #menu>.restaurant-closure-banner{display:none!important}
 .restaurant-closure-icon{display:grid;place-items:center;flex:none;width:37px;height:37px;border-radius:50%;background:#FDBE2D;color:#2d260f;font:900 23px/1 system-ui,sans-serif}
 .restaurant-closure-content{display:grid;gap:3px;min-width:0}
 .restaurant-closure-content strong{color:#ffe0a1;font:800 14px/1.5 Snounu,Tahoma,sans-serif}

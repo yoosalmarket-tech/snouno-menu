@@ -1,28 +1,35 @@
-import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=cart-ux-04-20261122';
+import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=advance-release-01-20261124';
 import {englishCategoryName} from './category-labels.js?v=1';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
-import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
+import {isRestaurantClosed,closureNoticeMessage} from './closure-schedule.js?v=advance-analytics-01-20261124';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
 const make=(tag,text)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;return el;};
 let dishes=[],categories=[],links=[],advertisements=[],settings={};
+let closedViewRecorded=false;
 function syncRestaurantClosure(){
  const closed=isRestaurantClosed(settings.closure_rules);
  document.body.classList.toggle('restaurant-closed',closed);
+ if(!closed)closedViewRecorded=false;
+ if(closed&&currentPage()==='menu'&&!closedViewRecorded&&!isPreview){closedViewRecorded=true;reporting.report('closed_hours_menu_view',null);}
  const banner=document.getElementById('restaurant-closure-banner');
  if(!banner)return;
  banner.hidden=!closed;
  if(!closed)return;
  const english=document.documentElement.lang==='en';
- const state=english?'en':'ar';
+ const copy=closureNoticeMessage(settings.closure_rules,english);
+ const richCopy=document.querySelector('#rich-menu .rm-closure-note-copy');
+ const richText=(english?'Restaurant currently closed · ':'المطعم مغلق حالياً · ')+copy;
+ if(richCopy&&richCopy.textContent!==richText)richCopy.textContent=richText;
+ const state=(english?'en':'ar')+copy;
  if(banner.dataset.language===state)return;
  banner.dataset.language=state;
  const icon=make('span','◷');icon.className='restaurant-closure-icon';icon.setAttribute('aria-hidden','true');
  const words=make('span');words.className='restaurant-closure-content';
  const title=make('strong',english?'Restaurant currently closed':'المطعم مغلق حالياً');
- const message=make('small',english?'You can still explore our meals. See you when we reopen!':'تقدر تتصفح وجباتنا، ونستناك وقت الافتتاح!');
+ const message=make('small',copy);
  words.append(title,message);banner.replaceChildren(icon,words);
 }
 let closureUpdatesInstalled=false;
@@ -31,7 +38,7 @@ function installRestaurantClosureUpdates(){
  if(!banner){
   banner=document.createElement('p');banner.id='restaurant-closure-banner';
   banner.className='restaurant-closure-banner';banner.setAttribute('role','status');
-  document.getElementById('menu')?.prepend(banner);
+  document.getElementById('experience-switch')?.after(banner);
  }
  syncRestaurantClosure();
  if(closureUpdatesInstalled)return;
@@ -172,7 +179,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=user-stamp-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=advance-analytics-01-20261124')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
@@ -268,7 +275,7 @@ richToggle?.addEventListener('change',()=>{
  reflectExplicitMode();
  void syncRichMode();
 });
-window.addEventListener('pagechange',()=>{void syncRichMode();});
+window.addEventListener('pagechange',()=>{void syncRichMode();if(settings?.name)syncRestaurantClosure();});
 
 
 // Arabic is the only visitor-facing language; keep original meal records.
@@ -1451,7 +1458,7 @@ async function load(){
   const values=await Promise.all(['menu_settings','categories?order=position,name','dishes?order=position,name','menu_links?order=position,name','menu_ads?order=position,name,id'].map(async path=>{
    const r=await fetch(base+path,{headers});if(!r.ok)throw new Error();return r.json();
   }));
-  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
+  [settings]=values[0];[,categories,dishes,links,advertisements]=values;installRestaurantClosureUpdates();if(!isPreview&&!cartUi)cartUi=installCart({catalog:()=>dishes,name:displayName,description:displayDescription,closed:()=>isRestaurantClosed(settings.closure_rules),page:currentPage,track:(action,id)=>reporting.report(action,null,id?{meal_id:String(id)}:{})});renderSettings();applyLanguage();installPreview();installWelcomeFoodCutouts();startDesktopMealWheel();startMobileWelcomeCycle();$('network').hidden=true;
   // The SEO fetch runs after initial menu data, outside the 3-second decision.
   setTimeout(()=>void refreshSeoWelcomeAlts(),3200);
   void syncRichMode();

@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "./payment-ui.js?v=receipt-clean-20261122";
+} from "./payment-ui.js?v=advance-analytics-01-20261124";
 import {getReferralSource} from "./referral-source.js?v=referrals-1";
 const endpoint = "https://wknpuzdyemwkllmxehyy.supabase.co",
   key = "sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip";
@@ -153,7 +153,7 @@ export function installPayDialogDrag(dialog){
  dialog.addEventListener("close",reset);
  return reset;
 }
-export function installCart({ catalog, name, description, closed, page }) {
+export function installCart({ catalog, name, description, closed, page, track=()=>{} }) {
   const dialog = el("dialog");
   dialog.className = "pay-dialog";
   dialog.setAttribute("aria-label", t("السلة والطلبات", "Cart and orders"));
@@ -375,7 +375,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     if (!locked) await closePayDialog(dialog, document.body.classList.contains("rich-menu-active"));
   }
   function add(d, existing) {
-    if (dialog.inert || !d || d.available === false || closed()) return;
+    if (dialog.inert || !d || d.available === false) return;
     const previous = document.getElementById("dish");
     if (previous?.open) previous.close();
     modal();
@@ -499,6 +499,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       confirm.disabled=true;
       form.inert=true;
       save(); // Cart is saved before any visual animation runs.
+      if(!existing&&closed())track("closed_hours_cart_addition",d.id);
       confirm.textContent=existing
         ?t("تم حفظ التعديل ✓","Changes saved ✓")
         :t("أُضيفت إلى السلة ✓","Added to cart ✓");
@@ -606,7 +607,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     return form;
   }
   function addDirect(d,qty=1,options=[],note=""){
-    if(!d||d.available===false||closed())throw Error(t("الطلب غير متاح حالياً","Ordering is currently unavailable"));
+    if(!d||d.available===false)throw Error(t("الطلب غير متاح حالياً","Ordering is currently unavailable"));
     const quantity=Number(qty);
     if(!Number.isInteger(quantity)||quantity<1||quantity>maxQty)
       throw Error(t("كمية غير صالحة","Invalid quantity"));
@@ -620,6 +621,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     if(same)same.qty+=quantity;
     else cart.push({line:crypto.randomUUID(),id:d.id,qty:quantity,options:selected,note});
     save();
+    if(closed())track("closed_hours_cart_addition",d.id);
     return true;
   }
   function open() {
@@ -800,13 +802,13 @@ export function installCart({ catalog, name, description, closed, page }) {
     else {
       nextButton = button(
         t("متابعة", "Continue") + " · " + amount(total()),
-        () => checkout(),
+        () => void beginCheckout(),
       );
       nextButton.className = "pay-primary";
-      nextButton.disabled = closed() || lines().some((l) => !l.d?.available);
+      nextButton.disabled = lines().some((l) => !l.d?.available);
       b.append(nextButton);
       if (nextButton.disabled)
-        b.append(el("p", t("الطلب غير متاح حالياً", "Ordering is currently unavailable")));
+        b.append(el("p", closed() ? t("تقدر تحتفظ بسلتك، والدفع متاح عند الافتتاح.", "Keep your cart; checkout opens when the restaurant reopens.") : t("الطلب غير متاح حالياً", "Ordering is currently unavailable")));
     }
     const orders=button(t("طلباتي", "My orders")+(tracking.length?" · "+tracking.length:""),showHistory);
     orders.className="pay-cart-orders";
@@ -860,6 +862,9 @@ export function installCart({ catalog, name, description, closed, page }) {
     };
     void updateShortcut();
   }
+  const makeCheckoutRef=()=>({id:crypto.randomUUID(),secret:Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join('')});
+  const holdFingerprint=()=>JSON.stringify({draft:{...draft,payment_mode:'online',arrival_eta_minutes:null},items:items(),total:total()});
+  let checkoutHold=null;
   async function submitOrder(receiptFile) {
       const payload = {
         ...draft,
@@ -873,13 +878,8 @@ export function installCart({ catalog, name, description, closed, page }) {
       const fingerprint = JSON.stringify(payload);
       let ref = read("snounu-pending-request", null);
       if (ref?.fingerprint !== fingerprint) {
-        ref = {
-          id: crypto.randomUUID(),
-          secret: Array.from(crypto.getRandomValues(new Uint8Array(32)), (n) =>
-            n.toString(16).padStart(2, "0"),
-          ).join(""),
-          fingerprint,
-        };
+        const held=checkoutHold?.fingerprint===holdFingerprint()?checkoutHold:null;
+        ref = {...(held||makeCheckoutRef()),fingerprint};
         localStorage.setItem("snounu-pending-request", JSON.stringify(ref));
       }
       const o = await call({ ...payload, id: ref.id, secret: ref.secret, action: "submit" }, receiptFile);
@@ -890,15 +890,42 @@ export function installCart({ catalog, name, description, closed, page }) {
       tracking = [saved, ...tracking.filter((r) => r.id !== ref.id)];
       localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
       localStorage.removeItem("snounu-pending-request");
+      localStorage.removeItem("snounu-advance-hold");checkoutHold=null;
       cart = [];
       save();
       proof = null;
       draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "",
         delivery_landmark: "", backup_phone: "", payment_mode: "online", arrival_eta_minutes: null };
+      if(o.advance_order)track("advance_order_submitted");
       announce(saved, o);
       await status(saved, o);
   }
   let proofAttempts=0,proofWarning=null,proofHelp=null;
+  let advanceCheckout=false;
+  const openingText=value=>value?new Intl.DateTimeFormat(document.documentElement.lang==="en"?"en-GB":"ar-PS",{timeZone:"Asia/Gaza",weekday:"long",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date(value)):"—";
+  async function beginCheckout(){
+    const b=layout(t("تأكيد الطلب","Confirm order"));
+    b.append(el("p",t("جارٍ التحقق من توفر الطلب…","Checking ordering availability…")));
+    const ticket=generation;
+    try{
+      const info=await call({action:"advance_info"});
+      if(ticket!==generation)return;
+      advanceCheckout=info.closed;
+      if(info.closed)track("advance_checkout_started");
+      if(!info.closed){checkout();return;}
+      b.replaceChildren();
+      if(!info.advance_allowed){
+        b.append(el("p",t("الطلبات المسبقة غير متاحة حالياً. ستبقى وجباتك محفوظة في السلة.","Advance orders are unavailable. Your cart will stay saved.")),button(t("العودة للسلة","Back to cart"),showCart));return;
+      }
+      b.append(el("h3",t("اطلب قبل الافتتاح!","Order before opening!")),
+        el("p",t("المطعم مغلق حالياً، لكن بتقدر تطلب وتحجز دورك من الآن.","The restaurant is closed, but you can order and reserve a place in line.")),
+        el("strong",t("الافتتاح القادم: ","Next opening: ")+openingText(info.next_opening_at)),
+        el("p",t("الطلبات الحالية في الانتظار: ","Current active orders: ")+Number(info.active_orders)),
+        el("p",t("سيتم مراجعة دفعتك وتجهيز طلبك حسب دورك بعد افتتاح المطعم. لا يتم حجز الدور قبل إرسال إثبات الدفع.","Payment will be reviewed and preparation starts after opening. A place is reserved only after submitting proof.")));
+      const proceed=button(t("متابعة الطلب والدفع","Continue to payment"),()=>{draft.payment_mode="online";draft.arrival_eta_minutes=null;checkout();});proceed.className="pay-primary";
+      b.append(proceed,button(t("العودة للسلة","Back to cart"),showCart));
+    }catch(e){if(ticket===generation){b.replaceChildren(el("p",t("تعذّر التحقق من توفر الطلب. حاول مرة أخرى قبل الدفع.","Unable to check ordering availability. Retry before paying.")),button(t("العودة للسلة","Back to cart"),showCart));}}
+  }
   function checkout() {
     const b = layout(t("تأكيد الطلب", "Confirm order")),
       f = el("form");
@@ -984,7 +1011,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     arrivalLabel.append(arrivalHeading,arrivalSelect,
       el("small",t("موعد وصول تقريبي وليس وقت تجهيز الوجبة. تجهيز الطلب يبدأ بعد تأكيد وصولك والدفع.",
         "This is an estimated arrival, not a meal preparation time. Preparation starts after your arrival and payment are confirmed.")));
-    for(const [value,label] of payOptions){
+    for(const [value,label] of payOptions.filter(([value])=>!advanceCheckout||value==="online")){
       const line=el("label");
       const radio=el("input");radio.type="radio";radio.name="payment_mode";radio.value=value;
       radio.checked=(draft.payment_mode||"online")===value;
@@ -1000,7 +1027,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       line.append(radio,el("span",label));payPlace.append(line);
     }
     payPlace.append(arrivalLabel);
-    payPlace.append(el("small",t("عند الدفع في المطعم لا تحتاج رفع إثبات. لن يبدأ تجهيز الطلب حتى تؤكد الإدارة حضورك واستلام الدفع.",
+    if(!advanceCheckout)payPlace.append(el("small",t("عند الدفع في المطعم لا تحتاج رفع إثبات. لن يبدأ تجهيز الطلب حتى تؤكد الإدارة حضورك واستلام الدفع.",
       "No payment proof required on arrival. Preparation starts after the restaurant confirms your arrival and payment.")));
     function updateService(type) {
       draft.service_type = type;
@@ -1115,11 +1142,29 @@ export function installCart({ catalog, name, description, closed, page }) {
       }
       task(async () => {
         cfg = await call({ action: "config" });
+        if(advanceCheckout&&!cfg.methods.length)throw Error(t("لا توجد طريقة دفع متاحة للطلب المسبق","No advance payment method is available"));
         if (cfg.methods.length) {
+          const fp=holdFingerprint();
+          if(draft.payment_mode==="online"){
+            const saved=read("snounu-advance-hold",null);
+            checkoutHold=saved?.fingerprint===fp&&Date.parse(saved.expires_at)>Date.now()?saved:{...makeCheckoutRef(),fingerprint:fp};
+          }else checkoutHold=null;
           const q = await call({
             action: "quote",
+            payment_mode:draft.payment_mode,
             items: items(),
+            reserve_advance:advanceCheckout,
+            reserve_checkout:draft.payment_mode==="online",
+            ...(checkoutHold?{id:checkoutHold.id,secret:checkoutHold.secret}:{})
           });
+          if(q.hold&&checkoutHold){
+            checkoutHold.expires_at=q.hold.expires_at;
+            checkoutHold.opening_at=q.hold.opening_at;
+            localStorage.setItem("snounu-advance-hold",JSON.stringify(checkoutHold));
+          }
+          if(advanceCheckout&&q.closed&&!q.hold)throw Error(t("تعذّر حجز سعة الطلب. لا تحول المبلغ.","Could not hold checkout capacity. Do not transfer."));
+          if((q.closed||q.hold?.opening_at)&&!advanceCheckout){await beginCheckout();return;}
+          if(draft.payment_mode==="online"&&!q.hold)throw Error(t("تعذّر تأكيد الدفع. لا تحول المبلغ.","Could not verify checkout. Do not transfer."));
           if (Number(q.total) !== total())
             throw Error(
               t(
@@ -1188,6 +1233,7 @@ export function installCart({ catalog, name, description, closed, page }) {
   }
   function payment() {
     const b = layout(t("الدفع", "Payment"));
+    if(checkoutHold?.expires_at&&checkoutHold.opening_at)b.append(el("p",t("أرسل إثبات الدفع قبل ","Submit proof before ")+openingText(checkoutHold.expires_at)+t(" لضمان توفر السعة. إذا دفعت وانتهت المهلة، أرسل الإثبات للمراجعة ولا تدفع مجدداً."," to guarantee capacity. If you already paid after expiry, submit proof for manual review; do not pay again.")));
     b.append(el("p", draft.service_type === "delivery"
       ? t("طلب توصيل", "Delivery order") + " · " + draft.delivery_address.trim()
       : t("تناول الطعام في المطعم", "Dine in at the restaurant")));
@@ -1347,7 +1393,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     const b = layout(t("متابعة الطلب", "Order status")),
       ticket = generation;
     b.textContent = t("جارٍ التحميل…", "Loading…");
-    let current = "",
+    let current = "",queueViewTracked=false,
       socket,
       timer,
       heartbeat,
@@ -1358,17 +1404,21 @@ export function installCart({ catalog, name, description, closed, page }) {
       try {
         const o = order || (await call({ ...ref, action: "status" }));
         if (ticket !== generation) return;
-        const nextKey=[o.status,o.fulfillment_status,o.arrived_at,o.report_open].join("|");
+        const nextKey=[o.status,o.fulfillment_status,o.arrived_at,o.report_open,o.queue_position,o.restaurant_closed,o.next_opening_at,o.advance_exception,o.refund_resolution].join("|");
         if (current === nextKey) return;
         const previousStatus = current;
         current = nextKey;
-        if (previousStatus && previousStatus !== nextKey) announce(ref, o);
+        if (previousStatus && (ref.status!==o.status||ref.fulfillment_status!==o.fulfillment_status)) announce(ref, o);
         ref.status = o.status;
         ref.fulfillment_status = o.fulfillment_status;
         localStorage.setItem("snounu-orders-v1", JSON.stringify(tracking));
         refresh();
         b.replaceChildren();
-        const stageTitle=o.fulfillment_status==="completed"
+        const stageTitle=o.advance_exception&&o.status==="pending"?t("استلمنا إثبات الدفع · بانتظار مراجعة الحجز","Proof received · Reservation needs review")
+          :o.advance_order&&o.status==="pending"&&o.queue_position!=null?t("حجزنا دورك!","Your place is reserved!")
+          :o.fulfillment_status==="queued"?t("تم تأكيد الدفع · بانتظار دورك","Payment approved · Waiting in line")
+          :o.fulfillment_status==="ready"?t("طلبك جاهز","Your order is ready")
+          :o.fulfillment_status==="completed"
           ? t("تم تسليم طلبك","Order marked delivered")
           : o.payment_mode==="at_restaurant"&&o.status==="pending"
           ? o.arrived_at?t("تم تأكيد وصولك","Arrival confirmed"):t("طلبك ينتظر حضورك","Awaiting your arrival")
@@ -1381,6 +1431,18 @@ export function installCart({ catalog, name, description, closed, page }) {
           el("strong", "#" + o.number + " · " + amount(o.total)),
           el("p", o.method + " · " + when(o.created_at)),
         );
+        if(o.advance_exception&&o.status==="pending")b.append(el("p",t("انتهت مهلة حجز السعة أو يحتاج إثباتك إلى مراجعة إضافية. لا تحوّل أي مبلغ جديد. سيؤكد المطعم دورك أو يتواصل معك للتسوية.","Your receipt was received, but the reservation needs manual review. Do not transfer again.")));
+        if(o.refund_resolution==="review_required")b.append(el("p",t("تسوية الدفعة قيد المراجعة اليدوية. لم يتم رد المبلغ تلقائياً.","Payment resolution is pending manual review. No automatic refund.")));
+        if(o.refund_resolution==="refunded")b.append(el("p",t("سجّل المطعم رد الدفعة يدوياً.","The restaurant recorded a manual refund.")));
+        if(o.refund_resolution==="no_refund_required")b.append(el("p",t("سجّل المطعم عدم الحاجة لرد الدفعة.","The restaurant recorded that no refund is required.")));
+        if(o.queue_position!=null){
+          if(!queueViewTracked){queueViewTracked=true;track("queue_position_viewed");}
+          b.append(el("h3",t("ترتيبك الحالي في قائمة الانتظار","Your current place in line")),el("strong","#"+Number(o.queue_position)),
+            el("p",Number(o.orders_ahead)>0?t("في "+o.orders_ahead+" طلبات قبلك",o.orders_ahead+" orders ahead of you"):t("لا توجد طلبات قبلك","No orders ahead of you")));
+          if(o.restaurant_closed&&o.next_opening_at)b.append(el("p",t("الافتتاح القادم: ","Next opening: ")+openingText(o.next_opening_at)));
+          if(o.status==="pending")b.append(el("small",t("دورك محجوز مبدئياً، وسيتم تأكيده بعد مراجعة الدفعة.","Your place is provisional until payment is verified.")));
+          else if(o.status==="approved"&&!o.restaurant_closed&&o.orders_ahead===0&&o.fulfillment_status==="queued")b.append(el("strong",t("صار دورك!","It is your turn!")));
+        }
         if (o.service_type === "delivery") {
           b.append(el("p", t("توصيل إلى: ", "Delivery to: ") + (o.delivery_address || "—")));
           if (o.delivery_landmark) b.append(el("p", t("أقرب معلم: ", "Nearby landmark: ") + o.delivery_landmark));
@@ -1408,6 +1470,7 @@ export function installCart({ catalog, name, description, closed, page }) {
                 "Your arrival is confirmed. Preparation begins after the restaurant records payment.")
               : t("تم تسجيل طلبك دون دفع مسبق. سيبدأ المطعم تجهيز وجبتك بعد حضورك والدفع.",
                 "Your order is registered with no advance payment. Preparation begins when you arrive and pay.")
+            : o.advance_order?t("وصل طلبك وإثبات الدفع. سيتم مراجعة دفعتك حسب دورك.","Your order and receipt are received. Payment is pending verification.")
             : t("وصل طلبك وإثبات الدفع. إدارة المطعم تراجع التحويل الآن، وستظهر النتيجة هنا.",
               "We have your order and receipt. The restaurant is reviewing the payment.")));
           if (o.cancellation)
@@ -1437,6 +1500,8 @@ export function installCart({ catalog, name, description, closed, page }) {
                   "The restaurant marked this order delivered. If you did not receive it, report a problem.")
                 : t("أشارت إدارة المطعم إلى تسليم وجبتك. إن لم تستلمها، أبلغنا فوراً.",
                   "The restaurant marked the meal handed over. Report a problem if you did not receive it.")
+              : o.fulfillment_status==="queued"?t("تم اعتماد دفعتك، والطلب بانتظار بدء التحضير.","Payment is approved; preparation has not started.")
+              : o.fulfillment_status==="ready"?t("طلبك جاهز للاستلام أو التوصيل.","Your order is ready for pickup or delivery.")
               : o.fulfillment_status==="awaiting_visit"
                 ? t("تم اعتماد دفعتك. سيبدأ إعداد الوجبة بعد حضورك إلى المطعم وتأكيد وصولك.",
                   "Your payment is approved. Preparation starts when you arrive.")
@@ -1670,7 +1735,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     inlineAdd,
     button(d) {
       const b = button(t("أضف إلى السلة", "Add to cart"), () => add(d));
-      b.disabled = d.available === false || closed();
+      b.disabled = d.available === false;
       b.className = "pay-primary";
       return b;
     },
