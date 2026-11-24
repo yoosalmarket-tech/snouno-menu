@@ -1,0 +1,187 @@
+-- ADVANCE ORDERING 01.3. Safe default: advance payments are disabled until launch.
+alter table public.pay_settings
+ add column advance_enabled boolean not null default false,
+ add column advance_capacity integer not null default 30 check (advance_capacity between 1 and 500),
+ add column advance_window_hours integer not null default 24 check (advance_window_hours between 1 and 168),
+ add column advance_suspended boolean not null default false;
+alter table public.pay_orders
+ add column advance_order boolean not null default false,
+ add column advance_opening_at timestamptz,
+ add column queue_joined_at timestamptz,
+ add column queue_managed boolean not null default false;
+update public.pay_orders set queue_joined_at=created_at where payment_mode='online';
+create index pay_orders_active_queue_idx on public.pay_orders(queue_joined_at,number)
+ where status in ('pending','approved') and fulfillment_status not in ('completed','stopped') and queue_joined_at is not null;
+alter table public.pay_orders drop constraint pay_orders_fulfillment_status_check;
+alter table public.pay_orders add constraint pay_orders_fulfillment_status_check check
+ (fulfillment_status in ('awaiting_approval','awaiting_visit','awaiting_payment','queued','preparing','ready','completed','stopped'));
+
+-- Match the existing Gaza wall-clock closure rules, including overnight overlap.
+create function private.advance_closed(rules jsonb, instant timestamptz) returns boolean
+language sql stable set search_path='' as $$
+ with local_time as (select instant at time zone 'Asia/Gaza' as wall),
+ rule as (
+  select r, wall::date as day, wall::time as tm
+  from local_time cross join lateral jsonb_array_elements(
+   case when jsonb_typeof(rules)='array' then rules else '[]'::jsonb end) r
+ ), matches as (
+  select r,tm,
+   case when r->>'kind'='date' then r->>'date'=day::text
+        when r->>'kind'='weekly' then coalesce(r->'weekdays','[]'::jsonb) @> jsonb_build_array(extract(dow from day)::int)
+        else false end as today,
+   case when r->>'kind'='date' then r->>'date'=(day-1)::text
+        when r->>'kind'='weekly' then coalesce(r->'weekdays','[]'::jsonb) @> jsonb_build_array(extract(dow from day-1)::int)
+        else false end as yesterday,
+   case when r->>'start' ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then (r->>'start')::time end as starts,
+   case when r->>'end' ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then (r->>'end')::time end as ends
+  from rule
+ )
+ select coalesce(bool_or(case when r->'allDay'='true'::jsonb then today
+  when starts<ends then today and tm>=starts and tm<ends
+  when starts>ends then (today and tm>=starts) or (yesterday and tm<ends)
+  else false end),false) from matches;
+$$;
+
+create function private.advance_next_open(rules jsonb, instant timestamptz, hours integer)
+returns timestamptz language sql stable set search_path='' as $$
+ select candidate from generate_series(date_trunc('minute',instant)+interval '1 minute',
+  instant+least(greatest(hours,1),168)*interval '1 hour',interval '1 minute') candidate
+ where private.advance_closed(rules,instant) and not private.advance_closed(rules,candidate)
+ order by candidate limit 1;
+$$;
+
+-- Service-only aggregate; never return another customer's row or tracking credential.
+create function public.pay_advance_info(p_id uuid default null) returns jsonb
+language plpgsql stable set search_path='' as $$
+declare cfg public.pay_settings; rules jsonb; moment timestamptz:=statement_timestamp();
+ closed boolean; opening timestamptz; active integer; advance_active integer;
+ ahead integer; own public.pay_orders;
+begin
+ select * into strict cfg from public.pay_settings where id=1;
+ select closure_rules into strict rules from public.menu_settings where id=1;
+ closed:=private.advance_closed(rules,moment);
+ if closed then opening:=private.advance_next_open(rules,moment,cfg.advance_window_hours); end if;
+ select count(*),count(*) filter(where advance_order) into active,advance_active
+ from public.pay_orders where status in ('pending','approved') and fulfillment_status not in ('completed','stopped') and queue_joined_at is not null;
+ if p_id is not null then
+  select * into own from public.pay_orders where id=p_id;
+  if found and own.queue_joined_at is not null and own.status in ('pending','approved')
+    and own.fulfillment_status not in ('completed','stopped') then
+   select count(*) into ahead from public.pay_orders
+   where status in ('pending','approved') and fulfillment_status not in ('completed','stopped')
+    and queue_joined_at is not null and (queue_joined_at,number)<(own.queue_joined_at,own.number);
+  end if;
+ end if;
+ return jsonb_build_object('closed',closed,'next_opening_at',opening,'advance_enabled',cfg.advance_enabled,
+  'advance_allowed',closed and cfg.advance_enabled and not cfg.advance_suspended and opening is not null and advance_active<cfg.advance_capacity,
+  'active_orders',active,'orders_ahead',ahead,'queue_position',case when ahead is not null then ahead+1 end);
+end $$;
+revoke all on function public.pay_advance_info(uuid) from public,anon,authenticated;
+grant execute on function public.pay_advance_info(uuid) to service_role;
+revoke all on function private.advance_closed(jsonb,timestamptz),private.advance_next_open(jsonb,timestamptz,integer) from public,anon,authenticated;
+grant execute on function private.advance_closed(jsonb,timestamptz),private.advance_next_open(jsonb,timestamptz,integer) to service_role;
+
+-- Serialize reservation and capacity checks inside the existing order transaction.
+-- A cart or quote does not create an order or reserve queue position.
+create function private.advance_on_insert() returns trigger language plpgsql set search_path='' as $$
+declare cfg public.pay_settings; rules jsonb; moment timestamptz; opening timestamptz; n integer;
+begin
+ perform pg_advisory_xact_lock(84621001);
+ moment:=clock_timestamp();
+ select * into strict cfg from public.pay_settings where id=1;
+ select closure_rules into strict rules from public.menu_settings where id=1;
+ if private.advance_closed(rules,moment) then
+  if new.payment_mode<>'online' or not cfg.advance_enabled or cfg.advance_suspended then raise exception 'Advance ordering unavailable'; end if;
+  opening:=private.advance_next_open(rules,moment,cfg.advance_window_hours);
+  if opening is null then raise exception 'No available opening within advance window'; end if;
+  select count(*) into n from public.pay_orders where advance_order and status in ('pending','approved')
+   and fulfillment_status not in ('completed','stopped');
+  if n>=cfg.advance_capacity then raise exception 'Advance queue full'; end if;
+  new.advance_order:=true;
+  new.advance_opening_at:=opening;
+ end if;
+ if new.payment_mode='online' then
+  new.queue_joined_at:=moment;
+  new.queue_managed:=cfg.advance_enabled or exists(select 1 from public.pay_orders where advance_order and status in ('pending','approved') and fulfillment_status not in ('completed','stopped'));
+ end if;
+ return new;
+end $$;
+create trigger pay_advance_on_insert before insert on public.pay_orders for each row execute function private.advance_on_insert();
+
+-- Preserve original status transitions for existing non-queue-managed orders.
+create or replace function private.pay_order_stage_sync() returns trigger
+language plpgsql set search_path='' as $$
+begin
+ if new.status is distinct from old.status then
+  if new.status='approved' then
+   new.fulfillment_status:=case when new.queue_managed then 'queued'
+    when new.service_type='dine_in' and new.arrived_at is null then 'awaiting_visit' else 'preparing' end;
+  elsif new.status in ('cancelled','rejected') then new.fulfillment_status:='stopped';
+  elsif new.status='pending' then
+   new.fulfillment_status:=case when new.payment_mode='at_restaurant' and new.arrived_at is null then 'awaiting_visit' else 'awaiting_approval' end;
+   if old.status='rejected' and new.payment_mode='online' then
+    perform pg_advisory_xact_lock(84621001);
+    new.queue_joined_at:=clock_timestamp();
+   end if;
+  end if;
+ end if;
+ return new;
+end $$;
+
+-- Explicit staff-controlled preparation, only when the restaurant is open.
+create function public.pay_queue_stage(p_id uuid,p_stage text) returns void
+language plpgsql security definer set search_path='' as $$
+declare o public.pay_orders; cfg public.pay_settings; rules jsonb;
+begin
+ if auth.uid() is null or coalesce(private.menu_role(),'') not in ('owner','customer_service')
+  or p_stage is null or p_stage not in ('preparing','ready') then raise exception 'Access denied'; end if;
+ perform pg_advisory_xact_lock(84621001);
+ select * into strict o from public.pay_orders where id=p_id for update;
+ if not o.queue_managed or o.status<>'approved' then raise exception 'Payment approval required'; end if;
+ if o.fulfillment_status=p_stage then return; end if;
+ select closure_rules into strict rules from public.menu_settings where id=1;
+ if private.advance_closed(rules,clock_timestamp()) then raise exception 'Restaurant closed'; end if;
+ if p_stage='preparing' then
+  if o.fulfillment_status<>'queued' then raise exception 'Invalid stage'; end if;
+  if exists(select 1 from public.pay_orders q where q.queue_managed and q.status='approved' and q.fulfillment_status='queued'
+    and (q.queue_joined_at,q.number)<(o.queue_joined_at,o.number)) then raise exception 'An earlier verified order is waiting'; end if;
+ elsif o.fulfillment_status<>'preparing' then raise exception 'Start preparation first'; end if;
+ update public.pay_orders set fulfillment_status=p_stage where id=p_id;
+ insert into public.pay_history(order_id,status,actor,reason) values(p_id,p_stage,auth.uid(),'');
+ select * into strict cfg from public.pay_settings where id=1;
+ if cfg.live_updates then perform realtime.send('{}'::jsonb,'refresh','payment-'||o.topic,false); end if;
+end $$;
+revoke all on function public.pay_queue_stage(uuid,text) from public,anon;
+grant execute on function public.pay_queue_stage(uuid,text) to authenticated;
+
+-- Maintain the staff arrival workflow without bypassing the queue.
+create or replace function public.pay_mark_arrived(p_id uuid) returns void
+language plpgsql security definer set search_path='' as $$
+declare o public.pay_orders; cfg public.pay_settings;
+begin
+ if auth.uid() is null or coalesce(private.menu_role(),'') not in ('owner','customer_service') then raise exception 'Access denied'; end if;
+ select * into strict o from public.pay_orders where id=p_id for update;
+ if o.service_type<>'dine_in' or o.status not in ('pending','approved') then raise exception 'Invalid arrival'; end if;
+ if o.arrived_at is not null then return; end if;
+ update public.pay_orders set arrived_at=now(),fulfillment_status=case when o.queue_managed then o.fulfillment_status
+  when status='approved' then 'preparing' when payment_mode='at_restaurant' then 'awaiting_payment' else 'awaiting_approval' end where id=p_id;
+ insert into public.pay_history(order_id,status,actor,reason) values(p_id,'arrived',auth.uid(),'تم تأكيد وصول العميل');
+ select * into cfg from public.pay_settings where id=1;
+ if cfg.live_updates then perform realtime.send('{}'::jsonb,'refresh','payment-'||o.topic,false); end if;
+end $$;
+
+create or replace function public.pay_mark_completed(p_id uuid) returns void
+language plpgsql security definer set search_path='' as $$
+declare o public.pay_orders; cfg public.pay_settings;
+begin
+ if auth.uid() is null or coalesce(private.menu_role(),'') not in ('owner','customer_service') then raise exception 'Access denied'; end if;
+ select * into strict o from public.pay_orders where id=p_id for update;
+ if o.fulfillment_status='completed' then return; end if;
+ if o.status<>'approved' then raise exception 'Only approved orders can be completed'; end if;
+ if o.queue_managed and o.fulfillment_status<>'ready' then raise exception 'Mark order ready first'; end if;
+ if o.service_type='dine_in' and o.arrived_at is null then raise exception 'Confirm customer arrival first'; end if;
+ update public.pay_orders set fulfillment_status='completed',completed_at=now() where id=p_id;
+ insert into public.pay_history(order_id,status,actor,reason) values(p_id,'completed',auth.uid(),'تم تأكيد تسليم الطلب');
+ select * into cfg from public.pay_settings where id=1;
+ if cfg.live_updates then perform realtime.send('{}'::jsonb,'refresh','payment-'||o.topic,false); end if;
+end $$;
