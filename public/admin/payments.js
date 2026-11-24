@@ -288,6 +288,11 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     if(queuePositions[o.id]!=null)extras.append(line("ترتيب الدور",queuePositions[o.id]));
     if(o.invoice?.employee_name)extras.append(line("الموظف الذي اعتمد الدفع",o.invoice.employee_name));
     if(o.invoice?.employee_role)extras.append(line("دور الموظف",o.invoice.employee_role));
+    if(o.status==="rejected"){
+      const rejection=(o.pay_history||[]).filter(h=>h.status==="rejected").sort((a,b)=>b.occurred_at.localeCompare(a.occurred_at)||Number(b.id)-Number(a.id))[0];
+      if(rejection?.employee_name)extras.append(line("الموظف الذي رفض الطلب",rejection.employee_name));
+      if(rejection?.employee_role)extras.append(line("دور الموظف",rejection.employee_role));
+    }
     if(o.arrival_eta_minutes&&o.payment_mode==="at_restaurant")extras.append(line("مدة الوصول",o.arrival_eta_minutes+" دقيقة"));
     if(o.expected_arrival_at)extras.append(line("وقت الوصول المتوقع",date(o.expected_arrival_at)));
     if(o.service_type==="delivery"){
@@ -435,8 +440,8 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
           }
           if(target==="rejected"&&!reason.value.trim()){reason.focus();return;}
           let employeeName="";
-          if(target==="approved"){
-            const entered=prompt("اسم الموظف الذي راجع الدفعة:");
+          if(target==="approved"||target==="rejected"){
+            const entered=prompt(target==="rejected"?"اسم الموظف الذي رفض الطلب:":"اسم الموظف الذي راجع الدفعة:");
             if(entered===null)return;
             employeeName=entered.trim();
             if(employeeName.length<2||employeeName.length>120){notice("يرجى إدخال اسم الموظف الصحيح.");return;}
@@ -531,7 +536,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       const entry=named("div",null,"ord-history-entry");
       entry.append(named("time",date(item.occurred_at)),
         named("strong",statusesArabic[item.status]||labels[item.status]||item.status),
-        named("span",[item.actor||"العميل",item.reason].filter(Boolean).join(" · ")));
+        named("span",[item.employee_name||item.actor||"العميل",item.employee_role,item.reason].filter(Boolean).join(" · ")));
       historyBody.append(entry);
     }
     if(!historyBody.childElementCount)historyBody.append(named("p","لا توجد تحديثات سابقة."));

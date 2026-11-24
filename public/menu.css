@@ -1480,3 +1480,9 @@ html.yoosal-credit-visited #rich-menu .rm-app > .rm-interactive-credit{
   vertical-align:middle;
   margin-inline-start:6px;
 }
+
+/* Compact closure status: exactly one line in the regular menu. */
+.restaurant-closure-banner{padding:6px 9px;gap:7px;min-width:0;justify-content:center}
+.restaurant-closure-icon{width:22px;height:22px;font-size:15px}
+.restaurant-closure-content{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(10px,2.8vw,12px)}
+.restaurant-closure-content strong{font-size:inherit;white-space:nowrap}

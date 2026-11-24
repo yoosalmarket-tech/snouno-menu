@@ -2003,3 +2003,8 @@ body.restaurant-closed #rich-menu .rm-closure-note{display:flex!important}
     width:64%!important;
   }
 }
+
+/* Compact closure status: single line, no wrapping. */
+#rich-menu .rm-closure-note{padding:4px 8px;gap:6px;min-width:0;font-size:clamp(10px,2.8vw,12px)}
+#rich-menu .rm-closure-note-copy{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+#rich-menu .rm-closure-mark{width:20px;height:20px;font-size:14px}

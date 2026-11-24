@@ -83,11 +83,11 @@ export function nextRestaurantOpening(rules,at=new Date(),maxDays=31){
  return result===null?null:new Date(result);
 }
 export function closureNoticeMessage(rules,english=false,at=new Date()){
- const message=english?'Browse and add meals to your cart. Check advance ordering availability at checkout.':'تقدر تضيف وجباتك للسلة وتتحقق من توفر الطلب المسبق عند الدفع.';
  const next=nextRestaurantOpening(rules,at);
- if(!next)return message;
- const date=new Intl.DateTimeFormat(english?'en-GB':'ar-PS',{
-  timeZone:CLOSURE_TIME_ZONE,weekday:'long',day:'numeric',month:'long',hour:'numeric',minute:'2-digit'
- }).format(next);
- return message+(english?' Next opening: ':' موعد الافتتاح القادم: ')+date;
+ if(!next)return english?'Closed now':'مغلق الآن';
+ const locale=english?'en-GB':'ar-PS';
+ const sameDay=gazaParts(next).date===gazaParts(at).date;
+ const time=new Intl.DateTimeFormat(locale,{timeZone:CLOSURE_TIME_ZONE,hour:'numeric',minute:'2-digit',hour12:true}).format(next);
+ const day=sameDay?'':new Intl.DateTimeFormat(locale,{timeZone:CLOSURE_TIME_ZONE,day:'numeric',month:'numeric'}).format(next)+' ';
+ return (english?'Closed · Opens ':'مغلق الآن · نفتح ')+day+time;
 }

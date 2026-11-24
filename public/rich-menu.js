@@ -2,7 +2,7 @@
    swipe-driven category transitions, and a perspective thumbnail rail. */
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {englishCategoryName} from './category-labels.js?v=1';
-import {closureNoticeMessage} from './closure-schedule.js?v=advance-analytics-01-20261124';
+import {closureNoticeMessage} from './closure-schedule.js?v=advance-refine-01-20261124';
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -280,7 +280,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   u.availability.hidden=true;
   u.availability.textContent='';
   if(document.body.classList.contains('restaurant-closed')){
-   const text=(isEnglish()?'Restaurant currently closed · ':'المطعم مغلق حالياً · ')+closureNoticeMessage(getData().settings?.closure_rules,isEnglish());
+   const text=closureNoticeMessage(getData().settings?.closure_rules,isEnglish());
    const copy=at(u.closureNote,'.rm-closure-note-copy');
    if(copy.textContent!==text)copy.textContent=text;
   }
