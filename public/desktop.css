@@ -1649,3 +1649,13 @@
   object-fit:contain!important;
  }
 }
+
+/* ADVANCE ORDERING 01.1 — keep the closed notice inside the standard menu grid. */
+@media(min-width:981px){
+ body.restaurant-closed:not([data-preview]):not(.rich-menu-active) #menu{grid-template-rows:auto auto auto auto minmax(300px,auto);}
+ body.restaurant-closed:not([data-preview]):not(.rich-menu-active) #menu>#restaurant-closure-banner{grid-column:1/-1!important;grid-row:2!important;max-width:1200px;width:100%;justify-self:center;margin:0;}
+ body.restaurant-closed:not([data-preview]):not(.rich-menu-active) #menu>#ads{grid-row:3!important;}
+ body.restaurant-closed:not([data-preview]):not(.rich-menu-active) #menu>.search{grid-row:4!important;}
+ body.restaurant-closed:not([data-preview]):not(.rich-menu-active) #menu>#chips{grid-row:4/span 2!important;}
+ body.restaurant-closed:not([data-preview]):not(.rich-menu-active) #menu>#cards{grid-row:5!important;}
+}

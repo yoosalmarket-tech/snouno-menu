@@ -375,7 +375,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     if (!locked) await closePayDialog(dialog, document.body.classList.contains("rich-menu-active"));
   }
   function add(d, existing) {
-    if (dialog.inert || !d || d.available === false || closed()) return;
+    if (dialog.inert || !d || d.available === false) return;
     const previous = document.getElementById("dish");
     if (previous?.open) previous.close();
     modal();
@@ -606,7 +606,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     return form;
   }
   function addDirect(d,qty=1,options=[],note=""){
-    if(!d||d.available===false||closed())throw Error(t("الطلب غير متاح حالياً","Ordering is currently unavailable"));
+    if(!d||d.available===false)throw Error(t("الطلب غير متاح حالياً","Ordering is currently unavailable"));
     const quantity=Number(qty);
     if(!Number.isInteger(quantity)||quantity<1||quantity>maxQty)
       throw Error(t("كمية غير صالحة","Invalid quantity"));
@@ -806,7 +806,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       nextButton.disabled = closed() || lines().some((l) => !l.d?.available);
       b.append(nextButton);
       if (nextButton.disabled)
-        b.append(el("p", t("الطلب غير متاح حالياً", "Ordering is currently unavailable")));
+        b.append(el("p", closed() ? t("تقدر تحتفظ بسلتك، والدفع متاح عند الافتتاح.", "Keep your cart; checkout opens when the restaurant reopens.") : t("الطلب غير متاح حالياً", "Ordering is currently unavailable")));
     }
     const orders=button(t("طلباتي", "My orders")+(tracking.length?" · "+tracking.length:""),showHistory);
     orders.className="pay-cart-orders";
@@ -1670,7 +1670,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     inlineAdd,
     button(d) {
       const b = button(t("أضف إلى السلة", "Add to cart"), () => add(d));
-      b.disabled = d.available === false || closed();
+      b.disabled = d.available === false;
       b.className = "pay-primary";
       return b;
     },

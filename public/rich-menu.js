@@ -279,8 +279,8 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   u.availability.hidden=true;
   u.availability.textContent='';
   at(u.closureNote,'.rm-closure-note-copy').textContent=isEnglish()
-   ?'Restaurant currently closed. Browse the menu and come back when we reopen!'
-   :'المطعم مغلق حالياً · تقدر تتصفح وجباتنا ونستناك وقت الافتتاح!';
+   ?'Restaurant currently closed. Browse and add meals to your cart; checkout opens when we reopen.'
+   :'المطعم مغلق حالياً · تقدر تضيف وجباتك للسلة، والدفع متاح عند الافتتاح.';
   u.closureNote.dir=isEnglish()?'ltr':'rtl';
   u.fav.dataset.mealId=String(m.id);u.share.dataset.mealId=String(m.id);
   u.customize.dataset.mealId=String(m.id);

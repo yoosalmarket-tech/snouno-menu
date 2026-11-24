@@ -1,4 +1,4 @@
-import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=cart-ux-04-20261122';
+import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from './cart.js?v=advance-ordering-01-20261124';
 import {englishCategoryName} from './category-labels.js?v=1';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
@@ -22,7 +22,7 @@ function syncRestaurantClosure(){
  const icon=make('span','◷');icon.className='restaurant-closure-icon';icon.setAttribute('aria-hidden','true');
  const words=make('span');words.className='restaurant-closure-content';
  const title=make('strong',english?'Restaurant currently closed':'المطعم مغلق حالياً');
- const message=make('small',english?'You can still explore our meals. See you when we reopen!':'تقدر تتصفح وجباتنا، ونستناك وقت الافتتاح!');
+ const message=make('small',english?'Browse and add meals to your cart. Checkout opens when we reopen.':'تقدر تتصفح وجباتنا وتضيفها للسلة، والدفع متاح عند الافتتاح.');
  words.append(title,message);banner.replaceChildren(icon,words);
 }
 let closureUpdatesInstalled=false;
@@ -31,7 +31,7 @@ function installRestaurantClosureUpdates(){
  if(!banner){
   banner=document.createElement('p');banner.id='restaurant-closure-banner';
   banner.className='restaurant-closure-banner';banner.setAttribute('role','status');
-  document.getElementById('menu')?.prepend(banner);
+  document.getElementById('experience-switch')?.after(banner);
  }
  syncRestaurantClosure();
  if(closureUpdatesInstalled)return;
@@ -172,7 +172,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=user-stamp-20261122')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=advance-ordering-01-20261124')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
