@@ -150,6 +150,7 @@ begin
  if new.status is distinct from old.status then
   if new.status='approved' then
    if old.advance_exception then raise exception 'Resolve expired checkout before approval'; end if;
+   if new.invoice is not null then new.invoice:=new.invoice||jsonb_build_object('employee_role',coalesce((select label from public.menu_roles where role=private.menu_role()),private.menu_role())); end if;
    new.fulfillment_status:=case when new.queue_managed then 'queued'
     when new.service_type='dine_in' and new.arrived_at is null then 'awaiting_visit' else 'preparing' end;
   elsif new.status in ('cancelled','rejected') then
@@ -275,3 +276,28 @@ begin
 end $$;
 revoke all on function public.pay_refund_resolution(uuid,text) from public,anon;
 grant execute on function public.pay_refund_resolution(uuid,text) to authenticated;
+
+-- Analytics uses actual orders and first preparation transition; never counts unverified payments as revenue.
+create function public.pay_advance_analytics(p_days integer default 28) returns jsonb
+language plpgsql stable security definer set search_path='' as $$
+declare cutoff timestamptz; views bigint; additions bigint; starts bigint; result jsonb;
+begin
+ if auth.uid() is null or coalesce(private.menu_role(),'')<>'owner' then raise exception 'Access denied'; end if;
+ if p_days is null or p_days not between 1 and 90 then raise exception 'Invalid period'; end if;
+ cutoff:=statement_timestamp()-p_days*interval '1 day';
+ select count(*) filter(where action='closed_hours_menu_view'),count(*) filter(where action='closed_hours_cart_addition'),count(*) filter(where action='advance_checkout_started')
+ into views,additions,starts from public.menu_action_events where created_at>=cutoff and action in ('closed_hours_menu_view','closed_hours_cart_addition','advance_checkout_started');
+ with orders as (select * from public.pay_orders where advance_order and created_at>=cutoff),
+ first_prep as(select h.order_id,min(h.occurred_at) as started from public.pay_history h join orders o on o.id=h.order_id where h.status='preparing' group by h.order_id)
+ select jsonb_build_object('days',p_days,'closed_views',views,'closed_cart_additions',additions,'checkout_starts',starts,
+ 'submitted',count(*),'approved',count(*) filter(where status='approved'),'rejected',count(*) filter(where status='rejected'),'cancelled',count(*) filter(where status='cancelled'),
+ 'revenue',coalesce(sum(total) filter(where status='approved'),0),
+ 'checkout_ratio',round(100.0*count(*)/nullif(starts,0),1),
+ 'wait_minutes',round((select avg(extract(epoch from (p.started-o.queue_joined_at))/60) from first_prep p join orders o on o.id=p.order_id where p.started>=o.queue_joined_at),1),
+ 'meals',(select coalesce(jsonb_agg(to_jsonb(m)),'[]'::jsonb) from (select i.name,sum(i.qty) quantity from public.pay_items i join orders o on o.id=i.order_id where o.status='approved' group by i.name order by quantity desc limit 15) m),
+ 'hours',(select coalesce(jsonb_agg(to_jsonb(h)),'[]'::jsonb) from (select to_char(created_at at time zone 'Asia/Gaza','HH24:00') hour,count(*) count from orders group by 1 order by count desc,1) h),
+ 'conversion_note','Submitted orders per checkout-start event; not unique visitor conversion. Views are not unique people.') into result from orders;
+ return result;
+end $$;
+revoke all on function public.pay_advance_analytics(integer) from public,anon;
+grant execute on function public.pay_advance_analytics(integer) to authenticated;

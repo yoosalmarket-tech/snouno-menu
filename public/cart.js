@@ -153,7 +153,7 @@ export function installPayDialogDrag(dialog){
  dialog.addEventListener("close",reset);
  return reset;
 }
-export function installCart({ catalog, name, description, closed, page }) {
+export function installCart({ catalog, name, description, closed, page, track=()=>{} }) {
   const dialog = el("dialog");
   dialog.className = "pay-dialog";
   dialog.setAttribute("aria-label", t("السلة والطلبات", "Cart and orders"));
@@ -499,6 +499,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       confirm.disabled=true;
       form.inert=true;
       save(); // Cart is saved before any visual animation runs.
+      if(!existing&&closed())track("closed_hours_cart_addition",d.id);
       confirm.textContent=existing
         ?t("تم حفظ التعديل ✓","Changes saved ✓")
         :t("أُضيفت إلى السلة ✓","Added to cart ✓");
@@ -620,6 +621,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     if(same)same.qty+=quantity;
     else cart.push({line:crypto.randomUUID(),id:d.id,qty:quantity,options:selected,note});
     save();
+    if(closed())track("closed_hours_cart_addition",d.id);
     return true;
   }
   function open() {
@@ -894,6 +896,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       proof = null;
       draft = { customer: "", phone: "", notes: "", service_type: "", delivery_address: "",
         delivery_landmark: "", backup_phone: "", payment_mode: "online", arrival_eta_minutes: null };
+      if(o.advance_order)track("advance_order_submitted");
       announce(saved, o);
       await status(saved, o);
   }
@@ -908,6 +911,7 @@ export function installCart({ catalog, name, description, closed, page }) {
       const info=await call({action:"advance_info"});
       if(ticket!==generation)return;
       advanceCheckout=info.closed;
+      if(info.closed)track("advance_checkout_started");
       if(!info.closed){checkout();return;}
       b.replaceChildren();
       if(!info.advance_allowed){
@@ -1386,7 +1390,7 @@ export function installCart({ catalog, name, description, closed, page }) {
     const b = layout(t("متابعة الطلب", "Order status")),
       ticket = generation;
     b.textContent = t("جارٍ التحميل…", "Loading…");
-    let current = "",
+    let current = "",queueViewTracked=false,
       socket,
       timer,
       heartbeat,
@@ -1429,6 +1433,7 @@ export function installCart({ catalog, name, description, closed, page }) {
         if(o.refund_resolution==="refunded")b.append(el("p",t("سجّل المطعم رد الدفعة يدوياً.","The restaurant recorded a manual refund.")));
         if(o.refund_resolution==="no_refund_required")b.append(el("p",t("سجّل المطعم عدم الحاجة لرد الدفعة.","The restaurant recorded that no refund is required.")));
         if(o.queue_position!=null){
+          if(!queueViewTracked){queueViewTracked=true;track("queue_position_viewed");}
           b.append(el("h3",t("ترتيبك الحالي في قائمة الانتظار","Your current place in line")),el("strong","#"+Number(o.queue_position)),
             el("p",Number(o.orders_ahead)>0?t("في "+o.orders_ahead+" طلبات قبلك",o.orders_ahead+" orders ahead of you"):t("لا توجد طلبات قبلك","No orders ahead of you")));
           if(o.restaurant_closed&&o.next_opening_at)b.append(el("p",t("الافتتاح القادم: ","Next opening: ")+openingText(o.next_opening_at)));

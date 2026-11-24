@@ -55,6 +55,7 @@ const functions=[
   tool('menu','Public meal names, categories, ingredients, availability and ILS prices. Optional substring of the meal name.',{meal:str}),
   tool('performance','Meal engagement and approved units/revenue for the last 7 or 28 days. Optional meal name substring.',{days:{type:'integer',enum:[7,28]},meal:str},['days']),
   tool('sales','Historical order counts, approved revenue and top sold meals, or recent daily/weekly/monthly approved revenue history.',{period:choices('totals','day','week','month')},['period']),
+  tool('advance_orders','Aggregate advance ordering, closed-hours views and checkout, approved sales, wait times, peak hours and top meals for the specified period. Views are not unique visitors.',{days:{type:'integer',minimum:1,maximum:90}},['days']),
   tool('pending','Exact count of online payments currently awaiting review.'),
   tool('restaurant','Public restaurant information such as address and opening hours.'),
   tool('traffic','GA4 visits, campaign/source breakdown or tagged link traffic. For tracked_link supply a specific source code.',{days:{type:'integer',minimum:1,maximum:365},breakdown:choices('totals','campaigns','tracked_link'),code:str},['days','breakdown']),
@@ -95,6 +96,7 @@ async function query(name,args,auth){
       const periods=sale.trends.filter(row=>row.period===args.period);
       return {timezone:'Asia/Gaza',period:args.period,approved_revenue_ils:periods.slice(0,90),truncated:periods.length>90};
     }
+    case 'advance_orders': return rpc(auth,'pay_advance_analytics',{p_days:args.days});
     case 'pending': {
       const res=await fetch(SUPABASE+'/rest/v1/pay_orders?select=status&status=eq.pending&payment_mode=eq.online',{
         method:'HEAD',headers:{...auth,apikey:ANON_KEY,Prefer:'count=exact'},signal:AbortSignal.timeout(8000)});

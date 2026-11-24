@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=customer-service-01";
+} from "../payment-ui.js?v=advance-analytics-01-20261124";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
@@ -287,6 +287,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     if(o.advance_order)extras.append(line("نوع الحجز","طلب مسبق"),line("موعد الافتتاح عند الطلب",date(o.advance_opening_at)));
     if(queuePositions[o.id]!=null)extras.append(line("ترتيب الدور",queuePositions[o.id]));
     if(o.invoice?.employee_name)extras.append(line("الموظف الذي اعتمد الدفع",o.invoice.employee_name));
+    if(o.invoice?.employee_role)extras.append(line("دور الموظف",o.invoice.employee_role));
     if(o.arrival_eta_minutes&&o.payment_mode==="at_restaurant")extras.append(line("مدة الوصول",o.arrival_eta_minutes+" دقيقة"));
     if(o.expected_arrival_at)extras.append(line("وقت الوصول المتوقع",date(o.expected_arrival_at)));
     if(o.service_type==="delivery"){
@@ -1048,6 +1049,9 @@ export async function sales(host, api) {
       table(["الوجبة", "الكمية", "المبيعات المعتمدة"],
         (s.meals || []).map(r => [r.name, r.quantity, amount(r.value)])));
     host.append(details);
+    const advance=await api(rootPath+"rpc/pay_advance_analytics",{method:"POST",body:{p_days:28}});
+    const section=el("section");section.className="pay-sales-details";section.append(el("h3","أداء الطلبات المسبقة · آخر 28 يوماً"),table(["المؤشر","القيمة"],[
+      ["زيارات المنيو أثناء الإغلاق (مشاهدات وليست أفراداً)",advance.closed_views],["إضافات السلة أثناء الإغلاق",advance.closed_cart_additions],["بدء الدفع أثناء الإغلاق",advance.checkout_starts],["الطلبات المسبقة المستلمة",advance.submitted],["الطلبات المسبقة المعتمدة",advance.approved],["المبيعات المعتمدة",amount(advance.revenue)],["نسبة الإرسال إلى بدء الدفع (تقريبية)",advance.checkout_ratio==null?"—":advance.checkout_ratio+"%"],["متوسط وقت الانتظار حتى التحضير (دقائق)",advance.wait_minutes??"—"],["المرفوضة",advance.rejected],["الملغاة",advance.cancelled]]),el("h3","الوجبات الأكثر طلباً"),table(["الوجبة","الكمية المعتمدة"],(advance.meals||[]).map(m=>[m.name,m.quantity])),el("h3","أوقات الطلب المسبق (توقيت غزة)"),table(["الساعة","عدد الطلبات"],(advance.hours||[]).map(h=>[h.hour,h.count])));host.append(section);
   } catch (e) {
     host.append(el("p", e.message));
   }

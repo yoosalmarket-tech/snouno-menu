@@ -83,7 +83,7 @@ export function nextRestaurantOpening(rules,at=new Date(),maxDays=31){
  return result===null?null:new Date(result);
 }
 export function closureNoticeMessage(rules,english=false,at=new Date()){
- const message=english?'Browse and add meals to your cart. Checkout opens when we reopen.':'تقدر تتصفح وجباتنا وتضيفها للسلة، والدفع متاح عند الافتتاح.';
+ const message=english?'Browse and add meals to your cart. Check advance ordering availability at checkout.':'تقدر تضيف وجباتك للسلة وتتحقق من توفر الطلب المسبق عند الدفع.';
  const next=nextRestaurantOpening(rules,at);
  if(!next)return message;
  const date=new Intl.DateTimeFormat(english?'en-GB':'ar-PS',{
