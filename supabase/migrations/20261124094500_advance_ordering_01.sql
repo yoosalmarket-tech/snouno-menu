@@ -52,7 +52,7 @@ $$;
 
 -- Service-only aggregate; never return another customer's row or tracking credential.
 create function public.pay_advance_info(p_id uuid default null) returns jsonb
-language plpgsql stable set search_path='' as $$
+language plpgsql stable security definer set search_path='' as $
 declare cfg public.pay_settings; rules jsonb; moment timestamptz:=statement_timestamp();
  closed boolean; opening timestamptz; active integer; advance_active integer;
  ahead integer; own public.pay_orders;
@@ -83,7 +83,7 @@ grant execute on function private.advance_closed(jsonb,timestamptz),private.adva
 
 -- Serialize reservation and capacity checks inside the existing order transaction.
 -- A cart or quote does not create an order or reserve queue position.
-create function private.advance_on_insert() returns trigger language plpgsql set search_path='' as $$
+create function private.advance_on_insert() returns trigger language plpgsql security definer set search_path='' as $$
 declare cfg public.pay_settings; rules jsonb; moment timestamptz; opening timestamptz; n integer;
 begin
  perform pg_advisory_xact_lock(84621001);
@@ -106,6 +106,7 @@ begin
  end if;
  return new;
 end $$;
+revoke all on function private.advance_on_insert() from public,anon,authenticated;
 create trigger pay_advance_on_insert before insert on public.pay_orders for each row execute function private.advance_on_insert();
 
 -- Preserve original status transitions for existing non-queue-managed orders.
@@ -120,7 +121,6 @@ begin
   elsif new.status='pending' then
    new.fulfillment_status:=case when new.payment_mode='at_restaurant' and new.arrived_at is null then 'awaiting_visit' else 'awaiting_approval' end;
    if old.status='rejected' and new.payment_mode='online' then
-    perform pg_advisory_xact_lock(84621001);
     new.queue_joined_at:=clock_timestamp();
    end if;
   end if;
