@@ -1,6 +1,6 @@
 // Guest tracking uses a separate 256-bit bearer secret. The order number is display-only.
 import { createClient } from "npm:@supabase/supabase-js@2.95.3";
-import { isRestaurantClosed } from "./closure-schedule.js";
+// Closure and queue calculations are shared with the transactional database guard.
 const db = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -17,7 +17,7 @@ const reply = (value: unknown, status = 200) =>
   Response.json(value, { status, headers });
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const summary =
-  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
+  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,advance_order,advance_opening_at,queue_managed,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
 function fileType(b: Uint8Array) {
   const at = (s: string, i = 0) =>
     Array.from(s).every((v, j) => b[i + j] === v.charCodeAt(0));
@@ -76,11 +76,20 @@ Deno.serve(async (req) => {
     if (cfgError || !cfg) throw new Error();
     const { data: contact }=await db.from("menu_settings").select("hotline").eq("id",1).single();
     const hotline=contact?.hotline || "#889";
+    const queueInfo = async (orderId: string | null = null) => {
+      const {data: info,error} = await db.rpc("pay_advance_info",{p_id:orderId});
+      if(error||!info) throw new Error("Queue unavailable");
+      return info;
+    };
+    if(action==="advance_info") return reply(await queueInfo());
     const forCustomer = async (order: Record<string,unknown>) => {
       const { data: report } = await db.from("pay_order_reports")
         .select("id").eq("order_id",order.id).is("resolved_at",null).limit(1).maybeSingle();
+      const queue=await queueInfo(String(order.id));
       return { ...order, cancellation: cfg.cancellation, live_updates: cfg.live_updates,
-        hotline, report_open: !!report };
+        hotline, report_open: !!report, queue_position:queue.queue_position,
+        orders_ahead:queue.orders_ahead, restaurant_closed:queue.closed,
+        next_opening_at:queue.next_opening_at };
     };
     if (action === "config") {
       const { data: methods, error } = await db
@@ -114,14 +123,10 @@ Deno.serve(async (req) => {
         (sum, line) => sum + Math.round(line.price * 100) * line.qty,
         0,
       );
-      const { data: s, error: closedError } = await db
-        .from("menu_settings")
-        .select("closure_rules")
-        .single();
-      if (closedError) throw new Error();
-      if (isRestaurantClosed(s.closure_rules))
-        return reply({ error: "Restaurant closed" }, 409);
-      return reply({ total: cents / 100 });
+      const queue=await queueInfo();
+      if(queue.closed && (!queue.advance_allowed || data.payment_mode==="at_restaurant"))
+        return reply({error:"الطلبات المسبقة غير متاحة حالياً. احتفظ بسلتك ولا تحول المبلغ."},409);
+      return reply({ total: cents / 100, ...queue });
     }
     if (!uuid.test(id) || !/^[a-f0-9]{64}$/.test(secret))
       return reply({ error: "Invalid tracking key" }, 400);
@@ -198,14 +203,9 @@ Deno.serve(async (req) => {
            data.backup_phone.replace(/\D/g, "") === data.phone.replace(/\D/g, "")))
       )
         return reply({ error: "Invalid order" }, 400);
-      const { data: s, error } = await db
-        .from("menu_settings")
-        .select("closure_rules")
-        .eq("id", 1)
-        .single();
-      if (error) throw new Error();
-      if (isRestaurantClosed(s.closure_rules))
-        return reply({ error: "Restaurant closed" }, 409);
+      const queue=await queueInfo();
+      if(queue.closed && (!queue.advance_allowed || data.payment_mode==="at_restaurant"))
+        return reply({error:"تعذّر حجز الدور حالياً. إذا حولت المبلغ، تواصل مع المطعم ولا تدفع مرة أخرى."},409);
       if(data.payment_mode!=="at_restaurant"){
         const method = await db.from("pay_methods").select("id")
           .eq("id",data.method).eq("enabled",true).maybeSingle();
