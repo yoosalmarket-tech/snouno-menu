@@ -295,7 +295,7 @@ begin
  'checkout_ratio',round(100.0*count(*)/nullif(starts,0),1),
  'wait_minutes',round((select avg(extract(epoch from (p.started-o.queue_joined_at))/60) from first_prep p join orders o on o.id=p.order_id where p.started>=o.queue_joined_at),1),
  'meals',(select coalesce(jsonb_agg(to_jsonb(m)),'[]'::jsonb) from (select i.name,sum(i.qty) quantity from public.pay_items i join orders o on o.id=i.order_id where o.status='approved' group by i.name order by quantity desc limit 15) m),
- 'hours',(select coalesce(jsonb_agg(to_jsonb(h)),'[]'::jsonb) from (select to_char(created_at at time zone 'Asia/Gaza','HH24:00') hour,count(*) count from orders group by 1 order by count desc,1) h),
+ 'hours',(select coalesce(jsonb_agg(to_jsonb(h)),'[]'::jsonb) from (select to_char(created_at at time zone 'Asia/Gaza','HH24:00') as "hour",count(*) as count from orders group by 1 order by count desc,1) h),
  'conversion_note','Submitted orders per checkout-start event; not unique visitor conversion. Views are not unique people.') into result from orders;
  return result;
 end $$;
