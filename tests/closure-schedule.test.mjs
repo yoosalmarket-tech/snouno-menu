@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {isRestaurantClosed,nextRestaurantOpening} from '../public/closure-schedule.js';
+const d=s=>new Date(s);
+const expect=(rules,at,want,days=31)=>assert.equal(nextRestaurantOpening(rules,d(at),days)?.toISOString()??null,want);
+const overnight={kind:'weekly',weekdays:[1],start:'22:00',end:'02:00'};
+expect([overnight],'2026-11-23T21:00:00Z','2026-11-24T00:00:00.000Z');
+expect([overnight,{kind:'date',date:'2026-11-24',start:'01:00',end:'09:30'}],'2026-11-23T21:00:00Z','2026-11-24T07:30:00.000Z');
+expect([{kind:'date',date:'2026-11-24',allDay:true}],'2026-11-24T08:00:00Z','2026-11-24T22:00:00.000Z');
+expect([{kind:'weekly',weekdays:[0,1,2,3,4,5,6],allDay:true}],'2026-11-24T08:00:00Z',null,1);
+expect([],'2026-11-24T08:00:00Z',null);
+assert.equal(isRestaurantClosed([overnight],d('2026-11-24T00:00:00Z')),false);
+expect([overnight],'2026-11-23T23:59:59Z','2026-11-24T00:00:00.000Z');
+expect([{kind:'date',date:'2026-11-24',start:'07:00',end:'12:00'},{kind:'date',date:'2026-11-24',start:'11:00',end:'14:00'}],'2026-11-24T06:00:00Z','2026-11-24T12:00:00.000Z');
+console.log('8 scheduling assertions passed');

@@ -2,6 +2,7 @@
    swipe-driven category transitions, and a perspective thumbnail rail. */
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {englishCategoryName} from './category-labels.js?v=1';
+import {closureNoticeMessage} from './closure-schedule.js?v=advance-opening-01-20261124';
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!=null)e.textContent=String(value);return e;};
 const at=(root,selector)=>root.querySelector(selector);
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -278,9 +279,11 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   // The red stamp on the meal image replaces the previous gold pill.
   u.availability.hidden=true;
   u.availability.textContent='';
-  at(u.closureNote,'.rm-closure-note-copy').textContent=isEnglish()
-   ?'Restaurant currently closed. Browse and add meals to your cart; checkout opens when we reopen.'
-   :'المطعم مغلق حالياً · تقدر تضيف وجباتك للسلة، والدفع متاح عند الافتتاح.';
+  if(document.body.classList.contains('restaurant-closed')){
+   const text=(isEnglish()?'Restaurant currently closed · ':'المطعم مغلق حالياً · ')+closureNoticeMessage(getData().settings?.closure_rules,isEnglish());
+   const copy=at(u.closureNote,'.rm-closure-note-copy');
+   if(copy.textContent!==text)copy.textContent=text;
+  }
   u.closureNote.dir=isEnglish()?'ltr':'rtl';
   u.fav.dataset.mealId=String(m.id);u.share.dataset.mealId=String(m.id);
   u.customize.dataset.mealId=String(m.id);

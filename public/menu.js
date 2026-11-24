@@ -2,7 +2,7 @@ import {installCart, closePayDialog, openPayDialog, installPayDialogDrag} from '
 import {englishCategoryName} from './category-labels.js?v=1';
 import {handleYoosalCreditClick,yoosalCreditVisited} from './credit-bell.js?v=5';
 import {installActionReporting,menuLink,shareMeal} from './action-tracking.js?v=ga4-order-intent-1';
-import {isRestaurantClosed} from './closure-schedule.js?v=closure1-20261120';
+import {isRestaurantClosed,closureNoticeMessage} from './closure-schedule.js?v=advance-opening-01-20261124';
 const base='https://wknpuzdyemwkllmxehyy.supabase.co/rest/v1/';
 const headers={apikey:'sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip'};
 const $=id=>document.getElementById(id);
@@ -16,13 +16,17 @@ function syncRestaurantClosure(){
  banner.hidden=!closed;
  if(!closed)return;
  const english=document.documentElement.lang==='en';
- const state=english?'en':'ar';
+ const copy=closureNoticeMessage(settings.closure_rules,english);
+ const richCopy=document.querySelector('#rich-menu .rm-closure-note-copy');
+ const richText=(english?'Restaurant currently closed · ':'المطعم مغلق حالياً · ')+copy;
+ if(richCopy&&richCopy.textContent!==richText)richCopy.textContent=richText;
+ const state=(english?'en':'ar')+copy;
  if(banner.dataset.language===state)return;
  banner.dataset.language=state;
  const icon=make('span','◷');icon.className='restaurant-closure-icon';icon.setAttribute('aria-hidden','true');
  const words=make('span');words.className='restaurant-closure-content';
  const title=make('strong',english?'Restaurant currently closed':'المطعم مغلق حالياً');
- const message=make('small',english?'Browse and add meals to your cart. Checkout opens when we reopen.':'تقدر تتصفح وجباتنا وتضيفها للسلة، والدفع متاح عند الافتتاح.');
+ const message=make('small',copy);
  words.append(title,message);banner.replaceChildren(icon,words);
 }
 let closureUpdatesInstalled=false;
@@ -172,7 +176,7 @@ async function richAssets(){
   link.onload=resolve;link.onerror=()=>reject(new Error('تعذّر تحميل تصميم الوضع التفاعلي'));
  });
  document.head.append(link);
- richImport=Promise.all([css,import('./rich-menu.js?v=advance-ordering-01-20261124')]).then(([,module])=>module).catch(error=>{
+ richImport=Promise.all([css,import('./rich-menu.js?v=advance-opening-01-20261124')]).then(([,module])=>module).catch(error=>{
   richImport=null;link.remove();throw error;
  });
  return richImport;
