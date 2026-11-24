@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "../payment-ui.js?v=receipt-clean-20261122";
+} from "../payment-ui.js?v=customer-service-01";
 const labels = {
   pending: "قيد المراجعة",
   approved: "تم اعتماد الدفع",
@@ -409,11 +409,18 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
             notice("يجب عرض إثبات الدفع ومراجعته قبل اعتماد الدفع.");return;
           }
           if(target==="rejected"&&!reason.value.trim()){reason.focus();return;}
+          let employeeName="";
+          if(target==="approved"){
+            const entered=prompt("اسم الموظف الذي راجع الدفعة:");
+            if(entered===null)return;
+            employeeName=entered.trim();
+            if(employeeName.length<2||employeeName.length>120){notice("يرجى إدخال اسم الموظف الصحيح.");return;}
+          }
           if(!confirm(label+" للطلب #"+o.number+"؟"))return;
           trigger.disabled=true;
           try{
             await api(rootPath+"rpc/pay_decide",{
-              method:"POST",body:{p_id:o.id,p_target:target,p_reason:target==="rejected"?reason.value.trim():""}
+              method:"POST",body:{p_id:o.id,p_target:target,p_reason:target==="rejected"?reason.value.trim():"",p_employee_name:employeeName}
             });
             dialog.close();await load();
           }catch(e){trigger.disabled=false;notice(e.message);}
