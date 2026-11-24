@@ -52,7 +52,7 @@ $$;
 
 -- Service-only aggregate; never return another customer's row or tracking credential.
 create function public.pay_advance_info(p_id uuid default null) returns jsonb
-language plpgsql stable security definer set search_path='' as $
+language plpgsql stable security definer set search_path='' as $$
 declare cfg public.pay_settings; rules jsonb; moment timestamptz:=statement_timestamp();
  closed boolean; opening timestamptz; active integer; advance_active integer;
  ahead integer; own public.pay_orders;
