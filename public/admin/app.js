@@ -1255,7 +1255,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
   return;
  }
  if(key==='orders'||key==='payment_settings'){
-  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=payment-settings-v3-20261122');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint,canManage:role==='owner'||role==='customer_service'});return;
+  const panel=node('div');$('body').replaceChildren(panel);const mod=await import('./payments.js?v=advance-ordering-01-20261124');await mod[key==='orders'?'orders':'settings']({root:panel,api,notice,endpoint,canManage:role==='owner'||role==='customer_service'});return;
  }
  if(key==='seo'||key==='seo_queries'){
    $('body').replaceChildren();

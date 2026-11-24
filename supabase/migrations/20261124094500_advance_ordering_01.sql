@@ -185,3 +185,18 @@ begin
  select * into cfg from public.pay_settings where id=1;
  if cfg.live_updates then perform realtime.send('{}'::jsonb,'refresh','payment-'||o.topic,false); end if;
 end $$;
+
+-- Staff queue ranks, independent of table pagination.
+create function public.pay_staff_queue() returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare positions jsonb;
+begin
+ if auth.uid() is null or not coalesce(private.menu_can('orders'),false) then raise exception 'Access denied'; end if;
+ select coalesce(jsonb_object_agg(id::text,position),'{}'::jsonb) into positions from (
+ select id,row_number() over(order by queue_joined_at,number) as position
+ from public.pay_orders where status in ('pending','approved')
+ and fulfillment_status not in ('completed','stopped') and queue_joined_at is not null
+ ) q;
+ return positions;
+end $$;
+revoke all on function public.pay_staff_queue() from public,anon;
+grant execute on function public.pay_staff_queue() to authenticated;
