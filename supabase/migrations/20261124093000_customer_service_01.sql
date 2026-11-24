@@ -39,7 +39,7 @@ DECLARE
   latest_uploaded_at timestamptz;
 BEGIN
   IF auth.uid() IS NULL OR coalesce(private.menu_role(),'') NOT IN ('owner','customer_service')
-    OR p_target NOT IN ('approved','rejected','cancelled')
+    OR p_target IS NULL OR p_target NOT IN ('approved','rejected','cancelled')
     THEN RAISE EXCEPTION 'Access denied'; END IF;
 
   SELECT * INTO STRICT o FROM public.pay_orders WHERE id=p_id FOR UPDATE;
