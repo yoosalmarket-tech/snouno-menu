@@ -11,7 +11,7 @@ alter table public.pay_orders
  add column queue_managed boolean not null default false,
  add column advance_exception boolean not null default false,
  add column refund_resolution text not null default 'none' check(refund_resolution in ('none','review_required','refunded','no_refund_required'));
-create table private.advance_checkout_holds(id uuid primary key,secret_hash text not null,expires_at timestamptz not null,opening_at timestamptz not null,consumed_at timestamptz);
+create table private.advance_checkout_holds(id uuid primary key,secret_hash text not null,expires_at timestamptz not null,opening_at timestamptz,consumed_at timestamptz);
 alter table private.advance_checkout_holds enable row level security;
 revoke all on private.advance_checkout_holds from public,anon,authenticated;
 create index advance_checkout_hold_expiry on private.advance_checkout_holds(expires_at) where consumed_at is null;
@@ -69,7 +69,7 @@ begin
  if closed then opening:=private.advance_next_open(rules,moment,cfg.advance_window_hours); end if;
  select count(*),count(*) filter(where advance_order) into active,advance_active
  from public.pay_orders where status in ('pending','approved') and fulfillment_status not in ('completed','stopped') and queue_joined_at is not null and not advance_exception;
- select count(*) into holds from private.advance_checkout_holds where consumed_at is null and expires_at>moment;
+ select count(*) into holds from private.advance_checkout_holds where consumed_at is null and opening_at is not null and expires_at>moment;
  if p_id is not null then
   select * into own from public.pay_orders where id=p_id;
   if found and own.queue_joined_at is not null and not own.advance_exception and own.status in ('pending','approved')
@@ -103,12 +103,15 @@ begin
  end if;
  select * into strict cfg from public.pay_settings where id=1;
  select closure_rules into strict rules from public.menu_settings where id=1;
- if not private.advance_closed(rules,moment) then return null; end if;
+ if not private.advance_closed(rules,moment) then
+  insert into private.advance_checkout_holds(id,secret_hash,expires_at,opening_at) values(p_id,p_hash,moment+interval '20 minutes',null) returning * into h;
+  return jsonb_build_object('expires_at',h.expires_at,'opening_at',h.opening_at);
+ end if;
  if not cfg.advance_enabled or cfg.advance_suspended then raise exception 'Advance ordering unavailable'; end if;
  opening:=private.advance_next_open(rules,moment,cfg.advance_window_hours);
  if opening is null then raise exception 'No available opening'; end if;
  select count(*) into n from public.pay_orders where advance_order and not advance_exception and status in ('pending','approved') and fulfillment_status not in ('completed','stopped');
- n:=n+(select count(*) from private.advance_checkout_holds where consumed_at is null and expires_at>moment);
+ n:=n+(select count(*) from private.advance_checkout_holds where consumed_at is null and opening_at is not null and expires_at>moment);
  if n>=cfg.advance_capacity then raise exception 'Advance queue full'; end if;
  insert into private.advance_checkout_holds(id,secret_hash,expires_at,opening_at) values(p_id,p_hash,moment+interval '20 minutes',opening) returning * into h;
  return jsonb_build_object('expires_at',h.expires_at,'opening_at',h.opening_at);
@@ -128,9 +131,9 @@ begin
  select * into h from private.advance_checkout_holds where id=new.id and secret_hash=new.secret_hash and consumed_at is null;
  if found then
   if new.payment_mode<>'online' then raise exception 'Advance payment proof required'; end if;
-  new.advance_order:=true;
+  new.advance_order:=h.opening_at is not null or private.advance_closed(rules,moment);
   new.advance_opening_at:=h.opening_at;
-  new.advance_exception:=h.expires_at<=moment;
+  new.advance_exception:=new.advance_order and (h.opening_at is null or h.expires_at<=moment);
   update private.advance_checkout_holds set consumed_at=moment where id=h.id;
  elsif private.advance_closed(rules,moment) then raise exception 'Reserve checkout before paying';
  end if;
@@ -253,7 +256,7 @@ begin
  select closure_rules into strict rules from public.menu_settings where id=1;
  if private.advance_closed(rules,moment) then
   select count(*) into n from public.pay_orders where advance_order and not advance_exception and status in ('pending','approved') and fulfillment_status not in ('completed','stopped');
-  n:=n+(select count(*) from private.advance_checkout_holds where consumed_at is null and expires_at>moment);
+  n:=n+(select count(*) from private.advance_checkout_holds where consumed_at is null and opening_at is not null and expires_at>moment);
   if n>=cfg.advance_capacity then raise exception 'Advance queue full'; end if;
  end if;
  update public.pay_orders set advance_exception=false where id=p_id;

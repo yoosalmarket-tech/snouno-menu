@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
       if(queue.closed && data.payment_mode==="at_restaurant")
         return reply({error:"الطلبات المسبقة تتطلب الدفع الإلكتروني."},409);
       let hold=null;
-      if(data.reserve_advance===true){
+      if(data.reserve_advance===true || (data.reserve_checkout===true && !queue.closed)){
         if(!uuid.test(id)||!/^[a-f0-9]{64}$/.test(secret))return reply({error:"Invalid checkout key"},400);
         const reservation=await db.rpc("pay_reserve_checkout",{p_id:id,p_hash:await hash(secret)});
         if(reservation.error)return reply({error:"الطلبات المسبقة غير متاحة حالياً. لا تحول المبلغ وحاول لاحقاً."},409);

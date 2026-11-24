@@ -6,7 +6,7 @@ import {
   button,
   field,
   invoice,
-} from "./payment-ui.js?v=receipt-clean-20261122";
+} from "./payment-ui.js?v=advance-analytics-01-20261124";
 import {getReferralSource} from "./referral-source.js?v=referrals-1";
 const endpoint = "https://wknpuzdyemwkllmxehyy.supabase.co",
   key = "sb_publishable_FJg5RC-dTvsINEy9D8_rXw_xM03B4Ip";
@@ -1145,7 +1145,7 @@ export function installCart({ catalog, name, description, closed, page, track=()
         if(advanceCheckout&&!cfg.methods.length)throw Error(t("لا توجد طريقة دفع متاحة للطلب المسبق","No advance payment method is available"));
         if (cfg.methods.length) {
           const fp=holdFingerprint();
-          if(advanceCheckout){
+          if(draft.payment_mode==="online"){
             const saved=read("snounu-advance-hold",null);
             checkoutHold=saved?.fingerprint===fp&&Date.parse(saved.expires_at)>Date.now()?saved:{...makeCheckoutRef(),fingerprint:fp};
           }else checkoutHold=null;
@@ -1154,14 +1154,17 @@ export function installCart({ catalog, name, description, closed, page, track=()
             payment_mode:draft.payment_mode,
             items: items(),
             reserve_advance:advanceCheckout,
+            reserve_checkout:draft.payment_mode==="online",
             ...(checkoutHold?{id:checkoutHold.id,secret:checkoutHold.secret}:{})
           });
           if(q.hold&&checkoutHold){
             checkoutHold.expires_at=q.hold.expires_at;
+            checkoutHold.opening_at=q.hold.opening_at;
             localStorage.setItem("snounu-advance-hold",JSON.stringify(checkoutHold));
           }
           if(advanceCheckout&&q.closed&&!q.hold)throw Error(t("تعذّر حجز سعة الطلب. لا تحول المبلغ.","Could not hold checkout capacity. Do not transfer."));
-          if(q.closed&&!advanceCheckout){await beginCheckout();return;}
+          if((q.closed||q.hold?.opening_at)&&!advanceCheckout){await beginCheckout();return;}
+          if(draft.payment_mode==="online"&&!q.hold)throw Error(t("تعذّر تأكيد الدفع. لا تحول المبلغ.","Could not verify checkout. Do not transfer."));
           if (Number(q.total) !== total())
             throw Error(
               t(
@@ -1230,7 +1233,7 @@ export function installCart({ catalog, name, description, closed, page, track=()
   }
   function payment() {
     const b = layout(t("الدفع", "Payment"));
-    if(checkoutHold?.expires_at)b.append(el("p",t("أرسل إثبات الدفع قبل ","Submit proof before ")+openingText(checkoutHold.expires_at)+t(" لضمان توفر السعة. إذا دفعت وانتهت المهلة، أرسل الإثبات للمراجعة ولا تدفع مجدداً."," to guarantee capacity. If you already paid after expiry, submit proof for manual review; do not pay again.")));
+    if(checkoutHold?.expires_at&&checkoutHold.opening_at)b.append(el("p",t("أرسل إثبات الدفع قبل ","Submit proof before ")+openingText(checkoutHold.expires_at)+t(" لضمان توفر السعة. إذا دفعت وانتهت المهلة، أرسل الإثبات للمراجعة ولا تدفع مجدداً."," to guarantee capacity. If you already paid after expiry, submit proof for manual review; do not pay again.")));
     b.append(el("p", draft.service_type === "delivery"
       ? t("طلب توصيل", "Delivery order") + " · " + draft.delivery_address.trim()
       : t("تناول الطعام في المطعم", "Dine in at the restaurant")));
