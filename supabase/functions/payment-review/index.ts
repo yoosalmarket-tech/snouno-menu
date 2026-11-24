@@ -17,7 +17,7 @@ const reply = (value: unknown, status = 200) =>
   Response.json(value, { status, headers });
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const summary =
-  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,advance_order,advance_opening_at,queue_managed,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
+  "id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,advance_order,advance_opening_at,queue_managed,advance_exception,refund_resolution,method,total,status,created_at,reason,topic,approved_at,invoice,pay_items(dish_id,name,qty,price,old_price,choices,special_instructions)";
 function fileType(b: Uint8Array) {
   const at = (s: string, i = 0) =>
     Array.from(s).every((v, j) => b[i + j] === v.charCodeAt(0));
@@ -124,9 +124,18 @@ Deno.serve(async (req) => {
         0,
       );
       const queue=await queueInfo();
-      if(queue.closed && (!queue.advance_allowed || data.payment_mode==="at_restaurant"))
-        return reply({error:"الطلبات المسبقة غير متاحة حالياً. احتفظ بسلتك ولا تحول المبلغ."},409);
-      return reply({ total: cents / 100, ...queue });
+      if(queue.closed && data.payment_mode==="at_restaurant")
+        return reply({error:"الطلبات المسبقة تتطلب الدفع الإلكتروني."},409);
+      let hold=null;
+      if(data.reserve_advance===true){
+        if(!uuid.test(id)||!/^[a-f0-9]{64}$/.test(secret))return reply({error:"Invalid checkout key"},400);
+        const reservation=await db.rpc("pay_reserve_checkout",{p_id:id,p_hash:await hash(secret)});
+        if(reservation.error)return reply({error:"الطلبات المسبقة غير متاحة حالياً. لا تحول المبلغ وحاول لاحقاً."},409);
+        hold=reservation.data;
+      } else if(queue.closed&&!queue.advance_allowed){
+        return reply({error:"الطلبات المسبقة غير متاحة حالياً. لا تحول المبلغ."},409);
+      }
+      return reply({ total: cents / 100, ...queue, hold });
     }
     if (!uuid.test(id) || !/^[a-f0-9]{64}$/.test(secret))
       return reply({ error: "Invalid tracking key" }, 400);
@@ -203,9 +212,11 @@ Deno.serve(async (req) => {
            data.backup_phone.replace(/\D/g, "") === data.phone.replace(/\D/g, "")))
       )
         return reply({ error: "Invalid order" }, 400);
-      const queue=await queueInfo();
-      if(queue.closed && (!queue.advance_allowed || data.payment_mode==="at_restaurant"))
-        return reply({error:"تعذّر حجز الدور حالياً. إذا حولت المبلغ، تواصل مع المطعم ولا تدفع مرة أخرى."},409);
+      // The database checks and consumes the hold atomically. A late proof must be retained for manual review.
+      if(data.payment_mode==="at_restaurant"){
+        const queue=await queueInfo();
+        if(queue.closed)return reply({error:"المطعم مغلق حالياً. الدفع عند الحضور غير متاح."},409);
+      }
       if(data.payment_mode!=="at_restaurant"){
         const method = await db.from("pay_methods").select("id")
           .eq("id",data.method).eq("enabled",true).maybeSingle();

@@ -201,6 +201,8 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       const number=named("td",null,"ord-number");number.dataset.label="رقم الطلب";
       const orderNum=named("strong","#"+o.number);orderNum.dir="ltr";number.append(orderNum);
       if(o.advance_order)number.append(named("small","طلب مسبق"));
+      if(o.advance_exception&&o.status==="pending")number.append(named("small","بحاجة لمراجعة الحجز"));
+      if(o.refund_resolution==="review_required")number.append(named("small","تسوية دفعة معلّقة"));
       if(queuePositions[o.id]!=null)number.append(named("small","الدور #"+queuePositions[o.id]));
 
       const customer=named("td",null,"ord-customer");customer.dataset.label="العميل";
@@ -399,6 +401,18 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
       });
       arrived.className="ord-detail-arrival";actionButtons.append(arrived);
     }
+    if(canManage&&o.advance_exception&&o.status==="pending"){
+      const admit=button("قبول الحجز في قائمة الانتظار",async()=>{
+        if(!confirm("قبول الحجز بعد مراجعة إثبات الدفع وتوفر السعة؟"))return;
+        admit.disabled=true;
+        try{await api(rootPath+"rpc/pay_admit_advance",{method:"POST",body:{p_id:o.id}});dialog.close();await load();}catch(e){admit.disabled=false;notice(e.message);}
+      });actionButtons.append(admit);
+    }
+    if(canManage&&o.refund_resolution==="review_required"){
+      for(const [value,label] of [["refunded","تسجيل رد الدفعة يدوياً"],["no_refund_required","تسجيل عدم الحاجة لرد الدفعة"]]){
+        const resolve=button(label,async()=>{if(!confirm("هل تمت التسوية فعلاً خارج النظام؟"))return;resolve.disabled=true;try{await api(rootPath+"rpc/pay_refund_resolution",{method:"POST",body:{p_id:o.id,p_resolution:value}});dialog.close();await load();}catch(e){resolve.disabled=false;notice(e.message);}});actionButtons.append(resolve);
+      }
+    }
     if(o.status==="pending"&&canManage){
       const declineBox=named("div",null,"ord-decline-box");
       const reason=input("");
@@ -411,6 +425,7 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
         ["cancelled","إلغاء الطلب"]
       ]){
         const trigger=button(label,async()=>{
+          if(target==="approved"&&o.advance_exception){notice("يجب قبول الحجز في قائمة الانتظار أولاً.");return;}
           if(target==="approved"&&o.payment_mode==="at_restaurant"&&!o.arrived_at){
             notice("أكّد وصول العميل أولاً قبل تسجيل الدفع.");return;
           }
@@ -533,14 +548,14 @@ export async function orders({root,api,notice,endpoint,canManage=false}){
     reload.disabled=true;state.textContent="جارٍ تحميل الطلبات...";
     results.setAttribute("aria-busy","true");
     const q=new URLSearchParams({
-      select:"id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,advance_order,advance_opening_at,queue_managed,queue_joined_at,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
+      select:"id,number,customer,phone,service_type,delivery_address,delivery_landmark,backup_phone,payment_mode,arrival_eta_minutes,expected_arrival_at,fulfillment_status,arrived_at,completed_at,advance_order,advance_opening_at,queue_managed,queue_joined_at,advance_exception,refund_resolution,notes,total,method,status,reason,created_at,approved_at,invoice,pay_items(*),pay_proofs(*),pay_history(*),pay_order_reports(*)",
       order:"created_at.desc",limit:"26",offset:String(page*25)
     });
     if(statusFilter.value)q.set("status","eq."+statusFilter.value);
     if(stageFilter.value)q.set("fulfillment_status","eq."+stageFilter.value);
     if(advanceFilter.value==="advance")q.set("advance_order","eq.true");
     if(advanceFilter.value==="queue"){
-      q.set("queue_joined_at","not.is.null");q.set("order","queue_joined_at.asc,number.asc");
+      q.set("queue_joined_at","not.is.null");q.set("advance_exception","eq.false");q.set("order","queue_joined_at.asc,number.asc");
       if(!statusFilter.value)q.set("status","in.(pending,approved)");
       if(!stageFilter.value)q.set("fulfillment_status","not.in.(completed,stopped)");
     }
