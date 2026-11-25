@@ -218,6 +218,54 @@ async function publishRenamedImage(api,currentUrl,slug,variant){
  });
  return seoStoragePublic+encodeURIComponent(name);
 }
+
+/* Upload sharing thumbnails to the existing public menu-images bucket.
+   Uploaded images are not published to SEO metadata until the form is saved. */
+function seoImageUploader(host,input,api,notice){
+ const container=el('div',null,'seo-share-image-uploader');
+ const preview=el('img');preview.className='seo-share-image-preview';preview.alt='معاينة صورة المشاركة';preview.loading='lazy';
+ const controls=el('div',null,'seo-share-image-controls');
+ const file=el('input');file.type='file';file.accept='image/jpeg,image/png,image/webp';file.className='seo-share-image-file';file.setAttribute('aria-label','اختيار صورة مشاركة من الجهاز');
+ const pick=btn('رفع صورة من الجهاز',()=>file.click(),'seo-button seo-outline');
+ const status=el('small',null,'seo-share-image-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+ const refresh=()=>{
+  const value=input.value.trim();
+  if(!value){preview.hidden=true;preview.removeAttribute('src');return;}
+  try{const url=new URL(value,baseUrl);if(url.protocol!=='https:')throw Error('Invalid');preview.src=url.href;preview.hidden=false;}
+  catch{preview.hidden=true;preview.removeAttribute('src');}
+ };
+ preview.addEventListener('error',()=>{preview.hidden=true;status.textContent='تعذر عرض الصورة الحالية. اختر صورة جديدة أو تحقق من الرابط.';});
+ preview.addEventListener('load',()=>{preview.hidden=false;if(!status.dataset.uploading)status.textContent='معاينة الصورة المحددة';});
+ file.addEventListener('change',async()=>{
+  const selected=file.files?.[0];if(!selected)return;
+  const extensions={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+  const ext=extensions[selected.type];
+  if(!ext){status.textContent='اختر صورة JPG أو PNG أو WebP فقط.';file.value='';return;}
+  if(!selected.size||selected.size>5242880){status.textContent='يجب ألا يتجاوز حجم الصورة 5 ميغابايت.';file.value='';return;}
+  pick.disabled=true;pick.textContent='جارٍ رفع الصورة...';
+  status.dataset.uploading='true';status.textContent='جارٍ الرفع إلى مساحة الصور...';
+  try{
+   const name='seo/sharing-'+crypto.randomUUID()+'.'+ext;
+   await api('/storage/v1/object/menu-images/'+name,{
+    method:'POST',body:new File([selected,name.split('/').pop(),{type:selected.type})
+   });
+   input.value=seoStoragePublic+name;
+   input.dispatchEvent(new Event('input',{bubbles:true}));
+   status.textContent='تم رفع الصورة. اضغط «حفظ جميع تغييرات SEO» لنشرها في روابط المشاركة.';
+   delete status.dataset.uploading;refresh();
+  }catch(error){
+   status.textContent='تعذر رفع الصورة: '+error.message;
+   notice('تعذر رفع صورة المشاركة: '+error.message);
+  }finally{delete status.dataset.uploading;pick.disabled=false;pick.textContent='رفع صورة من الجهاز';file.value='';}
+ });
+ input.addEventListener('input',()=>{status.textContent='';refresh();});
+ controls.append(pick,file);
+ container.append(preview,controls,status);
+ input.parentElement.append(container);
+ refresh();
+ return container;
+}
+
 function localCanonical(input,route){
  const url=new URL(input||route,baseUrl);
  if(url.origin!==baseUrl)throw Error('يجب أن يكون رابط Canonical من نفس الموقع');
@@ -248,7 +296,8 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
  const form=el('form',null,'seo-settings-form');form.id='seo-settings-editor';
  const general=panel('الإعدادات غير المرئية العامة','عنوان البحث والوصف والصورة وبيانات المطعم المنظمة تُضاف إلى HTML بواسطة الخادم قبل وصوله للزائر أو Google.');
  formField(general,'site_name','اسم الموقع',old.site_name||'مطعم سنونو');
- formField(general,'default_image','رابط صورة المشاركة الافتراضية',old.default_image||'/assets/welcome/2468.webp','text','صورة Open Graph للواتساب وفيسبوك، مقاس 1200 × 630 مقترح.');
+ const defaultSharingImage=formField(general,'default_image','رابط صورة المشاركة الافتراضية',old.default_image||'/assets/welcome/2468.webp','text','يمكنك رفع صورة مباشرة من جهازك أو كتابة رابط HTTPS. المقاس المقترح 1200 × 630.');
+ seoImageUploader(general,defaultSharingImage,api,notice);
  formField(general,'default_image_alt','الوصف البديل لصورة المشاركة',old.default_image_alt||'وجبات مطعم سنونو');
  formField(general,'social_handle','اسم حساب X (إن وجد)',old.social_handle||'');
  formField(general,'restaurant_schema','بيانات المطعم المنظمة JSON-LD',old.restaurant_schema!==false,'checkbox','تستخدم معلومات المطعم الفعلية مثل العنوان وساعات العمل.');
@@ -273,7 +322,8 @@ export async function renderSeoEditor({api,root,notice,navigate,role}){
   formField(sub,p.id+'_canonical','Canonical URL',cfg.canonical||p.route,'text','مسار نسبي داخل النطاق الأصلي مثل '+p.route);
   formField(sub,p.id+'_og_title','عنوان المشاركة (Open Graph)',cfg.og_title||'','text','اتركه فارغاً لاستخدام عنوان البحث.');
   formField(sub,p.id+'_og_description','وصف المشاركة',cfg.og_description||'','textarea','اتركه فارغاً لاستخدام وصف البحث.');
-  formField(sub,p.id+'_og_image','صورة مشاركة خاصة بهذه الصفحة',cfg.og_image||'','text','اتركه فارغاً لاستخدام الصورة الافتراضية.');
+  const pageSharingImage=formField(sub,p.id+'_og_image','صورة مشاركة خاصة بهذه الصفحة',cfg.og_image||'','text','ارفع صورة من جهازك أو استخدم رابطاً؛ اترك الحقل فارغاً لاستخدام الصورة الافتراضية.');
+  seoImageUploader(sub,pageSharingImage,api,notice);
   formField(sub,p.id+'_index','السماح بالفهرسة (Index, follow)',cfg.index!==false,'checkbox','إلغاء التفعيل يضيف noindex,follow. لا يُحذف الموقع من Google فوراً.');
   const snippet=el('div',null,'seo-preview');
   snippet.append(el('small','معاينة تقريبية لنتيجة البحث وليست ضماناً لظهورها كما هي.'));
