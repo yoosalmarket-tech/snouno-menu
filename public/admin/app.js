@@ -1261,7 +1261,7 @@ async function openSection(key,{initial=false,fromHistory=false}={}){
    $('body').replaceChildren();
    const ticketNow=generation;
    try{
-    const module=await import('./seo.js?v=seo-sharing-upload-fix-20261125');
+    const module=await import('./seo.js?v=seo-sharing-rename-20261125');
     if(ticketNow!==generation)return;
     const args={api,root:$('body'),notice,role,navigate:target=>openSection(target),
      token:()=>session?.access_token||''};
