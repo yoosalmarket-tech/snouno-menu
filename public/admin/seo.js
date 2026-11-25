@@ -260,7 +260,37 @@ function seoImageUploader(host,input,api,notice){
  });
  input.addEventListener('input',()=>{status.textContent='';refresh();});
  controls.append(pick,file);
- container.append(preview,controls,status);
+ const renamePanel=el('div',null,'seo-share-image-uploader');
+ const slug=formField(renamePanel,input.name+'_filename_ui','اسم ملف الصورة','','text','أحرف إنجليزية وأرقام وشرطات فقط. سيتم الاحتفاظ بالرابط السابق.');
+ slug.dir='ltr';slug.maxLength=65;slug.placeholder='snounu-best-burger-restaurant-gaza';
+ slug.addEventListener('input',()=>normalizeImageFilenameInput(slug));
+ slug.addEventListener('blur',()=>normalizeImageFilenameInput(slug,{final:true}));
+ const rename=btn('إعادة تسمية الصورة',async()=>{
+  normalizeImageFilenameInput(slug,{final:true});
+  if(!validImageSlug(slug.value)){notice('أدخل اسم ملف صالحاً');return;}
+  if(!input.value.trim()){notice('اختر صورة أولاً');return;}
+  rename.disabled=true;pick.disabled=true;status.dataset.uploading='true';
+  status.textContent='جارٍ إعادة تسمية الصورة...';
+  try{
+   const url=new URL(input.value.trim(),baseUrl);
+   if(!(url.origin===baseUrl&&url.pathname.startsWith('/assets/'))&&!(url.origin===seoStorageOrigin&&url.pathname.startsWith('/storage/v1/object/public/menu-images/')))throw Error('ارفع الصورة إلى سنونو أولاً.');
+   const response=await fetch(url.href);if(!response.ok)throw Error('تعذر قراءة الصورة');
+   const blob=await response.blob();
+   const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[blob.type.split(';')[0].toLowerCase()];
+   if(!ext||!blob.size||blob.size>5242880)throw Error('نوع أو حجم الصورة غير مدعوم');
+   const name=slug.value+'.'+ext;
+   const path='seo/'+crypto.randomUUID()+'/'+name;
+   await api('/storage/v1/object/menu-images/'+path,{method:'POST',body:new File([blob],name,{type:blob.type})});
+   input.value=seoStoragePublic+path;
+   input.dispatchEvent(new Event('input',{bubbles:true}));
+   status.textContent='تمت إعادة التسمية. احفظ تغييرات SEO لتفعيل الرابط الجديد.';
+  }catch(e){status.textContent=e.message;notice(e.message);}
+  finally{delete status.dataset.uploading;rename.disabled=false;pick.disabled=false;}
+ },'seo-button seo-outline');
+ const syncName=()=>{try{slug.value=normalizeImageSlug(fileName(input.value).replace(/\.[^.]+$/,'' )).slice(0,65);renamePanel.style.display=input.value.trim()?'':'none';}catch{slug.value='';}};
+ input.addEventListener('input',syncName);syncName();
+ renamePanel.append(rename);
+ container.append(preview,controls,renamePanel,status);
  input.parentElement.append(container);
  refresh();
  return container;
