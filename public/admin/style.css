@@ -2672,3 +2672,13 @@ main:has(#body.ga-overview) #tabs .admin-install-app:hover{
 .closure-feedback[data-state="success"]{color:#218456}.closure-feedback[data-state="error"]{color:#bc3422}
 .closure-feedback[data-state="pending"]{color:#966e16}
 @media(max-width:620px){.closure-manager{padding:15px}.closure-rule{padding:12px}.closure-day-picks{grid-template-columns:repeat(2,minmax(0,1fr))}.closure-time-fields{grid-template-columns:1fr 1fr;gap:7px}}
+
+
+/* SEO Open Graph upload control and responsive image preview. */
+#body .seo-share-image-uploader{display:grid;gap:9px;margin:9px 0 15px;min-width:0}
+#body .seo-share-image-preview{display:block;width:min(100%,420px);aspect-ratio:1200/630;object-fit:contain;border:1px solid #D6D6D6;border-radius:12px;background:#F2F2F2}
+#body .seo-share-image-preview[hidden]{display:none}
+#body .seo-share-image-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#body .seo-share-image-file{display:none}
+#body .seo-share-image-status{display:block;color:#595959;font-size:12px;line-height:1.7}
+#body .seo-share-image-controls .seo-button{width:auto;min-height:42px}
