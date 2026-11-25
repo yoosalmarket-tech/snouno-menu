@@ -247,7 +247,7 @@ function seoImageUploader(host,input,api,notice){
   try{
    const name='seo/sharing-'+crypto.randomUUID()+'.'+ext;
    await api('/storage/v1/object/menu-images/'+name,{
-    method:'POST',body:new File([selected,name.split('/').pop(),{type:selected.type})
+    method:'POST',body:new File([selected],name.split('/').pop(),{type:selected.type})
    });
    input.value=seoStoragePublic+name;
    input.dispatchEvent(new Event('input',{bubbles:true}));
