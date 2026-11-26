@@ -347,10 +347,7 @@ export function createRichMenu({configureMeal,host,getData,onOpen,onRestaurantIn
   // Desktop side plates sit farther out; the central plate keeps its full size.
   const sideRoom=desktop?clamp(width*.50,160,305):clamp(width*.44,92,255);
   const availableHeight=desktop?Math.max(160,height-120):Math.max(180,height);
-  // Mobile cards use the larger 320x330px canvas; fit the entire card above
-  // the CTA and rating, including narrow or short viewports.
-  const scale=desktop?clamp(availableHeight/340,availableHeight<230?.53:.62,1.1)*1.04:
-   Math.max(.25,Math.min(1.12,(height-68)/330,(width-12)/320));
+  const scale=clamp(availableHeight/340,availableHeight<230?.53:.62,1.1)*(desktop?1.04:.96);
   for(let i=0;i<dishesEls.length;i++){
    const el=dishesEls[i],dif=i-k;
    el.setAttribute('aria-selected',String(i===front));
